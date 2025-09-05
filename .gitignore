@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Production build
+dist/*
+
+# Environment variables
+.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+frontend/.gitignore

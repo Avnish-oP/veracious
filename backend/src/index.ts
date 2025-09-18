@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import AuthRoutes from "./routes/auth";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import producRoutes from "./routes/products";
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/v1/auth", AuthRoutes);
+app.use("/api/v1/products", producRoutes);
 
 // Start server
 app.listen(PORT, () => {

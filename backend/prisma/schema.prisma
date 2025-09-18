@@ -45,6 +45,10 @@ model User {
   refreshTokens RefreshToken[]
 
   Address Address[]
+
+  Review Review[]
+
+  RedeemedCoupon RedeemedCoupon[]
 }
 
 model Address {
@@ -95,6 +99,126 @@ model RefreshToken {
   expiresAt DateTime
   revokedAt DateTime?
   createdAt DateTime  @default(now())
+}
+
+model Product {
+  id                String         @id @default(uuid())
+  name              String
+  slug              String         @unique
+  description       String
+  brand             String
+  price             Decimal        @db.Decimal(10, 2)
+  discountPrice     Decimal?       @db.Decimal(10, 2)
+  stock             Int
+  sku               String         @unique
+  frameShape        String
+  frameMaterial     String
+  frameColor        String
+  lensType          String
+  lensColor         String
+  gender            Gender
+  isFeatured        Boolean        @default(false)
+  isActive          Boolean        @default(true)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  images            ProductImage[]
+  reviews           Review[]       @relation("ProductReviews")
+  categories        Category[]     @relation("ProductCategories")
+  tags              String[]
+  applicableCoupons Coupon[]       @relation("ProductCoupons")
+  specifications    Json
+
+  Review Review[]
+}
+
+model Coupon {
+  id                 String           @id @default(uuid())
+  code               String           @unique
+  description        String?
+  discountType       DiscountType
+  discount           Decimal          @db.Decimal(10, 2)
+  discountValue      Decimal?         @db.Decimal(10, 2)
+  validFrom          DateTime
+  validTo            DateTime?
+  usageLimit         Int?
+  perUserLimit       Int?
+  minOrderValue      Decimal?         @db.Decimal(10, 2)
+  isActive           Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  applicableProducts Product[]        @relation("ProductCoupons")
+  redeemedCoupons    RedeemedCoupon[]
+}
+
+model RedeemedCoupon {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  coupon     Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  couponId   String
+  redeemedAt DateTime @default(now())
+
+  @@unique([userId, couponId])
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  url       String
+  altText   String?
+  isMain    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  products  Product[] @relation("ProductCategories")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Review {
+  id        String    @id @default(uuid())
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  rating    Int
+  body      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Product   Product[] @relation("ProductReviews")
+
+  @@unique([productId, userId])
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum frameShape {
+  ROUND
+  SQUARE
+  OVAL
+  RECTANGLE
+  CAT_EYE
+  AVIATOR
+  WAYFARER
+  BROWLINE
+  RIMLESS
+  GEOMETRIC
+  OTHER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNISEX
 }
 
 enum Role {

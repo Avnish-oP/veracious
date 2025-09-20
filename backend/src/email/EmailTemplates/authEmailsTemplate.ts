@@ -170,7 +170,7 @@ const resetPasswordEmailTemplate = (token: string) => `
         <p>To reset your password, please use the following link:</p>
         <a href="${
           process.env.FRONTEND_URL
-        }/reset-password?token=${token}" class="code-box">Reset Password</a>
+        }/auth/reset-password?token=${token}" class="code-box">Reset Password</a>
         <p>If you did not request this, you can safely ignore this email.</p>
         <div class="footer">
             &copy; ${new Date().getFullYear()} Veracious. All rights reserved.

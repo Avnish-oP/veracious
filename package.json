@@ -2,6 +2,7 @@
   "dependencies": {
     "cookie-parser": "^1.4.7",
     "crypto": "^1.0.1",
-    "ioredis": "^5.7.0"
+    "ioredis": "^5.7.0",
+    "react-hook-form": "^7.63.0"
   }
 }

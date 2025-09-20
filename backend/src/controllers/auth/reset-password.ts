@@ -1,6 +1,7 @@
 import { sendResetSuccessEmail } from "../../email/sendmail";
 import prisma from "../../utils/prisma";
 import express from "express";
+import bcrypt from "bcryptjs";
 
 const resetPassword = async (req: express.Request, res: express.Response) => {
   const token = req.query.token;
@@ -33,11 +34,14 @@ const resetPassword = async (req: express.Request, res: express.Response) => {
       });
     }
 
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
     // Update the user's password
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
-        passwordHash: newPassword,
+        passwordHash: hashedPassword,
         resetToken: null,
         resetTokenExp: null,
       },

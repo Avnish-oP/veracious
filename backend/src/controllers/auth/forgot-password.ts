@@ -1,6 +1,7 @@
 import { sendResetPasswordEmail } from "../../email/sendmail";
 import prisma from "../../utils/prisma";
 import express from "express";
+import crypto from "crypto";
 
 const forgotPassword = async (req: express.Request, res: express.Response) => {
   const { email } = req.body;

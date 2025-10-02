@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { Sparkles, Sun, Glasses } from "lucide-react";
 import { RegistrationState, Step1FormData } from "@/types/registrationTypes";
 import { useLoginMutation } from "@/hooks/useRegistration";
+import { useUserStore } from "@/store/useUserStore";
 import { Progress } from "@/components/ui/form-components";
 import { Step1Form } from "./Step1Form";
 import { Step2Form } from "./Step2Form";
@@ -15,6 +16,7 @@ import { Step3Form } from "./Step3Form";
 export const RegistrationFlow: React.FC = () => {
   const router = useRouter();
   const loginMutation = useLoginMutation();
+  const { fetchUser } = useUserStore();
 
   const [registrationState, setRegistrationState] =
     React.useState<RegistrationState>({
@@ -69,8 +71,9 @@ export const RegistrationFlow: React.FC = () => {
           email: registrationState.step1Data.email,
           password: registrationState.step1Data.password,
         });
+        await fetchUser(); // Fetch user data after successful login
         toast.success("Registration completed! Welcome to Veracious!");
-        router.push("/dashboard");
+        router.push("/");
       } catch (error) {
         // If auto-login fails, redirect to login page
         toast.success("Registration completed! Please log in to continue.");
@@ -90,8 +93,9 @@ export const RegistrationFlow: React.FC = () => {
           email: registrationState.step1Data.email,
           password: registrationState.step1Data.password,
         });
+        await fetchUser(); // Fetch user data after successful login
         toast.success("Registration completed! Welcome to Veracious!");
-        router.push("/dashboard");
+        router.push("/");
       } catch (error) {
         toast.success("Registration completed! Please log in to continue.");
         router.push("/auth/login");

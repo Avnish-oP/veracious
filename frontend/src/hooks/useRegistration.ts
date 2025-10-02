@@ -80,6 +80,7 @@ export const useLoginMutation = () => {
     onSuccess: () => {
       // Invalidate and refetch user data after login
       queryClient.invalidateQueries({ queryKey: ["user"] });
+
       toast.success("Login successful!");
     },
     onError: (error: Error) => {

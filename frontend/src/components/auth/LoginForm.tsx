@@ -10,6 +10,7 @@ import { toast } from "react-hot-toast";
 import { LoginFormData, loginSchema } from "@/types/authTypes";
 import { useLoginMutation } from "@/hooks/useRegistration";
 import { Button, Card, Input } from "@/components/ui/form-components";
+import { useUserStore } from "@/store/useUserStore";
 
 interface LoginFormProps {
   onForgotPassword?: () => void;
@@ -19,6 +20,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   const router = useRouter();
   const loginMutation = useLoginMutation();
   const [showPassword, setShowPassword] = useState(false);
+
+  const { fetchUser } = useUserStore();
 
   const {
     register,
@@ -33,8 +36,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await loginMutation.mutateAsync(data);
+      await fetchUser(); // Fetch user data after successful login
       toast.success("Welcome back!");
-      router.push("/dashboard");
+      router.push("/");
     } catch (error: any) {
       const errorMessage = error.message || "Invalid email or password";
       toast.error(errorMessage);

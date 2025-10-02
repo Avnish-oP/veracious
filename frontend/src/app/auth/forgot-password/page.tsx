@@ -1,9 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Sun, Glasses } from "lucide-react";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
+import { useUserStore } from "@/store/useUserStore";
+import { useRouter } from "next/navigation";
+
+export default function ForgotPasswordPage() {
+  const router = useRouter();
+  const { user, loading } = useUserStore();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/");
+    }
+  }, [user, loading, router]);
 
 export default function ForgotPasswordPage() {
   return (

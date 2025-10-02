@@ -5,6 +5,7 @@ import prisma from "../../utils/prisma";
 const getCurrentUser = async (req: express.Request, res: express.Response) => {
   try {
     const accessToken = req.cookies.accessToken;
+    console.log("Access Token:", accessToken);
 
     if (!accessToken) {
       return res.status(401).json({

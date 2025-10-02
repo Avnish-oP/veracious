@@ -1,3 +1,4 @@
+import prisma from "..//utils/prisma";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
@@ -9,14 +10,21 @@ declare global {
   }
 }
 
-const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const authMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const token = req.cookies?.accessToken;
   if (!token) {
     return res.status(401).json({ success: false, message: "No access token" });
   }
   try {
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!);
-    req.user = decoded;
+    const user = await prisma.user.findUnique({
+      where: { id: (decoded as any).id },
+    });
+    req.user = user;
     return next();
   } catch {
     return res
@@ -25,4 +33,16 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export default authMiddleware;
+export const adminMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (req.user?.role !== "ADMIN") {
+    return res
+      .status(403)
+      .json({ success: false, message: "Admin access required" });
+  }
+
+  return next();
+};

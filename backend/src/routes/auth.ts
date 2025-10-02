@@ -9,6 +9,7 @@ import resendVerificationCode from "../controllers/auth/resendVerification";
 import registerStep2 from "../controllers/auth/registerStep2";
 import forgotPassword from "../controllers/auth/forgot-password";
 import resetPassword from "../controllers/auth/reset-password";
+import { authMiddleware } from "../middlewares/authmiddleware";
 
 const router = express.Router();
 
@@ -19,7 +20,7 @@ router.post("/login", loginUser);
 router.post("/logout", logoutUser);
 router.post("/verify", verifyUser);
 router.post("/refresh-token", refreshTokenHandler);
-router.get("/me", getCurrentUser);
+router.get("/me", authMiddleware, getCurrentUser);
 router.post("/resend-verification", resendVerificationCode);
 router.post("/register-step-2", registerStep2);
 router.post("/forgot-password", forgotPassword);

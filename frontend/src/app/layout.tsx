@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
+import ConditionalNavbar from "@/components/layout/ConditionalNavbar";
+import UserHydration from "@/components/providers/UserHydration";
+import TokenRefresher from "@/utils/tokenRefresher";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +32,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>{children}</Providers>
+        <Providers>
+          <UserHydration />
+          <TokenRefresher />
+          <ConditionalNavbar />
+          {children}
+        </Providers>
       </body>
     </html>
   );

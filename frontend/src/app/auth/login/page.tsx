@@ -1,11 +1,22 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Sun, Glasses } from "lucide-react";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { useUserStore } from "@/store/useUserStore";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { user, loading } = useUserStore();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/");
+    }
+  }, [user, loading, router]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 relative overflow-hidden">
       {/* Background Decorative Elements */}
@@ -124,7 +135,7 @@ export default function LoginPage() {
             Support
           </motion.a>
         </div>
-        
+
         <p className="text-xs text-slate-400">
           © 2025 Veracious. Crafting premium vision experiences worldwide.
         </p>
@@ -143,7 +154,7 @@ export default function LoginPage() {
           ease: "easeInOut",
         }}
       />
-      
+
       <motion.div
         className="absolute top-1/3 right-16 w-6 h-6 bg-orange-300/30 rounded-full"
         animate={{
@@ -157,7 +168,7 @@ export default function LoginPage() {
           delay: 1,
         }}
       />
-      
+
       <motion.div
         className="absolute bottom-1/4 left-1/4 w-3 h-3 bg-red-300/50 rounded-full"
         animate={{

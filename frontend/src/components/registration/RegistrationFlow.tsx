@@ -8,6 +8,7 @@ import { Sparkles, Sun, Glasses } from "lucide-react";
 import { RegistrationState, Step1FormData } from "@/types/registrationTypes";
 import { useLoginMutation } from "@/hooks/useRegistration";
 import { useUserStore } from "@/store/useUserStore";
+import { useCartStore } from "@/store/useCartStore";
 import { Progress } from "@/components/ui/form-components";
 import { Step1Form } from "./Step1Form";
 import { Step2Form } from "./Step2Form";
@@ -17,6 +18,7 @@ export const RegistrationFlow: React.FC = () => {
   const router = useRouter();
   const loginMutation = useLoginMutation();
   const { fetchUser } = useUserStore();
+  const { mergeGuestCart } = useCartStore();
 
   const [registrationState, setRegistrationState] =
     React.useState<RegistrationState>({
@@ -72,6 +74,10 @@ export const RegistrationFlow: React.FC = () => {
           password: registrationState.step1Data.password,
         });
         await fetchUser(); // Fetch user data after successful login
+
+        // Merge guest cart with user cart
+        await mergeGuestCart();
+
         toast.success("Registration completed! Welcome to Veracious!");
         router.push("/");
       } catch (error) {
@@ -94,6 +100,10 @@ export const RegistrationFlow: React.FC = () => {
           password: registrationState.step1Data.password,
         });
         await fetchUser(); // Fetch user data after successful login
+
+        // Merge guest cart with user cart
+        await mergeGuestCart();
+
         toast.success("Registration completed! Welcome to Veracious!");
         router.push("/");
       } catch (error) {

@@ -84,11 +84,12 @@ model Cart {
 }
 
 model CartItem {
-  id        String @id @default(uuid())
-  cart      Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  id        String  @id @default(uuid())
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   cartId    String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String
-  quantity  Int    @default(1)
+  quantity  Int     @default(1)
 }
 
 model RefreshToken {
@@ -127,6 +128,7 @@ model Product {
   tags              String[]
   applicableCoupons Coupon[]       @relation("ProductCoupons")
   specifications    Json
+  cartItems         CartItem[]
 
   Review Review[]
 }

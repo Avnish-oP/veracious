@@ -17,13 +17,17 @@ import { ProductCard } from "@/components/ui/ProductCard";
 import { Product } from "@/types/productTypes";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
+import { useCartStore } from "@/store/useCartStore";
+import { toast } from "react-hot-toast";
+import { QuickViewModal } from "@/components/products/QuickViewModal";
 
 interface FeaturedProductsProps {
-  products: Product[];
+  allProducts: Product[];
+  featuredProducts: Product[];
+  trendingProducts: Product[];
   loading?: boolean;
   error?: string;
-  onLoadMore?: () => void;
-  onViewAll?: () => void;
+  onViewAll?: (filter: string) => void;
 }
 
 const filterOptions = [
@@ -33,146 +37,68 @@ const filterOptions = [
   { id: "top-rated", label: "Top Rated", icon: Star },
 ];
 
-const mockProducts: Product[] = [
-  {
-    id: "1",
-    name: "Classic Aviator Premium Edition",
-    slug: "classic-aviator-premium",
-    brand: "Ray-Ban",
-    price: 199.99,
-    discountPrice: 149.99,
-    stock: 50,
-    sku: "RB-AV-001",
-    frameShape: "AVIATOR",
-    frameMaterial: "Metal",
-    frameColor: "Gold",
-    lensType: "Polarized",
-    lensColor: "Brown",
-    gender: "UNISEX",
-    isFeatured: true,
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "2",
-    name: "Modern Wayfarer Collection",
-    slug: "modern-wayfarer",
-    brand: "Oakley",
-    price: 159.99,
-    stock: 30,
-    sku: "OAK-WF-002",
-    frameShape: "WAYFARER",
-    frameMaterial: "Acetate",
-    frameColor: "Black",
-    lensType: "UV Protection",
-    lensColor: "Gray",
-    gender: "MALE",
-    isFeatured: true,
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "3",
-    name: "Elegant Cat Eye Designer",
-    slug: "elegant-cat-eye",
-    brand: "Gucci",
-    price: 299.99,
-    discountPrice: 249.99,
-    stock: 20,
-    sku: "GUC-CE-003",
-    frameShape: "CAT_EYE",
-    frameMaterial: "Acetate",
-    frameColor: "Tortoiseshell",
-    lensType: "Gradient",
-    lensColor: "Brown",
-    gender: "FEMALE",
-    isFeatured: true,
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "4",
-    name: "Sport Performance Pro",
-    slug: "sport-performance-pro",
-    brand: "Nike",
-    price: 129.99,
-    stock: 75,
-    sku: "NIK-SP-004",
-    frameShape: "GEOMETRIC",
-    frameMaterial: "Plastic",
-    frameColor: "Blue",
-    lensType: "Mirrored",
-    lensColor: "Silver",
-    gender: "UNISEX",
-    isFeatured: false,
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-    updatedAt: "2024-01-01T00:00:00Z",
-  },
-];
-
 export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
-  products = mockProducts,
+  allProducts = [],
+  featuredProducts = [],
+  trendingProducts = [],
   loading = false,
   error,
-  onLoadMore,
   onViewAll,
 }) => {
   const [activeFilter, setActiveFilter] = useState("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [currentPage, setCurrentPage] = useState(0);
-  const productsPerPage = 4;
-
-  const filteredProducts = products.filter((product) => {
-    switch (activeFilter) {
-      case "trending":
-        return product.discountPrice; // Assuming products with discounts are trending
-      case "featured":
-        return product.isFeatured;
-      case "top-rated":
-        return true; // All products for demo, could filter by rating
-      default:
-        return true;
-    }
-  });
-
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
-  const startIndex = currentPage * productsPerPage;
-  const visibleProducts = filteredProducts.slice(
-    startIndex,
-    startIndex + productsPerPage
+  const [layout, setLayout] = useState<"grid" | "list">("grid");
+  const [quickViewProductId, setQuickViewProductId] = useState<string | null>(
+    null
   );
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const { addToCart } = useCartStore();
 
-  const nextPage = () => {
-    setCurrentPage((prev) => (prev + 1) % totalPages);
+  // Get products based on active filter
+  const getFilteredProducts = () => {
+    switch (activeFilter) {
+      case "featured":
+        return featuredProducts;
+      case "trending":
+        return trendingProducts;
+      case "all":
+      default:
+        return allProducts;
+    }
   };
 
-  const prevPage = () => {
-    setCurrentPage((prev) => (prev - 1 + totalPages) % totalPages);
+  const displayedProducts = getFilteredProducts();
+
+  // Handle add to cart
+  const handleAddToCart = async (product: Product) => {
+    try {
+      await addToCart(product.id, 1);
+      toast.success(`${product.name} added to cart!`);
+    } catch (error) {
+      toast.error("Failed to add item to cart");
+    }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
+  // Handle quick view
+  const handleQuickView = (product: Product) => {
+    setQuickViewProductId(product.id);
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-      },
-    },
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        left: -400,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        left: 400,
+        behavior: "smooth",
+      });
+    }
   };
 
   if (error) {
@@ -186,9 +112,6 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
             Unable to load products
           </h3>
           <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={onLoadMore} variant="outline">
-            Try Again
-          </Button>
         </div>
       </div>
     );
@@ -199,6 +122,15 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
       id="featured-products"
       className="py-16 bg-gradient-to-b from-white to-gray-50"
     >
+      {/* Quick View Modal */}
+      {quickViewProductId && (
+        <QuickViewModal
+          isOpen={!!quickViewProductId}
+          onClose={() => setQuickViewProductId(null)}
+          productId={quickViewProductId}
+        />
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
@@ -239,15 +171,12 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
         >
           {/* Filter Tabs */}
           <div className="flex flex-wrap gap-2">
-            {filterOptions.map((option) => {
+            {filterOptions.slice(0, 3).map((option) => {
               const Icon = option.icon;
               return (
                 <motion.button
                   key={option.id}
-                  onClick={() => {
-                    setActiveFilter(option.id);
-                    setCurrentPage(0);
-                  }}
+                  onClick={() => setActiveFilter(option.id)}
                   className={cn(
                     "flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                     activeFilter === option.id
@@ -264,33 +193,41 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
             })}
           </div>
 
-          {/* View Controls */}
-          <div className="flex items-center space-x-4">
-            <div className="flex bg-gray-100 rounded-lg p-1">
+          {/* Layout Toggle and View All */}
+          <div className="flex items-center gap-3">
+            {/* Layout Switcher */}
+            <div className="flex items-center bg-white border border-gray-200 rounded-lg p-1">
               <button
-                onClick={() => setViewMode("grid")}
+                onClick={() => setLayout("grid")}
                 className={cn(
-                  "p-2 rounded-md transition-colors duration-200",
-                  viewMode === "grid" ? "bg-white shadow-sm" : "text-gray-500"
+                  "p-2 rounded transition-all duration-200",
+                  layout === "grid"
+                    ? "bg-amber-500 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
                 )}
+                aria-label="Grid view"
               >
                 <Grid3X3 className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setViewMode("list")}
+                onClick={() => setLayout("list")}
                 className={cn(
-                  "p-2 rounded-md transition-colors duration-200",
-                  viewMode === "list" ? "bg-white shadow-sm" : "text-gray-500"
+                  "p-2 rounded transition-all duration-200",
+                  layout === "list"
+                    ? "bg-amber-500 text-white"
+                    : "text-gray-600 hover:bg-gray-100"
                 )}
+                aria-label="List view"
               >
                 <List className="w-4 h-4" />
               </button>
             </div>
 
+            {/* View All Button */}
             <Button
               variant="outline"
               size="sm"
-              onClick={onViewAll}
+              onClick={() => onViewAll?.(activeFilter)}
               className="hidden sm:flex"
             >
               View All
@@ -301,9 +238,9 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 
         {/* Loading State */}
         {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="flex gap-6 overflow-hidden">
             {[...Array(4)].map((_, index) => (
-              <div key={index} className="animate-pulse">
+              <div key={index} className="flex-shrink-0 w-72 animate-pulse">
                 <div className="bg-gray-200 aspect-square rounded-2xl mb-4" />
                 <div className="space-y-2">
                   <div className="h-4 bg-gray-200 rounded w-3/4" />
@@ -315,115 +252,114 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
           </div>
         )}
 
-        {/* Products Grid */}
-        {!loading && (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={`${activeFilter}-${currentPage}`}
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              className={cn(
-                "gap-6",
-                viewMode === "grid"
-                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr"
-                  : "flex flex-col space-y-4"
-              )}
-            >
-              {visibleProducts.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  variants={itemVariants}
-                  className="flex justify-center"
+        {/* Products Display */}
+        {!loading && displayedProducts.length > 0 && (
+          <div className="relative">
+            {layout === "grid" ? (
+              <>
+                {/* Left Arrow for Grid Horizontal Scroll */}
+                <motion.button
+                  onClick={scrollLeft}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-3 hover:bg-amber-50 transition-colors duration-200 hidden md:block"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                 >
-                  <ProductCard
-                    product={product}
-                    onQuickView={(product) =>
-                      console.log("Quick view:", product)
-                    }
-                    onAddToCart={(product) =>
-                      console.log("Add to cart:", product)
-                    }
-                    onToggleWishlist={(product) =>
-                      console.log("Toggle wishlist:", product)
-                    }
-                    size={viewMode === "list" ? "lg" : "md"}
-                    layout={viewMode === "list" ? "horizontal" : "vertical"}
-                  />
-                </motion.div>
-              ))}
-            </motion.div>
-          </AnimatePresence>
+                  <ChevronLeft className="w-6 h-6 text-gray-700" />
+                </motion.button>
+
+                {/* Products Container - Horizontal Scroll */}
+                <div
+                  ref={scrollContainerRef}
+                  className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+                  style={{
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                  }}
+                >
+                  {displayedProducts.map((product, index) => (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      className="flex-shrink-0 w-72"
+                    >
+                      <ProductCard
+                        product={product}
+                        onQuickView={handleQuickView}
+                        onAddToCart={handleAddToCart}
+                        onToggleWishlist={(p) => console.log("Wishlist:", p)}
+                        size="md"
+                        layout="vertical"
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Right Arrow for Grid Horizontal Scroll */}
+                <motion.button
+                  onClick={scrollRight}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-3 hover:bg-amber-50 transition-colors duration-200 hidden md:block"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <ChevronRight className="w-6 h-6 text-gray-700" />
+                </motion.button>
+              </>
+            ) : (
+              /* List Layout - Vertical Stack */
+              <div className="space-y-4">
+                {displayedProducts.map((product, index) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                  >
+                    <ProductCard
+                      product={product}
+                      onQuickView={handleQuickView}
+                      onAddToCart={handleAddToCart}
+                      onToggleWishlist={(p) => console.log("Wishlist:", p)}
+                      size="md"
+                      layout="horizontal"
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <motion.div
-            className="flex items-center justify-center space-x-4 mt-12"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={prevPage}
-              disabled={currentPage === 0}
-              className="disabled:opacity-50"
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Previous
-            </Button>
-
-            <div className="flex space-x-2">
-              {[...Array(totalPages)].map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentPage(index)}
-                  className={cn(
-                    "w-8 h-8 rounded-full text-sm font-medium transition-all duration-200",
-                    currentPage === index
-                      ? "bg-amber-500 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-amber-100"
-                  )}
-                >
-                  {index + 1}
-                </button>
-              ))}
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={nextPage}
-              disabled={currentPage === totalPages - 1}
-              className="disabled:opacity-50"
-            >
-              Next
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </motion.div>
+        {/* No Products Message */}
+        {!loading && displayedProducts.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-600">
+              No products found for this category.
+            </p>
+          </div>
         )}
 
-        {/* Call to Action */}
-        <motion.div
-          className="text-center mt-12"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
+        {/* Mobile View All Button */}
+        <div className="mt-8 text-center sm:hidden">
           <Button
-            size="lg"
-            onClick={onViewAll}
-            className="bg-amber-500 hover:bg-amber-600 text-white px-8"
+            variant="primary"
+            size="md"
+            onClick={() => onViewAll?.(activeFilter)}
+            className="w-full"
           >
-            <Sparkles className="w-5 h-5 mr-2" />
-            Explore Full Collection
-            <ArrowRight className="w-5 h-5 ml-2" />
+            View All Products
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
-        </motion.div>
+        </div>
       </div>
+
+      {/* Hide scrollbar CSS */}
+      <style jsx>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </section>
   );
 };

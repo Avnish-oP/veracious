@@ -7,8 +7,10 @@ export interface Product {
   brand: string;
   price: number;
   discountPrice?: number;
+  description: string;
   stock: number;
   sku: string;
+  applicableCoupons?: string[];
   frameShape: string;
   frameMaterial: string;
   frameColor: string;
@@ -61,12 +63,21 @@ export interface Review {
 
 // API Response types
 export interface ProductsResponse {
+  success?: boolean;
   products: Product[];
   total: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
 }
 
 export interface FeaturedProductsResponse {
+  success?: boolean;
   products: Product[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
 }
 
 // Filter and search types

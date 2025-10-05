@@ -4,6 +4,7 @@ import AuthRoutes from "./routes/auth";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import producRoutes from "./routes/products";
+import cartRoutes from "./routes/cart";
 
 dotenv.config();
 
@@ -42,6 +43,7 @@ app.use(express.json());
 // Routes
 app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/products", producRoutes);
+app.use("/api/v1/cart", cartRoutes);
 
 // Start server
 app.listen(PORT, () => {

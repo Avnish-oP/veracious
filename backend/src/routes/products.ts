@@ -12,8 +12,8 @@ const router = express.Router();
 
 router.get("/", getAllProducts);
 router.get("/featured", getFeaturedProducts);
+router.get("/trending", getTrendingProducts); // Must be before /:productId
 router.get("/category/:categoryId", getProductsByCategory);
 router.get("/:productId", getProductById);
-router.get("/trending", getTrendingProducts);
 
 export default router;

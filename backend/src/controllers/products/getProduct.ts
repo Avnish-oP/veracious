@@ -59,9 +59,16 @@ export const getAllProducts = async (req: Request, res: Response) => {
       images: undefined, // remove images array
     }));
 
-    res.status(200).json({ products: productCards, total });
+    res.status(200).json({
+      success: true,
+      products: productCards,
+      total,
+      page: pageNum,
+      limit: take,
+      totalPages: Math.ceil(total / take),
+    });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch products" });
+    res.status(500).json({ success: false, error: "Failed to fetch products" });
   }
 };
 
@@ -117,33 +124,39 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const getFeaturedProducts = async (req: Request, res: Response) => {
   try {
-    const { limit = 10 } = req.query;
+    const { page = 1, limit = 10 } = req.query;
+    const pageNum = Number(page) || 1;
     const take = Number(limit);
+    const skip = (pageNum - 1) * take;
 
-    const products = await prisma.product.findMany({
-      where: { isFeatured: true },
-      take,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        brand: true,
-        price: true,
-        discountPrice: true,
-        frameShape: true,
-        frameMaterial: true,
-        frameColor: true,
-        lensType: true,
-        lensColor: true,
-        gender: true,
-        isFeatured: true,
-        images: {
-          where: { isMain: true },
-          select: { url: true },
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where: { isFeatured: true },
+        skip,
+        take,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          brand: true,
+          price: true,
+          discountPrice: true,
+          frameShape: true,
+          frameMaterial: true,
+          frameColor: true,
+          lensType: true,
+          lensColor: true,
+          gender: true,
+          isFeatured: true,
+          images: {
+            where: { isMain: true },
+            select: { url: true },
+          },
         },
-      },
-    });
+      }),
+      prisma.product.count({ where: { isFeatured: true } }),
+    ]);
 
     const productCards = products.map((product) => ({
       ...product,
@@ -151,7 +164,14 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
       images: undefined,
     }));
 
-    res.status(200).json({ success: true, products: productCards });
+    res.status(200).json({
+      success: true,
+      products: productCards,
+      total,
+      page: pageNum,
+      limit: take,
+      totalPages: Math.ceil(total / take),
+    });
   } catch (error) {
     res
       .status(500)
@@ -159,46 +179,64 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
   }
 };
 
-export const getProductsByCategory = (req: Request, res: Response) => {
+export const getProductsByCategory = async (req: Request, res: Response) => {
   const { categoryId } = req.params;
+  const { page = 1, limit = 10 } = req.query;
+  const pageNum = Number(page) || 1;
+  const take = Number(limit);
+  const skip = (pageNum - 1) * take;
 
-  prisma.product
-    .findMany({
-      where: { categories: { some: { id: categoryId } } },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        brand: true,
-        price: true,
-        discountPrice: true,
-        frameShape: true,
-        frameMaterial: true,
-        frameColor: true,
-        lensType: true,
-        lensColor: true,
-        gender: true,
-        isFeatured: true,
-        images: {
-          where: { isMain: true },
-          select: { url: true },
+  try {
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        skip,
+        take,
+        where: { categories: { some: { id: categoryId } } },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          brand: true,
+          price: true,
+          discountPrice: true,
+          frameShape: true,
+          frameMaterial: true,
+          frameColor: true,
+          lensType: true,
+          lensColor: true,
+          gender: true,
+          isFeatured: true,
+          images: {
+            where: { isMain: true },
+            select: { url: true },
+          },
         },
-      },
-    })
-    .then((products) => {
-      const productCards = products.map((product) => ({
-        ...product,
-        image: product.images[0]?.url || null,
-        images: undefined,
-      }));
-      res.status(200).json({ success: true, products: productCards });
-    })
-    .catch((error) => {
-      res.status(500).json({
-        success: false,
-        error: "Failed to fetch products by category",
-      });
+      }),
+      prisma.product.count({
+        where: { categories: { some: { id: categoryId } } },
+      }),
+    ]);
+
+    const productCards = products.map((product) => ({
+      ...product,
+      image: product.images[0]?.url || null,
+      images: undefined,
+    }));
+
+    res.status(200).json({
+      products: productCards,
+      total,
+      page: pageNum,
+      limit: take,
+      totalPages: Math.ceil(total / take),
     });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch products by category",
+    });
+  }
 };
 
 export const getTrendingProducts = async (req: Request, res: Response) => {

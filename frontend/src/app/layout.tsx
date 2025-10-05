@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
 import ConditionalNavbar from "@/components/layout/ConditionalNavbar";
 import UserHydration from "@/components/providers/UserHydration";
+import CartHydration from "@/components/providers/CartHydration";
 import TokenRefresher from "@/utils/tokenRefresher";
 
 const geistSans = Geist({
@@ -34,6 +35,7 @@ export default function RootLayout({
       >
         <Providers>
           <UserHydration />
+          <CartHydration />
           <TokenRefresher />
           <ConditionalNavbar />
           {children}

@@ -17,7 +17,6 @@ export default function ForgotPasswordPage() {
     }
   }, [user, loading, router]);
 
-export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 relative overflow-hidden">
       {/* Background Decorative Elements */}

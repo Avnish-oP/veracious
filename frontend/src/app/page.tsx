@@ -4,7 +4,11 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
-import { useFeaturedProducts } from "@/hooks/useProducts";
+import {
+  useProducts,
+  useFeaturedProducts,
+  useTrendingProducts,
+} from "@/hooks/useProducts";
 import { motion } from "framer-motion";
 import {
   Sparkles,
@@ -51,11 +55,22 @@ const stats = [
 
 export default function Home() {
   const router = useRouter();
-  const {
-    data: featuredProductsData,
-    isLoading: featuredLoading,
-    error: featuredError,
-  } = useFeaturedProducts(8);
+
+  // Fetch all products (page 1)
+  const { data: allProductsData, isLoading: allLoading } = useProducts({
+    page: 1,
+    limit: 8,
+  });
+
+  // Fetch featured products (page 1)
+  const { data: featuredProductsData, isLoading: featuredLoading } =
+    useFeaturedProducts({ page: 1, limit: 8 });
+
+  // Fetch trending products (page 1)
+  const { data: trendingProductsData, isLoading: trendingLoading } =
+    useTrendingProducts({ page: 1, limit: 8 });
+
+  const isLoading = allLoading || featuredLoading || trendingLoading;
 
   const getColorClasses = (color: string) => {
     const colors = {
@@ -75,10 +90,15 @@ export default function Home() {
 
       {/* Featured Products */}
       <FeaturedProducts
-        products={featuredProductsData?.products || []}
-        loading={featuredLoading}
-        error={featuredError?.message}
-        onViewAll={() => router.push("/products")}
+        allProducts={allProductsData?.products || []}
+        featuredProducts={featuredProductsData?.products || []}
+        trendingProducts={trendingProductsData?.products || []}
+        loading={isLoading}
+        onViewAll={(filter: string) => {
+          // Navigate to products page with filter query
+          const query = filter === "all" ? "" : `?filter=${filter}`;
+          router.push(`/products${query}`);
+        }}
       />
 
       {/* Features Section */}

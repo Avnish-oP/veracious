@@ -60,25 +60,80 @@ export const fetchProducts = async ({
 };
 
 // Fetch featured products
-export const fetchFeaturedProducts = async (
-  limit: number = 8
-): Promise<FeaturedProductsResponse> => {
+export const fetchFeaturedProducts = async ({
+  page = 1,
+  limit = 8,
+}: {
+  page?: number;
+  limit?: number;
+} = {}): Promise<FeaturedProductsResponse> => {
   const params = new URLSearchParams();
+  params.append("page", page.toString());
   params.append("limit", limit.toString());
 
   return apiCall<FeaturedProductsResponse>(`/products/featured?${params}`);
 };
 
 // Fetch product by ID
-export const fetchProductById = async (productId: string): Promise<Product> => {
-  return apiCall<Product>(`/products/${productId}`);
+export const fetchProductById = async (
+  productId: string
+): Promise<{ success: boolean; product: Product }> => {
+  return apiCall<{ success: boolean; product: Product }>(
+    `/products/${productId}`
+  );
+};
+
+// Hook for fetching a single product by ID
+export const useProductDetail = (productId: string) => {
+  return useQuery({
+    queryKey: ["product", productId],
+    queryFn: () => fetchProductById(productId),
+    enabled: !!productId,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    retry: (failureCount, error: any) => {
+      if (
+        error?.status === 404 ||
+        (error?.status >= 400 && error?.status < 500)
+      ) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+  });
 };
 
 // Fetch products by category
-export const fetchProductsByCategory = async (
-  categoryId: string
-): Promise<ProductsResponse> => {
-  return apiCall<ProductsResponse>(`/products/category/${categoryId}`);
+export const fetchProductsByCategory = async ({
+  categoryId,
+  page = 1,
+  limit = 10,
+}: {
+  categoryId: string;
+  page?: number;
+  limit?: number;
+}): Promise<ProductsResponse> => {
+  const params = new URLSearchParams();
+  params.append("page", page.toString());
+  params.append("limit", limit.toString());
+
+  return apiCall<ProductsResponse>(
+    `/products/category/${categoryId}?${params}`
+  );
+};
+
+// Fetch trending products
+export const fetchTrendingProducts = async ({
+  page = 1,
+  limit = 8,
+}: {
+  page?: number;
+  limit?: number;
+} = {}): Promise<ProductsResponse> => {
+  const params = new URLSearchParams();
+  params.append("page", page.toString());
+  params.append("limit", limit.toString());
+
+  return apiCall<ProductsResponse>(`/products/trending?${params}`);
 };
 
 // React Query Hooks
@@ -109,10 +164,16 @@ export const useProducts = ({
 };
 
 // Hook for fetching featured products
-export const useFeaturedProducts = (limit: number = 8) => {
+export const useFeaturedProducts = ({
+  page = 1,
+  limit = 8,
+}: {
+  page?: number;
+  limit?: number;
+} = {}) => {
   return useQuery({
-    queryKey: ["products", "featured", limit],
-    queryFn: () => fetchFeaturedProducts(limit),
+    queryKey: ["products", "featured", page, limit],
+    queryFn: () => fetchFeaturedProducts({ page, limit }),
     staleTime: 1000 * 60 * 10, // 10 minutes for featured products
     retry: (failureCount, error: any) => {
       if (error?.status >= 400 && error?.status < 500) {
@@ -140,12 +201,41 @@ export const useProduct = (productId: string) => {
 };
 
 // Hook for fetching products by category
-export const useProductsByCategory = (categoryId: string) => {
+export const useProductsByCategory = ({
+  categoryId,
+  page = 1,
+  limit = 10,
+}: {
+  categoryId: string;
+  page?: number;
+  limit?: number;
+}) => {
   return useQuery({
-    queryKey: ["products", "category", categoryId],
-    queryFn: () => fetchProductsByCategory(categoryId),
+    queryKey: ["products", "category", categoryId, page, limit],
+    queryFn: () => fetchProductsByCategory({ categoryId, page, limit }),
     enabled: !!categoryId,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: (failureCount, error: any) => {
+      if (error?.status >= 400 && error?.status < 500) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+  });
+};
+
+// Hook for fetching trending products
+export const useTrendingProducts = ({
+  page = 1,
+  limit = 8,
+}: {
+  page?: number;
+  limit?: number;
+} = {}) => {
+  return useQuery({
+    queryKey: ["products", "trending", page, limit],
+    queryFn: () => fetchTrendingProducts({ page, limit }),
+    staleTime: 1000 * 60 * 10, // 10 minutes for trending products
     retry: (failureCount, error: any) => {
       if (error?.status >= 400 && error?.status < 500) {
         return false;
@@ -186,7 +276,7 @@ export const usePrefetchProducts = () => {
   const prefetchFeaturedProducts = () => {
     queryClient.prefetchQuery({
       queryKey: ["products", "featured", 8],
-      queryFn: () => fetchFeaturedProducts(8),
+      queryFn: () => fetchFeaturedProducts({ limit: 8 }),
       staleTime: 1000 * 60 * 10,
     });
   };

@@ -17,7 +17,6 @@ export default function ResetPasswordPage() {
     }
   }, [user, loading, router]);
 
-export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 relative overflow-hidden">
       {/* Background Decorative Elements */}

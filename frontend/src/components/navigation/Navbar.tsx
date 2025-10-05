@@ -20,6 +20,9 @@ import {
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
 import { useUserStore } from "@/store/useUserStore";
+import { useCartStore } from "@/store/useCartStore";
+import { CartDrawer } from "@/components/cart/CartDrawer";
+import Image from "next/image";
 
 interface NavItem {
   label: string;
@@ -52,7 +55,11 @@ export const Navbar: React.FC = () => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const { user, loading, logout } = useUserStore();
+  const { getTotalItems } = useCartStore();
+
+  const cartItemCount = getTotalItems();
   console.log("User in Navbar:", user);
 
   // Handle scroll effect
@@ -107,10 +114,10 @@ export const Navbar: React.FC = () => {
             whileTap={{ scale: 0.95 }}
           >
             <Link href="/" className="flex items-center space-x-2">
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 rounded-2xl flex items-center justify-center shadow-lg">
-                  <ShoppingCart className="w-6 h-6 text-white" />
-                </div>
+              <div className="relative flex items-center">
+                {/* <ShoppingCart className="w-6 h-6 text-white" /> */}
+                <Image src="/logo.png" alt="Logo" width={50} height={50} />
+
                 <motion.div
                   className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-300 rounded-full"
                   animate={{
@@ -123,10 +130,10 @@ export const Navbar: React.FC = () => {
                     ease: "easeInOut",
                   }}
                 />
+                <div className="text-2xl font-bold font-serif bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent -ml-2 mt-2  ">
+                  OtticaMart
+                </div>
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent">
-                OtticaMart
-              </span>
             </Link>
           </motion.div>
 
@@ -220,14 +227,21 @@ export const Navbar: React.FC = () => {
 
             {/* Cart */}
             <motion.button
+              onClick={() => setIsCartOpen(true)}
               className="relative p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 rounded-lg hover:bg-amber-50"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <ShoppingCart className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                0
-              </span>
+              {cartItemCount > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold"
+                >
+                  {cartItemCount > 99 ? "99+" : cartItemCount}
+                </motion.span>
+              )}
             </motion.button>
 
             {/* User Menu */}
@@ -394,6 +408,45 @@ export const Navbar: React.FC = () => {
                 </div>
               ))}
 
+              {/* Mobile Quick Actions */}
+              <div className="pt-4 border-t border-gray-200 grid grid-cols-3 gap-3">
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    // Add search functionality later
+                  }}
+                  className="flex flex-col items-center justify-center p-4 text-gray-600 hover:text-amber-600 bg-gray-50 hover:bg-amber-50 rounded-lg transition-colors"
+                >
+                  <Search className="w-5 h-5 mb-1" />
+                  <span className="text-xs">Search</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    // Add wishlist functionality later
+                  }}
+                  className="flex flex-col items-center justify-center p-4 text-gray-600 hover:text-amber-600 bg-gray-50 hover:bg-amber-50 rounded-lg transition-colors"
+                >
+                  <Heart className="w-5 h-5 mb-1" />
+                  <span className="text-xs">Wishlist</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsCartOpen(true);
+                  }}
+                  className="relative flex flex-col items-center justify-center p-4 text-gray-600 hover:text-amber-600 bg-gray-50 hover:bg-amber-50 rounded-lg transition-colors"
+                >
+                  <ShoppingCart className="w-5 h-5 mb-1" />
+                  <span className="text-xs">Cart</span>
+                  {cartItemCount > 0 && (
+                    <span className="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold">
+                      {cartItemCount > 99 ? "99+" : cartItemCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
               {/* Mobile Auth Buttons */}
               <div className="pt-4 border-t border-gray-200 space-y-3">
                 {loading ? (
@@ -457,6 +510,9 @@ export const Navbar: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Cart Drawer */}
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </motion.nav>
   );
 };

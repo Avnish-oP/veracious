@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   Heart,
   ShoppingCart,
@@ -14,6 +15,7 @@ import {
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
 import { Product } from "@/types/productTypes";
+import { useCartStore } from "@/store/useCartStore";
 
 interface ProductCardProps {
   product: Product;
@@ -38,6 +40,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const { getItemQuantity } = useCartStore();
+  const router = useRouter();
+
+  const quantityInCart = getItemQuantity(product.id);
+  const isInCart = quantityInCart > 0;
 
   const discountPercentage = product.discountPrice
     ? Math.round(
@@ -62,6 +69,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     e.preventDefault();
     e.stopPropagation();
     onQuickView?.(product);
+  };
+
+  const handleCardClick = () => {
+    router.push(`/products/${product.id}`);
   };
 
   const getGenderColor = (gender: string) => {
@@ -141,7 +152,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 src={product.image}
                 alt={product.name}
                 className={cn(
-                  "w-full h-full object-contain transition-all duration-300 group-hover:scale-105",
+                  "w-full h-full object-cover transition-all duration-300 group-hover:scale-105",
                   isImageLoaded ? "opacity-100" : "opacity-0"
                 )}
                 onLoad={() => setIsImageLoaded(true)}
@@ -235,12 +246,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 </Button>
                 <motion.button
                   onClick={handleAddToCart}
-                  className="flex items-center px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium rounded-lg transition-all duration-200"
+                  className={cn(
+                    "flex items-center px-3 py-1 text-white text-xs font-medium rounded-lg transition-all duration-200",
+                    isInCart
+                      ? "bg-green-500 hover:bg-green-600"
+                      : "bg-amber-500 hover:bg-amber-600"
+                  )}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <ShoppingCart className="w-3 h-3 mr-1" />
-                  Add
+                  {isInCart ? `In Cart (${quantityInCart})` : "Add"}
                 </motion.button>
               </div>
             </div>
@@ -274,8 +290,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   // Vertical Layout (original)
   return (
     <motion.div
+      onClick={handleCardClick}
       className={cn(
-        "group relative bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full",
+        "group relative bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full pb-6 cursor-pointer",
         cardSizes[size],
         className
       )}
@@ -339,13 +356,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </motion.button>
 
         {/* Product Image */}
-        <div className="w-full h-full flex items-center justify-center p-8">
+        <div className="w-full h-full flex items-center justify-center p-4">
           {product.image ? (
             <img
               src={product.image}
               alt={product.name}
               className={cn(
-                "w-full h-full object-contain transition-all duration-300 group-hover:scale-105",
+                "w-full h-full object-cover transition-all duration-300 group-hover:scale-105",
                 isImageLoaded ? "opacity-100" : "opacity-0"
               )}
               onLoad={() => setIsImageLoaded(true)}
@@ -374,11 +391,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </Button>
             <motion.button
               onClick={handleAddToCart}
-              className="p-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors duration-200"
+              className={cn(
+                "p-2 text-white rounded-lg transition-colors duration-200 relative",
+                isInCart
+                  ? "bg-green-500 hover:bg-green-600"
+                  : "bg-amber-500 hover:bg-amber-600"
+              )}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <ShoppingCart className="w-4 h-4" />
+              {isInCart && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-green-600 text-xs rounded-full flex items-center justify-center font-bold border-2 border-green-500">
+                  {quantityInCart}
+                </span>
+              )}
             </motion.button>
           </div>
         </motion.div>
@@ -386,7 +413,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       {/* Product Info */}
       <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-        <div className="space-y-3">
+        <div className="space-y-1">
           {/* Brand */}
           <p className="text-sm text-gray-500 font-medium">{product.brand}</p>
 
@@ -451,12 +478,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           <motion.button
             onClick={handleAddToCart}
-            className="flex items-center px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-all duration-200"
+            className={cn(
+              "flex items-center px-3 py-2 text-white text-sm font-medium rounded-lg transition-all duration-200",
+              isInCart
+                ? "bg-green-500 hover:bg-green-600"
+                : "bg-amber-500 hover:bg-amber-600"
+            )}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             <ShoppingCart className="w-4 h-4 mr-1" />
-            Add
+            {isInCart ? `In Cart (${quantityInCart})` : "Add"}
           </motion.button>
         </div>
       </div>

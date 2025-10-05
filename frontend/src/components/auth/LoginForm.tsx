@@ -11,6 +11,7 @@ import { LoginFormData, loginSchema } from "@/types/authTypes";
 import { useLoginMutation } from "@/hooks/useRegistration";
 import { Button, Card, Input } from "@/components/ui/form-components";
 import { useUserStore } from "@/store/useUserStore";
+import { useCartStore } from "@/store/useCartStore";
 
 interface LoginFormProps {
   onForgotPassword?: () => void;
@@ -22,6 +23,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   const { fetchUser } = useUserStore();
+  const { mergeGuestCart } = useCartStore();
 
   const {
     register,
@@ -37,6 +39,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
     try {
       await loginMutation.mutateAsync(data);
       await fetchUser(); // Fetch user data after successful login
+
+      // Merge guest cart with user cart
+      await mergeGuestCart();
+
       toast.success("Welcome back!");
       router.push("/");
     } catch (error: any) {

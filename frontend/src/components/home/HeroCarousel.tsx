@@ -39,7 +39,8 @@ const slides: CarouselSlide[] = [
     subtitle: "Discover Your Perfect Style",
     description:
       "Explore our curated collection of premium sunglasses and eyeglasses designed to complement your unique face shape and personal style.",
-    image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=800&q=80",
+    image:
+      "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=800&q=80",
     cta: {
       text: "Shop Collection",
       href: "/products",
@@ -54,7 +55,8 @@ const slides: CarouselSlide[] = [
     subtitle: "Find Your Perfect Match",
     description:
       "Our AI-powered face shape analysis helps you discover frames that enhance your natural features and boost your confidence.",
-    image: "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=800&q=80",
+    image:
+      "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?w=800&q=80",
     cta: {
       text: "Try Face Analysis",
       href: "/products",
@@ -69,7 +71,8 @@ const slides: CarouselSlide[] = [
     subtitle: "Luxury Meets Affordability",
     description:
       "Browse exclusive designer frames from the world's most prestigious brands, now accessible with our competitive pricing.",
-    image: "https://images.unsplash.com/photo-1509695507497-903c140c43b0?w=800&q=80",
+    image:
+      "https://images.unsplash.com/photo-1509695507497-903c140c43b0?w=800&q=80",
     cta: {
       text: "View Brands",
       href: "/products",
@@ -84,7 +87,8 @@ const slides: CarouselSlide[] = [
     subtitle: "Beat the Heat in Style",
     description:
       "Protect your eyes with our latest summer collection featuring UV protection, polarized lenses, and trendy designs.",
-    image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=800&q=80",
+    image:
+      "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=800&q=80",
     cta: {
       text: "Shop Summer",
       href: "/products",
@@ -111,10 +115,13 @@ export const HeroCarousel: React.FC = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   }, []);
 
-  const goToSlide = useCallback((index: number) => {
-    setDirection(index > currentSlide ? 1 : -1);
-    setCurrentSlide(index);
-  }, [currentSlide]);
+  const goToSlide = useCallback(
+    (index: number) => {
+      setDirection(index > currentSlide ? 1 : -1);
+      setCurrentSlide(index);
+    },
+    [currentSlide]
+  );
 
   // Auto-advance slides
   useEffect(() => {
@@ -131,18 +138,18 @@ export const HeroCarousel: React.FC = () => {
   // Keyboard navigation
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') {
+      if (e.key === "ArrowLeft") {
         prevSlide();
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === "ArrowRight") {
         nextSlide();
-      } else if (e.key === ' ') {
+      } else if (e.key === " ") {
         e.preventDefault();
-        setIsAutoPlaying(prev => !prev);
+        setIsAutoPlaying((prev) => !prev);
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
   }, [nextSlide, prevSlide]);
 
   const currentSlideData = slides[currentSlide];
@@ -297,7 +304,9 @@ export const HeroCarousel: React.FC = () => {
                   transition={{ delay: 0.3 }}
                   className="flex justify-center lg:justify-start"
                 >
-                  <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border ${accentColors.light}`}>
+                  <div
+                    className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border ${accentColors.light}`}
+                  >
                     <Sparkles className="w-4 h-4 mr-2" />
                     {currentSlideData.subtitle}
                   </div>
@@ -310,7 +319,7 @@ export const HeroCarousel: React.FC = () => {
                   transition={{ delay: 0.4 }}
                   className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-gray-900 leading-tight"
                 >
-                  {currentSlideData.title.split(' ').map((word, index) => (
+                  {currentSlideData.title.split(" ").map((word, index) => (
                     <motion.span
                       key={index}
                       initial={{ opacity: 0, y: 20 }}
@@ -373,8 +382,9 @@ export const HeroCarousel: React.FC = () => {
                     variant="outline"
                     size="lg"
                     onClick={() => {
-                      const element = document.getElementById('featured-products');
-                      element?.scrollIntoView({ behavior: 'smooth' });
+                      const element =
+                        document.getElementById("featured-products");
+                      element?.scrollIntoView({ behavior: "smooth" });
                     }}
                     className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 bg-white/80 backdrop-blur-sm font-medium px-8"
                   >
@@ -401,8 +411,10 @@ export const HeroCarousel: React.FC = () => {
                 className="relative hidden lg:block"
               >
                 {/* Decorative Background Elements */}
-                <div className={`absolute -inset-4 ${accentColors.glow} blur-3xl rounded-full`} />
-                
+                <div
+                  className={`absolute -inset-4 ${accentColors.glow} blur-3xl rounded-full`}
+                />
+
                 <motion.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
@@ -433,8 +445,12 @@ export const HeroCarousel: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Zap className={`w-5 h-5 ${accentColors.text}`} />
                       <div>
-                        <p className="text-xs text-gray-500 font-medium">Special Offer</p>
-                        <p className="text-lg font-bold text-gray-900">30% OFF</p>
+                        <p className="text-xs text-gray-500 font-medium">
+                          Special Offer
+                        </p>
+                        <p className="text-lg font-bold text-gray-900">
+                          30% OFF
+                        </p>
                       </div>
                     </div>
                   </motion.div>

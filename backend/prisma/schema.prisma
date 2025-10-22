@@ -70,6 +70,7 @@ model Wishlist {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
   @@index([userId, productId])
@@ -127,6 +128,7 @@ model Product {
   categories        Category[]     @relation("ProductCategories")
   tags              String[]
   applicableCoupons Coupon[]       @relation("ProductCoupons")
+  wishlistedBy      Wishlist[]
   specifications    Json
   cartItems         CartItem[]
 

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
 import { useUserStore } from "@/store/useUserStore";
 import { useCartStore } from "@/store/useCartStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import Image from "next/image";
 
@@ -58,8 +59,10 @@ export const Navbar: React.FC = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { user, loading, logout } = useUserStore();
   const { getTotalItems } = useCartStore();
+  const { getWishlistCount } = useWishlistStore();
 
   const cartItemCount = getTotalItems();
+  const wishlistItemCount = getWishlistCount();
   console.log("User in Navbar:", user);
 
   // Handle scroll effect
@@ -218,11 +221,21 @@ export const Navbar: React.FC = () => {
 
             {/* Wishlist */}
             <motion.button
-              className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 rounded-lg hover:bg-amber-50"
+              onClick={() => router.push("/wishlist")}
+              className="relative p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 rounded-lg hover:bg-amber-50"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <Heart className="w-5 h-5" />
+              {wishlistItemCount > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold"
+                >
+                  {wishlistItemCount > 99 ? "99+" : wishlistItemCount}
+                </motion.span>
+              )}
             </motion.button>
 
             {/* Cart */}

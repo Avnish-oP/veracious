@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
 import { Product } from "@/types/productTypes";
 import { useCartStore } from "@/store/useCartStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
 
 interface ProductCardProps {
   product: Product;
@@ -38,13 +39,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   size = "md",
   layout = "vertical",
 }) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const { getItemQuantity } = useCartStore();
+  const { isInWishlist, toggleItem } = useWishlistStore();
   const router = useRouter();
 
   const quantityInCart = getItemQuantity(product.id);
   const isInCart = quantityInCart > 0;
+  const isWishlisted = isInWishlist(product.id);
 
   const discountPercentage = product.discountPrice
     ? Math.round(
@@ -52,11 +54,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       )
     : 0;
 
-  const handleWishlistToggle = (e: React.MouseEvent) => {
+  const handleWishlistToggle = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsWishlisted(!isWishlisted);
-    onToggleWishlist?.(product);
+    try {
+      await toggleItem(product.id);
+      onToggleWishlist?.(product);
+    } catch (error) {
+      console.error("Failed to toggle wishlist:", error);
+    }
   };
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -230,7 +236,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   </>
                 ) : (
                   <span className="text-xl font-bold text-gray-900">
-                    ${product.price.toFixed(2)}
+                    $
+                    {typeof product.price === "number"
+                      ? product.price.toFixed(2)
+                      : product.price}
                   </span>
                 )}
               </div>
@@ -471,7 +480,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </>
             ) : (
               <span className="text-lg font-bold text-gray-900">
-                ${product.price.toFixed(2)}
+                $
+                {typeof product.price === "number"
+                  ? product.price.toFixed(2)
+                  : product.price}
               </span>
             )}
           </div>

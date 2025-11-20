@@ -49,6 +49,8 @@ model User {
   Review Review[]
 
   RedeemedCoupon RedeemedCoupon[]
+
+  Order Order[]
 }
 
 model Address {
@@ -61,6 +63,7 @@ model Address {
   state     String
   postal    String
   country   String
+  orders    Order[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -151,7 +154,11 @@ model Coupon {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   applicableProducts Product[]        @relation("ProductCoupons")
+  isForNewUsers      Boolean          @default(false)
+  isForAllProducts   Boolean          @default(true)
   redeemedCoupons    RedeemedCoupon[]
+
+  Order Order[]
 }
 
 model RedeemedCoupon {
@@ -163,6 +170,54 @@ model RedeemedCoupon {
   redeemedAt DateTime @default(now())
 
   @@unique([userId, couponId])
+}
+
+model Order {
+  id          String    @id @default(cuid())
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  items       Json
+  totalAmount Float
+  discount    Float     @default(0)
+  finalAmount Float
+  currency    String    @default("INR")
+  couponId    String?
+  coupon      Coupon?   @relation(fields: [couponId], references: [id])
+  addressId   String?
+  address     Address?  @relation(fields: [addressId], references: [id])
+  payments    Payment[]
+
+  razorpayOrderId String?
+
+  status        OrderStatus @default(PENDING)
+  paymentMethod String?
+  paymentStatus String?     @default("PENDING")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId         String   @unique
+  paymentId       String?  @unique
+  razorpayOrderId String?
+  amount          Float
+  currency        String   @default("INR")
+  paymentMethod   String
+  paymentStatus   String   @default("PENDING")
+  rawResponse     Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
 }
 
 model ProductImage {
@@ -177,12 +232,20 @@ model ProductImage {
 }
 
 model Category {
-  id        String    @id @default(uuid())
-  name      String
-  slug      String    @unique
-  products  Product[] @relation("ProductCategories")
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  type        CategoryType @default(OTHER)
+  description String?
+  icon        String?
+  parentId    String?
+  parent      Category?    @relation("CategoryChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Category[]   @relation("CategoryChildren")
+  order       Int          @default(0)
+  isActive    Boolean      @default(true)
+  products    Product[]    @relation("ProductCategories")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model Review {
@@ -228,4 +291,13 @@ enum Gender {
 enum Role {
   USER
   ADMIN
+}
+
+enum CategoryType {
+  SEX
+  SHAPE
+  COLLECTION
+  BRAND
+  MATERIAL
+  OTHER
 }

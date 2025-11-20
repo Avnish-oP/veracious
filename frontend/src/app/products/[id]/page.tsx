@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ArrowLeft,
   Tag,
+  Copy,
 } from "lucide-react";
 import Image from "next/image";
 import { useProductDetail } from "@/hooks/useProducts";
@@ -24,6 +25,7 @@ import { useCartStore } from "@/store/useCartStore";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
 import { toast } from "react-hot-toast";
+import { useProductCoupons } from "@/hooks/useCoupons";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -32,6 +34,11 @@ export default function ProductDetailPage() {
 
   const { data, isLoading, error } = useProductDetail(productId);
   const { addToCart } = useCartStore();
+  const {
+    data: couponsData,
+    isLoading: couponsLoading,
+    isError: couponsError,
+  } = useProductCoupons(productId);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -39,8 +46,17 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState<
     "description" | "specs" | "reviews"
   >("description");
+  const [showAllCoupons, setShowAllCoupons] = useState(false);
+  const [copiedCouponCode, setCopiedCouponCode] = useState<string | null>(null);
 
   const product = data?.product;
+  const fallbackCoupons = product?.applicableCoupons ?? [];
+  const coupons = couponsData?.coupons ?? fallbackCoupons;
+  const hasCoupons = coupons.length > 0;
+  const visibleCoupons = showAllCoupons ? coupons : coupons.slice(0, 3);
+  const couponErrorMessage = couponsError
+    ? "Unable to load coupons right now."
+    : null;
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -53,6 +69,45 @@ export default function ProductDetailPage() {
       toast.error("Failed to add to cart");
     } finally {
       setIsAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!product) return;
+
+    setIsAddingToCart(true);
+    try {
+      // Add product to cart
+      await addToCart(product.id, quantity);
+
+      // Redirect to cart page
+      router.push("/cart");
+    } catch (error) {
+      toast.error("Failed to add to cart");
+      setIsAddingToCart(false);
+    }
+  };
+
+  const formatCouponDate = (dateValue?: string | Date | null) => {
+    if (!dateValue) return null;
+    const parsed = new Date(dateValue);
+    if (Number.isNaN(parsed.getTime())) return null;
+    return parsed.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const handleCopyCoupon = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCouponCode(code);
+      toast.success("Coupon code copied!");
+      setTimeout(() => setCopiedCouponCode(null), 2000);
+    } catch (copyError) {
+      console.error("Failed to copy coupon code", copyError);
+      toast.error("Could not copy coupon code");
     }
   };
 
@@ -250,10 +305,10 @@ export default function ProductDetailPage() {
                 {product.discountPrice ? (
                   <>
                     <span className="text-4xl font-bold text-gray-900">
-                      ${Number(product.discountPrice).toFixed(2)}
+                      ₹{Number(product.discountPrice).toFixed(2)}
                     </span>
                     <span className="text-2xl text-gray-500 line-through">
-                      ${Number(product.price).toFixed(2)}
+                      ₹{Number(product.price).toFixed(2)}
                     </span>
                     <span className="px-3 py-1 bg-red-500 text-white text-sm font-semibold rounded-full">
                       {discountPercentage}% OFF
@@ -261,31 +316,97 @@ export default function ProductDetailPage() {
                   </>
                 ) : (
                   <span className="text-4xl font-bold text-gray-900">
-                    ${Number(product.price).toFixed(2)}
+                    ₹{Number(product.price).toFixed(2)}
                   </span>
                 )}
               </div>
 
               {/* Coupons */}
-              {product.applicableCoupons &&
-                product.applicableCoupons.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-amber-200">
-                    <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                      <Tag className="w-4 h-4 text-amber-600" />
-                      Available Coupons:
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {product.applicableCoupons.slice(0, 2).map((coupon) => (
-                        <span
-                          key={coupon.id}
-                          className="px-3 py-1 bg-white border border-amber-300 text-amber-700 text-xs font-mono rounded"
+              <div className="mt-4 pt-4 border-t border-amber-200">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-amber-600" />
+                    Available Coupons
+                  </p>
+                  {hasCoupons && coupons.length > 3 && (
+                    <button
+                      onClick={() => setShowAllCoupons((prev) => !prev)}
+                      className="text-xs font-semibold text-amber-600 hover:text-amber-700"
+                    >
+                      {showAllCoupons
+                        ? "Show less"
+                        : `View all ${coupons.length}`}
+                    </button>
+                  )}
+                </div>
+
+                {couponsLoading ? (
+                  <p className="text-sm text-gray-500">Fetching coupons...</p>
+                ) : hasCoupons ? (
+                  <div className="space-y-3">
+                    {visibleCoupons.map((coupon) => (
+                      <div
+                        key={coupon.id}
+                        className="flex items-start justify-between gap-4 bg-white border border-amber-100 rounded-lg p-3 shadow-sm"
+                      >
+                        <div>
+                          <p className="text-base font-mono font-semibold text-amber-700">
+                            {coupon.code}
+                          </p>
+                          {coupon.description && (
+                            <p className="text-xs text-gray-600 mt-1">
+                              {coupon.description}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap text-xs text-gray-500 gap-3 mt-2">
+                            <span>
+                              {coupon.discountType === "PERCENTAGE"
+                                ? `Save ${Number(
+                                    coupon.discountValue ?? coupon.discount ?? 0
+                                  )}%`
+                                : `Save ₹${Number(
+                                    coupon.discountValue ?? coupon.discount ?? 0
+                                  ).toFixed(0)}`}
+                            </span>
+                            {coupon.minOrderValue && (
+                              <span>
+                                Min order ₹
+                                {Number(coupon.minOrderValue).toFixed(0)}
+                              </span>
+                            )}
+                            {formatCouponDate(coupon.validTo) && (
+                              <span>
+                                Valid till {formatCouponDate(coupon.validTo)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleCopyCoupon(coupon.code)}
+                          className="flex items-center gap-2 px-3 py-2 border border-amber-300 rounded-md text-sm text-amber-700 hover:bg-amber-50 transition-colors"
                         >
-                          {coupon.code}
-                        </span>
-                      ))}
-                    </div>
+                          {copiedCouponCode === coupon.code ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                          {copiedCouponCode === coupon.code ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                    ))}
                   </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No coupons available for this product right now.
+                  </p>
                 )}
+
+                {couponErrorMessage && (
+                  <p className="text-xs text-red-500 mt-2">
+                    {couponErrorMessage}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Stock Status */}
@@ -339,25 +460,35 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4">
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={product.stock === 0 || isAddingToCart}
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transition-all"
+                >
+                  {isAddingToCart ? (
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <ShoppingCart className="w-6 h-6" />
+                  )}
+                  Add to Cart
+                </Button>
+                <button
+                  className="p-4 border-2 border-amber-500 rounded-xl hover:bg-amber-50 text-amber-600 transition-all"
+                  aria-label="Add to wishlist"
+                >
+                  <Heart className="w-6 h-6" />
+                </button>
+              </div>
+
               <Button
-                onClick={handleAddToCart}
+                onClick={handleBuyNow}
                 disabled={product.stock === 0 || isAddingToCart}
-                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transition-all"
+                className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transition-all"
               >
-                {isAddingToCart ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <ShoppingCart className="w-6 h-6" />
-                )}
-                Add to Cart
+                Buy Now
               </Button>
-              <button
-                className="p-4 border-2 border-amber-500 rounded-xl hover:bg-amber-50 text-amber-600 transition-all"
-                aria-label="Add to wishlist"
-              >
-                <Heart className="w-6 h-6" />
-              </button>
             </div>
 
             {/* Features */}
@@ -367,7 +498,7 @@ export default function ProductDetailPage() {
                 <p className="text-xs font-medium text-gray-700">
                   Free Shipping
                 </p>
-                <p className="text-xs text-gray-500">On orders over $50</p>
+                <p className="text-xs text-gray-500">On orders over ₹4175</p>
               </div>
               <div className="text-center">
                 <RefreshCw className="w-8 h-8 text-amber-600 mx-auto mb-2" />
@@ -487,7 +618,7 @@ export default function ProductDetailPage() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <p className="font-semibold text-gray-900">
-                          {review.user.name}
+                          {review.user?.name || "Verified customer"}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex">

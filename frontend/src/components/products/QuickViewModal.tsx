@@ -234,10 +234,13 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
                                   "w-4 h-4",
                                   i <
                                     Math.round(
-                                      product.reviews?.reduce(
-                                        (sum, r) => sum + r.rating,
-                                        0
-                                      ) / product.reviews.length || 0
+                                      product.reviews &&
+                                        product.reviews.length > 0
+                                        ? product.reviews.reduce(
+                                            (sum, r) => sum + r.rating,
+                                            0
+                                          ) / product.reviews.length
+                                        : 0
                                     )
                                     ? "text-amber-400 fill-amber-400"
                                     : "text-gray-300"
@@ -256,15 +259,15 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
                         {product.discountPrice ? (
                           <>
                             <span className="text-3xl font-bold text-gray-900">
-                              ${Number(product.discountPrice).toFixed(2)}
+                              ₹{Number(product.discountPrice).toFixed(2)}
                             </span>
                             <span className="text-lg text-gray-500 line-through">
-                              ${Number(product.price).toFixed(2)}
+                              ₹{Number(product.price).toFixed(2)}
                             </span>
                           </>
                         ) : (
                           <span className="text-3xl font-bold text-gray-900">
-                            ${Number(product.price).toFixed(2)}
+                            ₹{Number(product.price).toFixed(2)}
                           </span>
                         )}
                       </div>

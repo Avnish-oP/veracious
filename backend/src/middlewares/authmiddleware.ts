@@ -24,6 +24,12 @@ export const authMiddleware = async (
     const user = await prisma.user.findUnique({
       where: { id: (decoded as any).id },
     });
+    if (!user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "User not found" });
+    }
+
     req.user = user;
     return next();
   } catch {

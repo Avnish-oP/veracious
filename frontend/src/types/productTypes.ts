@@ -1,5 +1,7 @@
 // Product related types for the application
 
+import { Coupons } from "./couponsTypes";
+
 export interface Product {
   id: string;
   name: string;
@@ -10,7 +12,7 @@ export interface Product {
   description: string;
   stock: number;
   sku: string;
-  applicableCoupons?: string[];
+  applicableCoupons?: Coupons[];
   frameShape: string;
   frameMaterial: string;
   frameColor: string;

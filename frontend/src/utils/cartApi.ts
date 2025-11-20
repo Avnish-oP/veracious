@@ -28,6 +28,7 @@ async function cartApiCall<T>(
     credentials: "include", // Include cookies for authentication
     ...options,
   });
+  console.log("Response:", response);
 
   const data = await response.json();
 

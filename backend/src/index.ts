@@ -6,6 +6,9 @@ import cookieParser from "cookie-parser";
 import producRoutes from "./routes/products";
 import cartRoutes from "./routes/cart";
 import wishlistRoutes from "./routes/whishlist";
+import categoriesRoutes from "./routes/categories";
+import couponsRoutes from "./routes/coupons";
+import orderRoutes from "./routes/checkout";
 
 dotenv.config();
 
@@ -36,7 +39,7 @@ app.use(
 
 app.use(cookieParser());
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(express.json());
@@ -46,6 +49,9 @@ app.use("/api/v1/auth", AuthRoutes);
 app.use("/api/v1/products", producRoutes);
 app.use("/api/v1/cart", cartRoutes);
 app.use("/api/v1/wishlist", wishlistRoutes);
+app.use("/api/v1/categories", categoriesRoutes);
+app.use("/api/v1/coupons", couponsRoutes);
+app.use("/api/v1/checkout", orderRoutes);
 
 // Start server
 app.listen(PORT, () => {

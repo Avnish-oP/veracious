@@ -24,6 +24,7 @@ import { useCartStore } from "@/store/useCartStore";
 import { useWishlistStore } from "@/store/useWishlistStore";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import Image from "next/image";
+import { fetchCategories } from "@/utils/api";
 
 interface NavItem {
   label: string;
@@ -31,19 +32,9 @@ interface NavItem {
   children?: NavItem[];
 }
 
-const navigation: NavItem[] = [
+const navigationBase: NavItem[] = [
   { label: "Home", href: "/" },
-  {
-    label: "Categories",
-    href: "/categories",
-    children: [
-      { label: "Men's Sunglasses", href: "/categories/men" },
-      { label: "Women's Sunglasses", href: "/categories/women" },
-      { label: "Unisex Frames", href: "/categories/unisex" },
-      { label: "Reading Glasses", href: "/categories/reading" },
-      { label: "Prescription", href: "/categories/prescription" },
-    ],
-  },
+  { label: "Categories", href: "/categories" },
   { label: "Featured", href: "/featured" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
@@ -52,6 +43,9 @@ const navigation: NavItem[] = [
 export const Navbar: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const [navigation, setNavigation] = useState<NavItem[]>(navigationBase);
+  const [categoryChildren, setCategoryChildren] = useState<NavItem[]>([]);
+  const [categoriesRaw, setCategoriesRaw] = useState<any[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -80,6 +74,36 @@ export const Navbar: React.FC = () => {
     setIsMobileMenuOpen(false);
     setActiveDropdown(null);
   }, [pathname]);
+
+  // Fetch categories for navigation
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetchCategories();
+        const cats = res.categories || [];
+        const children = cats.map((c: any) => ({
+          label: c.name,
+          href: `/products?category=${c.id}`,
+        }));
+        if (mounted) {
+          setCategoriesRaw(cats);
+          setCategoryChildren(children);
+          // build navigation with categories children (flat fallback)
+          const nav = navigationBase.map((item) =>
+            item.label === "Categories" ? { ...item, children } : item
+          );
+          setNavigation(nav);
+        }
+      } catch (e) {
+        // swallow error and keep default navigation
+        console.error("Failed to load categories for navbar", e);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleDropdownToggle = (label: string) => {
     setActiveDropdown(activeDropdown === label ? null : label);
@@ -174,19 +198,73 @@ export const Navbar: React.FC = () => {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -10, scale: 0.95 }}
                           transition={{ duration: 0.2 }}
-                          className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden"
+                          className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden p-4 z-40"
                         >
-                          <div className="py-2">
-                            {item.children.map((child) => (
-                              <Link
-                                key={child.href}
-                                href={child.href}
-                                className="block px-4 py-3 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-600 transition-colors duration-150"
-                              >
-                                {child.label}
-                              </Link>
-                            ))}
-                          </div>
+                          {/* If this is the Categories menu, render grouped by type */}
+                          {item.label === "Categories" ? (
+                            <div className="flex space-x-6 p-4 w-full">
+                              {(() => {
+                                // group categories by type and render in preferred order
+                                const order = [
+                                  "SEX",
+                                  "SHAPE",
+                                  "COLLECTION",
+                                  "BRAND",
+                                  "MATERIAL",
+                                  "OTHER",
+                                ];
+                                const typeNames: Record<string, string> = {
+                                  SEX: "Gender",
+                                  SHAPE: "Shape",
+                                  COLLECTION: "Collections",
+                                  BRAND: "Brands",
+                                  MATERIAL: "Material",
+                                  OTHER: "Other",
+                                };
+                                const grouped: Record<string, any[]> = {};
+                                categoriesRaw.forEach((c) => {
+                                  const t = c.type || "OTHER";
+                                  if (!grouped[t]) grouped[t] = [];
+                                  grouped[t].push(c);
+                                });
+
+                                return order.map((t) => {
+                                  const list = grouped[t];
+                                  if (!list || list.length === 0) return null;
+                                  return (
+                                    <div key={t}>
+                                      <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                                        {typeNames[t] || t}
+                                      </h4>
+                                      <div className="space-y-1">
+                                        {list.map((c) => (
+                                          <Link
+                                            key={c.id}
+                                            href={`/products?category=${c.id}`}
+                                            className="block px-2 py-1 text-sm text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-md"
+                                          >
+                                            {c.name}
+                                          </Link>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          ) : (
+                            <div className="py-2">
+                              {item.children?.map((child) => (
+                                <Link
+                                  key={child.href}
+                                  href={child.href}
+                                  className="block px-4 py-3 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-600 transition-colors duration-150"
+                                >
+                                  {child.label}
+                                </Link>
+                              ))}
+                            </div>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -392,15 +470,63 @@ export const Navbar: React.FC = () => {
                             transition={{ duration: 0.2 }}
                             className="ml-4 mt-2 space-y-2"
                           >
-                            {item.children.map((child) => (
-                              <Link
-                                key={child.href}
-                                href={child.href}
-                                className="block px-3 py-2 text-sm text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors duration-200"
-                              >
-                                {child.label}
-                              </Link>
-                            ))}
+                            {item.label === "Categories"
+                              ? (() => {
+                                  const order = [
+                                    "SEX",
+                                    "SHAPE",
+                                    "COLLECTION",
+                                    "BRAND",
+                                    "MATERIAL",
+                                    "OTHER",
+                                  ];
+                                  const typeNames: Record<string, string> = {
+                                    SEX: "By Sex",
+                                    SHAPE: "Shape",
+                                    COLLECTION: "Collections",
+                                    BRAND: "Brands",
+                                    MATERIAL: "Material",
+                                    OTHER: "Other",
+                                  };
+                                  const grouped: Record<string, any[]> = {};
+                                  categoriesRaw.forEach((c) => {
+                                    const t = c.type || "OTHER";
+                                    if (!grouped[t]) grouped[t] = [];
+                                    grouped[t].push(c);
+                                  });
+
+                                  return order.map((t) => {
+                                    const list = grouped[t];
+                                    if (!list || list.length === 0) return null;
+                                    return (
+                                      <div key={t} className="mb-3">
+                                        <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                                          {typeNames[t] || t}
+                                        </h4>
+                                        <div className="space-y-1">
+                                          {list.map((c) => (
+                                            <Link
+                                              key={c.id}
+                                              href={`/products?category=${c.id}`}
+                                              className="block px-3 py-2 text-sm text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors duration-200"
+                                            >
+                                              {c.name}
+                                            </Link>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    );
+                                  });
+                                })()
+                              : item.children.map((child) => (
+                                  <Link
+                                    key={child.href}
+                                    href={child.href}
+                                    className="block px-3 py-2 text-sm text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors duration-200"
+                                  >
+                                    {child.label}
+                                  </Link>
+                                ))}
                           </motion.div>
                         )}
                       </AnimatePresence>

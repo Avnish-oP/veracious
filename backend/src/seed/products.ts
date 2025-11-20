@@ -471,23 +471,58 @@ const products = [
 
 async function seedProducts() {
   console.log("Starting to seed products...");
+  // Convert USD seeded prices to INR for the business (assumption: 1 USD = 83.5 INR)
+  const USD_TO_INR = 83.5;
 
-  // First, let's create some categories
+  // First, let's create structured categories with bifurcation (sex, shape, collection, brand, material)
   const categories = [
-    { name: "Aviators", slug: "aviators" },
-    { name: "Wayfarers", slug: "wayfarers" },
-    { name: "Round", slug: "round" },
-    { name: "Cat Eye", slug: "cat-eye" },
-    { name: "Sport", slug: "sport" },
-    { name: "Vintage", slug: "vintage" },
-    { name: "Luxury", slug: "luxury" },
+    // Sex
+    { name: "Men", slug: "men", type: "SEX" },
+    { name: "Women", slug: "women", type: "SEX" },
+    { name: "Unisex", slug: "unisex", type: "SEX" },
+
+    // Shape
+    { name: "Aviator", slug: "aviator", type: "SHAPE" },
+    { name: "Wayfarer", slug: "wayfarer", type: "SHAPE" },
+    { name: "Round", slug: "round", type: "SHAPE" },
+    { name: "Cat Eye", slug: "cat-eye", type: "SHAPE" },
+    { name: "Rectangle", slug: "rectangle", type: "SHAPE" },
+    { name: "Square", slug: "square", type: "SHAPE" },
+    { name: "Oval", slug: "oval", type: "SHAPE" },
+    { name: "Geometric", slug: "geometric", type: "SHAPE" },
+    { name: "Rimless", slug: "rimless", type: "SHAPE" },
+    { name: "Browline", slug: "browline", type: "SHAPE" },
+
+    // Collections
+    { name: "Luxury", slug: "luxury", type: "COLLECTION" },
+    { name: "Vintage", slug: "vintage", type: "COLLECTION" },
+    { name: "Sport", slug: "sport", type: "COLLECTION" },
+    { name: "Festival", slug: "festival", type: "COLLECTION" },
+    { name: "Eco", slug: "eco", type: "COLLECTION" },
+    { name: "Tech", slug: "tech", type: "COLLECTION" },
+
+    // Some brands as categories (optional)
+    { name: "SkyVision", slug: "skyvision", type: "BRAND" },
+    { name: "CityStyle", slug: "citystyle", type: "BRAND" },
   ];
 
   for (const category of categories) {
     await prisma.category.upsert({
       where: { slug: category.slug },
       update: {},
-      create: category,
+      // cast to any because generated prisma client needs to be regenerated after schema changes
+      create: {
+        name: category.name,
+        slug: category.slug,
+        type: category.type,
+        description: (category as any).description || null,
+        icon: (category as any).icon || null,
+        order: (category as any).order || 0,
+        isActive:
+          (category as any).isActive !== undefined
+            ? (category as any).isActive
+            : true,
+      } as any,
     });
   }
 
@@ -513,14 +548,34 @@ async function seedProducts() {
       ],
     };
 
-    const createdProduct = await prisma.product.create({
-      data: {
+    // Ensure unique slug per product run; if product exists, reuse it to make seeding idempotent
+    const uniqueSlug = `${slug}-${i}`;
+    let createdProduct = await prisma.product.findUnique({
+      where: { slug: uniqueSlug },
+    });
+    if (!createdProduct) {
+      // Convert price fields from USD -> INR for storage
+      const priceINR = Number((product.price * USD_TO_INR).toFixed(2));
+      const discountPriceINR = product.discountPrice
+        ? Number((product.discountPrice * USD_TO_INR).toFixed(2))
+        : undefined;
+
+      const productData = {
         ...product,
-        slug: `${slug}-${i}`, // Ensure unique slug
+        price: priceINR,
+        ...(discountPriceINR !== undefined
+          ? { discountPrice: discountPriceINR }
+          : {}),
+        slug: uniqueSlug,
         sku: `SKU-${Date.now()}-${i}`,
         specifications,
-      },
-    });
+      } as any;
+
+      createdProduct = await prisma.product.create({ data: productData });
+    } else {
+      // Optionally update the product fields if you want fresh data on reseed
+      // await prisma.product.update({ where: { id: createdProduct.id }, data: { ...product, specifications } });
+    }
 
     // Add 2-4 random images for each product
     const numImages = Math.floor(Math.random() * 3) + 2;
@@ -537,24 +592,57 @@ async function seedProducts() {
       });
     }
 
-    // Assign random categories (1-3 per product)
-    const productCategories = categories
-      .sort(() => 0.5 - Math.random())
-      .slice(0, Math.floor(Math.random() * 3) + 1);
+    // Assign categories based on product properties (shape, gender, tags), fallback to random
+    const desiredSlugs = new Set<string>();
 
-    for (const category of productCategories) {
-      const dbCategory = await prisma.category.findUnique({
-        where: { slug: category.slug },
-      });
+    // shape -> e.g. AVIATOR -> aviator, CAT_EYE -> cat-eye
+    if (product.frameShape) {
+      desiredSlugs.add(
+        String(product.frameShape).toLowerCase().replace(/_/g, "-")
+      );
+    }
 
+    // gender mapping
+    if (product.gender) {
+      const g = String(product.gender).toLowerCase();
+      if (g === "male") desiredSlugs.add("men");
+      else if (g === "female") desiredSlugs.add("women");
+      else desiredSlugs.add("unisex");
+    }
+
+    // tags -> map common tags to collections
+    if (product.tags && Array.isArray(product.tags)) {
+      const collectionTags = [
+        "luxury",
+        "vintage",
+        "sport",
+        "festival",
+        "eco",
+        "tech",
+        "beach",
+      ];
+      for (const t of product.tags) {
+        const tag = String(t).toLowerCase();
+        if (collectionTags.includes(tag)) desiredSlugs.add(tag);
+      }
+    }
+
+    // Ensure 1-3 categories total by filling randomly if needed
+    const minCount = 1;
+    const maxCount = 3;
+    const targetCount =
+      Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount;
+    const allSlugs = categories.map((c) => c.slug);
+    while (desiredSlugs.size < targetCount) {
+      desiredSlugs.add(allSlugs[Math.floor(Math.random() * allSlugs.length)]);
+    }
+
+    for (const slug of Array.from(desiredSlugs)) {
+      const dbCategory = await prisma.category.findUnique({ where: { slug } });
       if (dbCategory) {
         await prisma.product.update({
           where: { id: createdProduct.id },
-          data: {
-            categories: {
-              connect: { id: dbCategory.id },
-            },
-          },
+          data: { categories: { connect: { id: dbCategory.id } } },
         });
       }
     }
@@ -562,7 +650,9 @@ async function seedProducts() {
     console.log(`Created product: ${product.name}`);
   }
 
-  console.log(`Successfully seeded ${products.length} products!`);
+  console.log(
+    `Successfully seeded ${products.length} products! Prices stored in INR.`
+  );
 }
 
 seedProducts()

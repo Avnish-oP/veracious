@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Minus, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/useCartStore";
+import { useUserStore } from "@/store/useUserStore";
 import { Button } from "@/components/ui/form-components";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
@@ -16,6 +17,7 @@ interface CartDrawerProps {
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
+  const { user } = useUserStore();
   const {
     cart,
     loading,
@@ -78,8 +80,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   };
 
   const handleCheckout = () => {
+    // Check if user is logged in
+    if (!user) {
+      toast.error("Please login to proceed with checkout");
+      onClose();
+      router.push("/auth/login");
+      return;
+    }
+
     onClose();
-    router.push("/cart");
+    router.push("/checkout");
   };
 
   const handleViewCart = () => {
@@ -204,7 +214,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                         </p>
                         <div className="flex items-center justify-between">
                           <p className="font-bold text-amber-600">
-                            $
+                            ₹
                             {(
                               (Number(item.product?.discountPrice) ||
                                 Number(item.product?.price) ||
@@ -226,7 +236,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                             >
                               <Minus className="w-3 h-3 text-gray-600" />
                             </button>
-                            <span className="w-8 text-center text-sm font-medium">
+                            <span className="w-8 text-center text-black text-sm font-medium">
                               {item.quantity}
                             </span>
                             <button
@@ -265,18 +275,26 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Subtotal</span>
                     <span className="font-semibold text-gray-900">
-                      ${cartSummary.subtotal.toFixed(2)}
+                      ₹{cartSummary.subtotal.toFixed(2)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Shipping</span>
-                    <span className="text-green-600 font-medium">Free</span>
-                  </div>
+                  {(cartSummary.discount ?? 0) > 0 && (
+                    <div className="flex justify-between text-xs text-green-600">
+                      <span>Product savings</span>
+                      <span>-₹{(cartSummary.discount ?? 0).toFixed(2)}</span>
+                    </div>
+                  )}
+                  {cartSummary.couponDiscount > 0 && (
+                    <div className="flex justify-between text-xs text-green-600">
+                      <span>Coupon savings</span>
+                      <span>-₹{cartSummary.couponDiscount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="pt-2 border-t border-gray-200">
                     <div className="flex justify-between">
                       <span className="font-bold text-gray-900">Total</span>
                       <span className="font-bold text-xl text-amber-600">
-                        ${cartSummary.total.toFixed(2)}
+                        ₹{cartSummary.total.toFixed(2)}
                       </span>
                     </div>
                   </div>

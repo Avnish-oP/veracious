@@ -1,6 +1,7 @@
 // Cart related types for the application
 
 import { Product } from "./productTypes";
+import { ApplyCouponResponse, Coupons } from "./couponsTypes";
 
 export interface CartItem {
   id?: string; // DB cart item ID (only for logged-in users)
@@ -59,9 +60,11 @@ export interface LocalStorageCart {
 export interface CartSummary {
   totalItems: number;
   subtotal: number;
+  subtotalAfterDiscount: number;
   tax?: number;
   shipping?: number;
   discount?: number;
+  couponDiscount: number;
   total: number;
 }
 
@@ -70,6 +73,9 @@ export interface CartState {
   cart: Cart | null;
   loading: boolean;
   error: string | null;
+  appliedCoupon: Coupons | null;
+  couponDiscount: number;
+  couponApplying: boolean;
 
   // Actions
   addToCart: (productId: string, quantity: number) => Promise<void>;
@@ -78,6 +84,11 @@ export interface CartState {
   getCart: () => Promise<void>;
   clearCart: () => void;
   mergeGuestCart: () => Promise<void>;
+  applyCouponToCart: (
+    code: string,
+    options?: { silent?: boolean }
+  ) => Promise<ApplyCouponResponse>;
+  removeCoupon: () => void;
 
   // Computed
   getCartSummary: () => CartSummary;

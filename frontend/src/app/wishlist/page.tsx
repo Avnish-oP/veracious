@@ -178,13 +178,13 @@ export default function WishlistPage() {
                     {item.product.discountPrice ? (
                       <>
                         <span className="text-lg font-bold text-gray-900">
-                          $
+                          ₹
                           {typeof item.product.discountPrice === "number"
                             ? item.product.discountPrice.toFixed(2)
                             : item.product.discountPrice}
                         </span>
                         <span className="text-sm text-gray-500 line-through">
-                          $
+                          ₹
                           {typeof item.product.price === "number"
                             ? item.product.price.toFixed(2)
                             : item.product.price}
@@ -192,7 +192,7 @@ export default function WishlistPage() {
                       </>
                     ) : (
                       <span className="text-lg font-bold text-gray-900">
-                        $
+                        ₹
                         {typeof item.product.price === "number"
                           ? item.product.price.toFixed(2)
                           : item.product.price}

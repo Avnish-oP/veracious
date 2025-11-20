@@ -222,13 +222,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {product.discountPrice ? (
                   <>
                     <span className="text-xl font-bold text-gray-900 block">
-                      $
+                      ₹
                       {typeof product.discountPrice === "number"
                         ? product.discountPrice.toFixed(2)
                         : product.discountPrice}
                     </span>
                     <span className="text-sm text-gray-500 line-through">
-                      $
+                      ₹
                       {typeof product.price === "number"
                         ? product.price.toFixed(2)
                         : product.price}
@@ -236,7 +236,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   </>
                 ) : (
                   <span className="text-xl font-bold text-gray-900">
-                    $
+                    ₹
                     {typeof product.price === "number"
                       ? product.price.toFixed(2)
                       : product.price}
@@ -466,13 +466,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {product.discountPrice ? (
               <>
                 <span className="text-lg font-bold text-gray-900">
-                  $
+                  ₹
                   {typeof product.discountPrice === "number"
                     ? product.discountPrice.toFixed(2)
                     : product.discountPrice}
                 </span>
                 <span className="text-sm text-gray-500 line-through">
-                  $
+                  ₹
                   {typeof product.price === "number"
                     ? product.price.toFixed(2)
                     : product.price}
@@ -480,7 +480,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </>
             ) : (
               <span className="text-lg font-bold text-gray-900">
-                $
+                ₹
                 {typeof product.price === "number"
                   ? product.price.toFixed(2)
                   : product.price}

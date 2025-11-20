@@ -116,3 +116,8 @@ export const resetPassword = async (data: {
     }
   );
 };
+
+// Fetch categories from backend
+export const fetchCategories = async (): Promise<any> => {
+  return apiCall<any>("/categories");
+};

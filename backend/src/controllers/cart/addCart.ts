@@ -6,7 +6,10 @@ export const addToCart = async (
   req: express.Request,
   res: express.Response
 ) => {
-  const userId = req.user.id;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  }
   const { productId, quantity } = req.body;
   if (!productId || !quantity || quantity <= 0) {
     return res.status(400).json({ success: false, message: "Invalid input" });
@@ -14,7 +17,9 @@ export const addToCart = async (
   try {
     const key = `cart:${userId}`;
     const cartData = await redisClient.get(key);
-    let cart = cartData ? JSON.parse(cartData) : '{"items":[]}';
+    // Ensure cart is an object with items array. previous code returned a JSON string which caused
+    // `cart.items` to be undefined and throw when calling findIndex.
+    let cart = cartData ? JSON.parse(cartData) : { items: [] };
 
     const existingItemIndex = cart.items.findIndex(
       (item: any) => item.productId === productId
@@ -97,17 +102,16 @@ export const addToCart = async (
       updatedAt: dbCart.updatedAt,
     };
 
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: "Item added to cart",
-        cart: formattedCart,
-      });
+    return res.status(200).json({
+      success: true,
+      message: "Item added to cart",
+      cart: formattedCart,
+    });
   } catch (error) {
+    console.error("addToCart error:", error);
     return res
       .status(500)
-      .json({ success: false, message: "Internal server error" });
+      .json({ success: false, message: "adding cart controller error" });
   }
 };
 
@@ -410,13 +414,11 @@ export const removeCartItem = async (
       updatedAt: updatedCart.updatedAt,
     };
 
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: "Item removed from cart",
-        cart: formattedCart,
-      });
+    return res.status(200).json({
+      success: true,
+      message: "Item removed from cart",
+      cart: formattedCart,
+    });
   } catch (error) {
     console.error("error removing cart item", error);
     return res

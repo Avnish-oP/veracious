@@ -46,6 +46,13 @@ export default function ProductsPage() {
     setPage(1); // Reset to first page when filter changes
   }, [filterParam]);
 
+  // Read category from URL search param (e.g. /products?category=<categoryId>)
+  useEffect(() => {
+    const urlCategory = searchParams.get("category") || "";
+    setCategory(urlCategory);
+    setPage(1);
+  }, [searchParams]);
+
   // Conditionally fetch products based on active filter
   const shouldFetchAll = activeFilter === "all";
   const shouldFetchFeatured = activeFilter === "featured";

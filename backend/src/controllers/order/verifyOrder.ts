@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../../utils/prisma";
+import redisClient from "../../lib/redis";
 import { verifyRazorpaySignature } from "../../services/razorPayService";
 
 export const verifyOrder = async (req: Request, res: Response) => {
@@ -31,67 +32,106 @@ export const verifyOrder = async (req: Request, res: Response) => {
         .status(400)
         .json({ success: false, message: "Invalid signature" });
 
-    const orderRecord = await prisma.order.findUnique({
-      where: { id: orderId },
-      select: {
-        finalAmount: true,
-        couponId: true,
-        userId: true,
-      },
-    });
+    // Use transaction to ensure data integrity
+    await prisma.$transaction(async (tx) => {
+      const orderRecord = await tx.order.findUnique({
+        where: { id: orderId },
+        select: {
+          finalAmount: true,
+          couponId: true,
+          userId: true,
+          items: true,
+          paymentStatus: true,
+        },
+      });
 
-    if (!orderRecord) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Order not found" });
-    }
+      if (!orderRecord) {
+        throw new Error("Order not found");
+      }
 
-    // update order + payment record
-    await prisma.payment.create({
-      data: {
-        orderId,
-        paymentId: razorpay_payment_id,
-        razorpayOrderId: razorpay_order_id,
-        amount: Number(orderRecord.finalAmount || 0),
-        currency: "INR",
-        paymentMethod: "RAZORPAY",
-        paymentStatus: "CAPTURED",
-        rawResponse: { verifiedAt: new Date().toISOString() },
-      } as any,
-    });
+      if (orderRecord.paymentStatus === "PAID") {
+        return; // Already paid, idempotent approach
+      }
 
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        paymentStatus: "PAID",
-        status: "PROCESSING" as any,
-        updatedAt: new Date(),
-      },
-    });
+      // update order + payment record
+      await tx.payment.create({
+        data: {
+          orderId,
+          paymentId: razorpay_payment_id,
+          razorpayOrderId: razorpay_order_id,
+          amount: Number(orderRecord.finalAmount || 0),
+          currency: "INR",
+          paymentMethod: "RAZORPAY",
+          paymentStatus: "CAPTURED",
+          rawResponse: { verifiedAt: new Date().toISOString() },
+        } as any,
+      });
 
-    if (orderRecord.couponId && orderRecord.userId) {
-      await prisma.redeemedCoupon.upsert({
-        where: {
-          userId_couponId: {
+      await tx.order.update({
+        where: { id: orderId },
+        data: {
+          paymentStatus: "PAID",
+          status: "PROCESSING" as any,
+          updatedAt: new Date(),
+        },
+      });
+
+      if (orderRecord.couponId && orderRecord.userId) {
+        await tx.redeemedCoupon.upsert({
+          where: {
+            userId_couponId: {
+              userId: orderRecord.userId,
+              couponId: orderRecord.couponId,
+            },
+          },
+          update: {
+            redeemedAt: new Date(),
+          },
+          create: {
             userId: orderRecord.userId,
             couponId: orderRecord.couponId,
           },
-        },
-        update: {
-          redeemedAt: new Date(),
-        },
-        create: {
-          userId: orderRecord.userId,
-          couponId: orderRecord.couponId,
-        },
-      });
-    }
+        });
+      }
+
+      // 1. Decrement Stock
+      const items = orderRecord.items as any[];
+      if (Array.isArray(items)) {
+        for (const item of items) {
+          if (item.productId && item.quantity) {
+             await tx.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: {
+                  decrement: Number(item.quantity)
+                }
+              }
+            });
+          }
+        }
+      }
+
+      // 2. Clear Cart
+      if (orderRecord.userId) {
+        await tx.cart.delete({
+          where: { userId: orderRecord.userId },
+        }).catch(() => {
+           // Ignore if cart doesn't exist
+        });
+        
+        // Remove from Redis
+        const redisKey = `cart:${orderRecord.userId}`;
+        await redisClient.del(redisKey);
+        // Alternatively, if delete cascades or if we just want to clear items:
+        // await tx.cartItem.deleteMany({ where: { cart: { userId: orderRecord.userId } } });
+      }
+    });
 
     return res.json({ success: true });
-  } catch (err) {
+  } catch (err: any) {
     console.error("verifyOrder error:", err);
     return res
       .status(500)
-      .json({ success: false, message: "Verification failed" });
+      .json({ success: false, message: err.message || "Verification failed" });
   }
 };

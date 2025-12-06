@@ -17,11 +17,16 @@ import {
   Package,
   Truck,
   Shield,
+  Locate,
+  Save,
+  Plus,
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "react-hot-toast";
 import { Address } from "@/types/orderTypes";
 import { createOrder } from "@/utils/checkoutApi";
+import { getAddresses, addAddress, deleteAddress } from "@/utils/addressApi";
+import { useGeolocation } from "@/hooks/useGeolocation";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -35,9 +40,17 @@ export default function CheckoutPage() {
     couponApplying,
   } = useCartStore();
   const { user } = useUserStore();
+  const { getLocation, loading: locationLoading } = useGeolocation();
 
   const [loading, setLoading] = useState(false);
   const [couponInput, setCouponInput] = useState("");
+
+  // Address State
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [shouldSaveAddress, setShouldSaveAddress] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   // Address form state
   const [address, setAddress] = useState<Address>({
@@ -47,6 +60,7 @@ export default function CheckoutPage() {
     state: "",
     postal: "",
     country: "India",
+    label: "Home",
   });
 
   const cartSummary = getCartSummary();
@@ -72,8 +86,49 @@ export default function CheckoutPage() {
     if (!user) {
       toast.error("Please login to continue");
       router.push("/auth/login");
+    } else {
+      fetchAddresses();
     }
   }, [cart, user, router]);
+
+  const fetchAddresses = async () => {
+    setLoadingAddresses(true);
+    try {
+      const addresses = await getAddresses();
+      setSavedAddresses(addresses);
+      if (addresses.length > 0) {
+        selectAddress(addresses[0]);
+      } else {
+        setShowAddressForm(true);
+      }
+    } catch (error) {
+      console.error("Failed to fetch addresses:", error);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
+  const selectAddress = (addr: Address) => {
+    setSelectedAddressId(addr.id || null);
+    setAddress(addr);
+    setShowAddressForm(false);
+  };
+
+  const handleUseCurrentLocation = async () => {
+    const loc = await getLocation();
+    if (loc) {
+      setAddress((prev) => ({
+        ...prev,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+      }));
+      // In a real app, you would use a Reverse Geocoding API here
+      // to fill line1, city, state, postal, country based on coords.
+      toast.success("Location captured! Please fill in the address details.");
+      setShowAddressForm(true);
+      setSelectedAddressId(null); // Deselect existing to act as new
+    }
+  };
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) {
@@ -116,6 +171,19 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
+      // 1. Save address if requested and it's a new address (no ID)
+      let finalAddressId = selectedAddressId;
+      if (shouldSaveAddress && !selectedAddressId) {
+        try {
+          const newAddr = await addAddress(address);
+          finalAddressId = newAddr.id || null;
+          toast.success("Address saved successfully");
+        } catch (err) {
+          console.error("Failed to save address:", err);
+          toast.error("Failed to save address, proceeding with order anyway");
+        }
+      }
+
       // Prepare order items
       const items = cart.items.map((item) => {
         const firstImage = item.product?.images?.[0];
@@ -135,13 +203,40 @@ export default function CheckoutPage() {
       // Create order
       const orderResponse = await createOrder({
         items,
+        addressId: finalAddressId || undefined, // If not saved, might fail backend validation if backend *requires* ID.
+        // NOTE: If backend requires addressId, we MUST save it first. 
+        // Based on previous createOrder analysis, it checks `if (addressId) ...`. 
+        // If we don't send addressId, we might need to send address details in body if backend supports it (it doesn't currently).
+        // So we SHOULD save it implicitly if not selected.
         couponCode: appliedCoupon?.code || undefined,
         shipping: SHIPPING_COST,
         gst: GST_RATE,
       });
 
-      // Store order details and navigate to payment page
-      sessionStorage.setItem("pendingOrder", JSON.stringify(orderResponse));
+      // Ideally, if createOrder requires addressId, we must have one. 
+      // If the user didn't save, we should probably save it as a "temporary" address or force save.
+      // For now, let's assume valid flow is: Select ID OR Save & Get ID.
+      // If user unchecks "Save", we currently don't have an ID.
+      // Modification: Backend createOrder expects addressId. We must ensure we have one.
+      // If valid ID not present, create it silently?
+      if (!finalAddressId) {
+         // Force create address if not exists
+         const newAddr = await addAddress({...address, label: "Temporary"});
+         finalAddressId = newAddr.id || null;
+         // Proceed with new Order call if needed or just use this ID
+         // Re-calling createOrder with new ID:
+         const retryOrderResponse = await createOrder({
+            items,
+            addressId: finalAddressId || undefined,
+            couponCode: appliedCoupon?.code || undefined,
+            shipping: SHIPPING_COST,
+            gst: GST_RATE,
+         });
+         sessionStorage.setItem("pendingOrder", JSON.stringify(retryOrderResponse));
+      } else {
+         sessionStorage.setItem("pendingOrder", JSON.stringify(orderResponse));
+      }
+
       sessionStorage.setItem("orderAddress", JSON.stringify(address));
 
       router.push("/payment");
@@ -193,160 +288,184 @@ export default function CheckoutPage() {
                 </h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address Line 1 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={address.line1}
-                    onChange={(e) =>
-                      setAddress({ ...address, line1: e.target.value })
-                    }
-                    placeholder="Street address, P.O. box"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Address Line 2
-                  </label>
-                  <input
-                    type="text"
-                    value={address.line2}
-                    onChange={(e) =>
-                      setAddress({ ...address, line2: e.target.value })
-                    }
-                    placeholder="Apartment, suite, unit, building, floor, etc."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    City <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={address.city}
-                    onChange={(e) =>
-                      setAddress({ ...address, city: e.target.value })
-                    }
-                    placeholder="City"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    State <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={address.state}
-                    onChange={(e) =>
-                      setAddress({ ...address, state: e.target.value })
-                    }
-                    placeholder="State"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Postal Code <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={address.postal}
-                    onChange={(e) =>
-                      setAddress({ ...address, postal: e.target.value })
-                    }
-                    placeholder="Postal code"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Country <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={address.country}
-                    onChange={(e) =>
-                      setAddress({ ...address, country: e.target.value })
-                    }
-                    placeholder="Country"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Coupon Code */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-white rounded-2xl shadow-lg p-6"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Tag className="w-6 h-6 text-green-600" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Discount Coupon
-                </h2>
-              </div>
-
-              {!appliedCoupon ? (
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    value={couponInput}
-                    onChange={(e) =>
-                      setCouponInput(e.target.value.toUpperCase())
-                    }
-                    placeholder="Enter coupon code"
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
-                  />
-                  <button
-                    onClick={handleApplyCoupon}
-                    disabled={couponApplying}
-                    className="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {couponApplying ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Applying
-                      </>
-                    ) : (
-                      "Apply"
-                    )}
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <Tag className="w-5 h-5 text-green-600" />
-                    <div>
-                      <p className="font-semibold text-green-900">
-                        {appliedCoupon.code}
-                      </p>
-                      <p className="text-sm text-green-700">
-                        You saved ₹{cartSummary.couponDiscount.toFixed(2)}!
+              {/* Saved Addresses List */}
+              {!showAddressForm && savedAddresses.length > 0 && (
+                <div className="mb-6 grid gap-4 grid-cols-1 md:grid-cols-2">
+                  {savedAddresses.map((addr) => (
+                    <div
+                      key={addr.id}
+                      onClick={() => selectAddress(addr)}
+                      className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                        selectedAddressId === addr.id
+                          ? "border-amber-500 bg-amber-50"
+                          : "border-gray-200 hover:border-amber-300"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                         <span className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full font-medium mb-2 inline-block">
+                           {addr.label || "Address"}
+                         </span>
+                         {selectedAddressId === addr.id && <div className="h-3 w-3 bg-amber-500 rounded-full"/>}
+                      </div>
+                      <p className="font-medium text-gray-900">{addr.line1}</p>
+                      {addr.line2 && <p className="text-gray-600 text-sm">{addr.line2}</p>}
+                      <p className="text-gray-600 text-sm">
+                        {addr.city}, {addr.state} {addr.postal}
                       </p>
                     </div>
-                  </div>
+                  ))}
                   <button
-                    onClick={handleRemoveCoupon}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={() => {
+                      setShowAddressForm(true);
+                      setSelectedAddressId(null);
+                      setAddress({ line1: "", line2: "", city: "", state: "", postal: "", country: "India", label: "Home" });
+                    }}
+                    className="p-4 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-500 hover:border-amber-500 hover:text-amber-600 transition-colors h-full min-h-[120px]"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Plus className="w-6 h-6 mb-2" />
+                    <span>Add New Address</span>
                   </button>
+                </div>
+              )}
+
+              {/* Address Form */}
+              {(showAddressForm || savedAddresses.length === 0) && (
+                <div className="space-y-4">
+                  <div className="flex justify-end gap-3 mb-4">
+                     {savedAddresses.length > 0 && (
+                        <button 
+                           onClick={() => setShowAddressForm(false)}
+                           className="text-sm text-gray-500 hover:text-gray-700 underline"
+                        >
+                           Cancel & Select Saved
+                        </button>
+                     )}
+                     <button
+                        onClick={handleUseCurrentLocation}
+                        disabled={locationLoading}
+                        className="flex items-center gap-2 text-sm text-amber-600 font-medium hover:text-amber-700 disabled:opacity-50"
+                     >
+                        {locationLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Locate className="w-4 h-4"/>}
+                        Use Current Location
+                     </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Label (e.g., Home, Office)
+                      </label>
+                      <input
+                        type="text"
+                        value={address.label}
+                        onChange={(e) =>
+                          setAddress({ ...address, label: e.target.value })
+                        }
+                        placeholder="Home"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black transition-all"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Address Line 1 <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={address.line1}
+                        onChange={(e) =>
+                          setAddress({ ...address, line1: e.target.value })
+                        }
+                        placeholder="Street address, P.O. box"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black transition-all"
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Address Line 2
+                      </label>
+                      <input
+                        type="text"
+                        value={address.line2}
+                        onChange={(e) =>
+                          setAddress({ ...address, line2: e.target.value })
+                        }
+                        placeholder="Apartment, suite, unit, building, floor, etc."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        City <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={address.city}
+                        onChange={(e) =>
+                          setAddress({ ...address, city: e.target.value })
+                        }
+                        placeholder="City"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        State <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={address.state}
+                        onChange={(e) =>
+                          setAddress({ ...address, state: e.target.value })
+                        }
+                        placeholder="State"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Postal Code <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={address.postal}
+                        onChange={(e) =>
+                          setAddress({ ...address, postal: e.target.value })
+                        }
+                        placeholder="Postal code"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Country <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={address.country}
+                        onChange={(e) =>
+                          setAddress({ ...address, country: e.target.value })
+                        }
+                        placeholder="Country"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mt-4">
+                     <input 
+                        type="checkbox" 
+                        id="saveAddress"
+                        checked={shouldSaveAddress}
+                        onChange={(e) => setShouldSaveAddress(e.target.checked)}
+                        className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
+                     />
+                     <label htmlFor="saveAddress" className="text-sm text-gray-700">Save this address for future orders</label>
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -500,17 +619,6 @@ export default function CheckoutPage() {
                   </>
                 )}
               </button>
-
-              <div className="mt-6 space-y-3">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Shield className="w-4 h-4 text-green-600" />
-                  <span>Secure checkout with Razorpay</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <CreditCard className="w-4 h-4 text-blue-600" />
-                  <span>Multiple payment options available</span>
-                </div>
-              </div>
             </motion.div>
           </div>
         </div>

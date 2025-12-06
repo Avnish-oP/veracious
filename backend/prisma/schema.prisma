@@ -63,6 +63,10 @@ model Address {
   state     String
   postal    String
   country   String
+  label     String?  @default("Home") // e.g. Home, Office, Other
+  latitude  Float?
+  longitude Float?
+  isDefault Boolean  @default(false)
   orders    Order[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -177,9 +181,9 @@ model Order {
   userId      String?
   user        User?     @relation(fields: [userId], references: [id])
   items       Json
-  totalAmount Float
-  discount    Float     @default(0)
-  finalAmount Float
+  totalAmount Decimal   @db.Decimal(10, 2)
+  discount    Decimal   @default(0) @db.Decimal(10, 2)
+  finalAmount Decimal   @db.Decimal(10, 2)
   currency    String    @default("INR")
   couponId    String?
   coupon      Coupon?   @relation(fields: [couponId], references: [id])
@@ -202,7 +206,7 @@ model Payment {
   orderId         String   @unique
   paymentId       String?  @unique
   razorpayOrderId String?
-  amount          Float
+  amount          Decimal  @db.Decimal(10, 2)
   currency        String   @default("INR")
   paymentMethod   String
   paymentStatus   String   @default("PENDING")

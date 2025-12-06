@@ -22,7 +22,7 @@ export const createOrder = async (req: Request, res: Response) => {
     const productIds = items.map((item: any) => item.productId);
     const products = await prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, price: true, discountPrice: true },
+      select: { id: true, price: true, discountPrice: true, stock: true },
     });
     const productMap = new Map(
       products.map((product) => [product.id, product])
@@ -34,6 +34,13 @@ export const createOrder = async (req: Request, res: Response) => {
         return res
           .status(400)
           .json({ message: `Product with ID ${item.productId} not found` });
+      }
+      if (product.stock < (Number(item.quantity) || 1)) {
+        return res
+          .status(400)
+          .json({
+            message: `Insufficient stock for product ${item.productId}`,
+          });
       }
       const price = Number(product.discountPrice ?? product.price);
       const quantity = Number(item.quantity) || 1;
@@ -59,6 +66,17 @@ export const createOrder = async (req: Request, res: Response) => {
             .json({ success: false, message: error.message });
         }
         throw error;
+      }
+    }
+
+    if (addressId) {
+      const address = await prisma.address.findFirst({
+        where: { id: addressId, userId },
+      });
+      if (!address) {
+        return res
+          .status(400)
+          .json({ message: "Invalid address or address does not belong to user" });
       }
     }
 

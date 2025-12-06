@@ -9,6 +9,7 @@ import wishlistRoutes from "./routes/whishlist";
 import categoriesRoutes from "./routes/categories";
 import couponsRoutes from "./routes/coupons";
 import orderRoutes from "./routes/checkout";
+import addressRoutes from "./routes/address";
 
 dotenv.config();
 
@@ -52,6 +53,7 @@ app.use("/api/v1/wishlist", wishlistRoutes);
 app.use("/api/v1/categories", categoriesRoutes);
 app.use("/api/v1/coupons", couponsRoutes);
 app.use("/api/v1/checkout", orderRoutes);
+app.use("/api/v1/address", addressRoutes);
 
 // Start server
 app.listen(PORT, () => {

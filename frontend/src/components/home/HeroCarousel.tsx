@@ -212,7 +212,7 @@ export const HeroCarousel: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-[85vh] md:h-[90vh] overflow-hidden bg-gradient-to-br from-gray-50 to-white">
+    <div className="relative w-full h-[95vh] md:h-[90vh] overflow-hidden bg-gradient-to-br from-gray-50 to-white">
       {/* Animated Background Gradient */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -276,7 +276,7 @@ export const HeroCarousel: React.FC = () => {
                   x: { type: "spring", stiffness: 300, damping: 30 },
                   opacity: { duration: 0.5 },
                 }}
-                className="space-y-6 text-center lg:text-left z-10"
+                className="space-y-6 text-center lg:text-left z-10 order-last lg:order-first"
               >
                 {/* Tags */}
                 {currentSlideData.tags && (
@@ -347,7 +347,7 @@ export const HeroCarousel: React.FC = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.7 }}
-                  className="flex flex-wrap justify-center lg:justify-start gap-4 sm:gap-6 text-sm text-gray-600"
+                  className="flex flex-wrap hidden lg:flex justify-center lg:justify-start gap-4 sm:gap-6 text-sm text-gray-600"
                 >
                   <div className="flex items-center bg-white/60 backdrop-blur-sm px-3 py-2 rounded-lg">
                     <Star className="w-4 h-4 text-yellow-500 mr-2 fill-yellow-500" />
@@ -408,7 +408,7 @@ export const HeroCarousel: React.FC = () => {
                   x: { type: "spring", stiffness: 300, damping: 30 },
                   opacity: { duration: 0.5 },
                 }}
-                className="relative hidden lg:block"
+                className="relative block order-first lg:order-last -mt-12 h-64 lg:h-auto"
               >
                 {/* Decorative Background Elements */}
                 <div

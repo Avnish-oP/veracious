@@ -1,8 +1,10 @@
 import {
   generateTokens,
+  generateVerificationCode,
   setCookies,
   storeRefreshToken,
-} from "../..//utils/authentication";
+} from "../../utils/authentication";
+import { sendVerificationEmail } from "../../email/sendmail";
 import prisma from "../../utils/prisma";
 import express from "express";
 import bcrypt from "bcryptjs";
@@ -39,9 +41,21 @@ const loginUser = async (req: express.Request, res: express.Response) => {
       });
     }
     if (!user.isVerified) {
+      const verificationCode = generateVerificationCode();
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          verificationToken: verificationCode,
+          verificationExp: new Date(Date.now() + 10 * 60 * 1000),
+        },
+      });
+      await sendVerificationEmail(user.email, verificationCode);
+
       return res.status(403).json({
         success: false,
-        message: "Email not verified",
+        message:
+          "Email not verified. A new verification code has been sent to your email.",
+        userId: user.id,
       });
     }
 

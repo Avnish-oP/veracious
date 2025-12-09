@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
 import { Sparkles, Sun, Glasses } from "lucide-react";
@@ -16,6 +16,7 @@ import { Step3Form } from "./Step3Form";
 
 export const RegistrationFlow: React.FC = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const loginMutation = useLoginMutation();
   const { fetchUser } = useUserStore();
   const { mergeGuestCart } = useCartStore();
@@ -24,6 +25,21 @@ export const RegistrationFlow: React.FC = () => {
     React.useState<RegistrationState>({
       currentStep: 1,
     });
+
+  React.useEffect(() => {
+    const stepParam = searchParams.get("step");
+    const userIdParam = searchParams.get("userId");
+    const emailParam = searchParams.get("email");
+
+    if (stepParam === "2" && userIdParam && emailParam) {
+      setRegistrationState((prev) => ({
+        ...prev,
+        currentStep: 2,
+        userId: userIdParam,
+        step1Data: { email: emailParam } as any,
+      }));
+    }
+  }, [searchParams]);
 
   const steps = ["Create Account", "Verify Email", "Personalize"];
 

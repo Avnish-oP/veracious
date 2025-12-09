@@ -46,6 +46,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
       toast.success("Welcome back!");
       router.push("/");
     } catch (error: any) {
+      if (error.status === 403 && error.data?.userId) {
+        toast.error("Account not verified. Redirecting to verification...", { duration: 4000 });
+        const params = new URLSearchParams({
+          step: "2",
+          userId: error.data.userId,
+          email: data.email
+        });
+        router.push(`/auth/register?${params.toString()}`);
+        return;
+      }
+
       const errorMessage = error.message || "Invalid email or password";
       toast.error(errorMessage);
 

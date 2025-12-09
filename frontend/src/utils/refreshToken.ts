@@ -13,6 +13,9 @@ export async function ensureAccessToken() {
 
     if (!refreshRes.ok) {
       console.error("❌ Failed to refresh token:", refreshRes.status);
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth/")) {
+        window.location.href = "/auth/login";
+      }
       throw new Error("Session expired. Please log in again.");
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/useUserStore";
 import { RegistrationFlow } from "@/components/registration/RegistrationFlow";
@@ -15,5 +15,9 @@ export default function RegisterPage() {
     }
   }, [user, loading, router]);
 
-  return <RegistrationFlow />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RegistrationFlow />
+    </Suspense>
+  );
 }

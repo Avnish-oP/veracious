@@ -24,7 +24,47 @@ const registerUser = async (req: express.Request, res: express.Response) => {
         OR: [{ email }, { phoneNumber }],
       },
     });
+
     if (existing) {
+      if (!existing.isVerified) {
+        const hashedPassword = await bcrypt.hash(password, 12);
+        const verificationCode = generateVerificationCode();
+        
+        const updatedUser = await prisma.user.update({
+          where: { id: existing.id },
+          data: {
+            name,
+            email, // Ensure email is set if it was finding by phone
+            passwordHash: hashedPassword,
+            phoneNumber,
+            verificationToken: verificationCode,
+            verificationExp: new Date(Date.now() + 10 * 60 * 1000),
+          },
+        });
+
+        console.log("Verification code for resend:", verificationCode);
+        
+        // Use updatedUser for token generation
+        const { accessToken, refreshToken } = generateTokens(updatedUser.id);
+        await storeRefreshToken(updatedUser.id, refreshToken);
+        setCookies(res, accessToken, refreshToken);
+
+        await sendVerificationEmail(updatedUser.email, verificationCode);
+        
+        return res.status(200).json({
+          success: true,
+          message: "User registered successfully",
+          user: {
+            id: updatedUser.id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            phoneNumber: updatedUser.phoneNumber,
+            isVerified: updatedUser.isVerified,
+            verificationCode: updatedUser.verificationToken,
+          },
+        });
+      }
+
       const conflictField = existing.email === email ? "email" : "phone number";
       return res.status(400).json({
         success: false,

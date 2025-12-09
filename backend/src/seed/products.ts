@@ -650,6 +650,66 @@ async function seedProducts() {
     console.log(`Created product: ${product.name}`);
   }
 
+  // Seed Coupons
+  console.log("Seeding coupons...");
+  const coupons = [
+    {
+      code: "WELCOME50",
+      description: "Welcome discount for new users",
+      discountType: "FIXED_AMOUNT",
+      discount: 50,
+      minOrderValue: 500,
+      validFrom: new Date(),
+      validTo: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // 1 year from now
+      isActive: true,
+      isForNewUsers: true,
+      isForAllProducts: true,
+    },
+    {
+      code: "SUMMER20",
+      description: "Summer sale discount",
+      discountType: "PERCENTAGE",
+      discount: 20,
+      minOrderValue: 1000,
+      validFrom: new Date(),
+      validTo: new Date(new Date().setMonth(new Date().getMonth() + 3)), // 3 months from now
+      isActive: true,
+      isForNewUsers: false,
+      isForAllProducts: true,
+    },
+    {
+      code: "FLAT100",
+      description: "Flat 100 off on orders above 2000",
+      discountType: "FIXED_AMOUNT",
+      discount: 100,
+      minOrderValue: 2000,
+      validFrom: new Date(),
+      isActive: true,
+      isForNewUsers: false,
+      isForAllProducts: true,
+    },
+  ];
+
+  for (const coupon of coupons) {
+    await prisma.coupon.upsert({
+      where: { code: coupon.code },
+      update: {},
+      create: {
+        code: coupon.code,
+        description: coupon.description,
+        discountType: coupon.discountType as any, // Cast to any to avoid Enum import issues if not generated yet
+        discount: coupon.discount,
+        minOrderValue: coupon.minOrderValue,
+        validFrom: coupon.validFrom,
+        validTo: coupon.validTo,
+        isActive: coupon.isActive,
+        isForNewUsers: coupon.isForNewUsers,
+        isForAllProducts: coupon.isForAllProducts,
+      },
+    });
+    console.log(`Created coupon: ${coupon.code}`);
+  }
+
   console.log(
     `Successfully seeded ${products.length} products! Prices stored in INR.`
   );

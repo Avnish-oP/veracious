@@ -124,3 +124,28 @@ export const resetPassword = async (data: {
 export const fetchCategories = async (): Promise<any> => {
   return apiCall<any>("/categories");
 };
+
+// Fetch user orders
+export const fetchOrders = async (): Promise<any> => {
+  return apiCall<any>("/orders");
+};
+
+// Fetch user addresses
+export const fetchAddresses = async (): Promise<any> => {
+  return apiCall<any>("/address");
+};
+
+// Add new address
+export const addAddress = async (data: any): Promise<any> => {
+  return apiCall<any>("/address/add", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+// Delete address
+export const deleteAddress = async (id: string): Promise<any> => {
+  return apiCall<any>(`/address/${id}`, {
+    method: "DELETE",
+  });
+};

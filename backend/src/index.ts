@@ -11,6 +11,9 @@ import couponsRoutes from "./routes/coupons";
 import orderRoutes from "./routes/checkout";
 import addressRoutes from "./routes/address";
 
+import orderListingRoutes from "./routes/orders";
+import adminRoutes from "./routes/admin";
+
 dotenv.config();
 
 const app = express();
@@ -18,6 +21,8 @@ const app = express();
 // CORS configuration
 const allowedOrigins = process.env.CORS_ORIGIN?.split(",") || [
   "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002", // Just in case
 ];
 
 app.use(
@@ -54,6 +59,8 @@ app.use("/api/v1/categories", categoriesRoutes);
 app.use("/api/v1/coupons", couponsRoutes);
 app.use("/api/v1/checkout", orderRoutes);
 app.use("/api/v1/address", addressRoutes);
+app.use("/api/v1/orders", orderListingRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 // Start server
 app.listen(PORT, () => {

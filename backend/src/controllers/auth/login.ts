@@ -62,6 +62,13 @@ const loginUser = async (req: express.Request, res: express.Response) => {
     const { accessToken, refreshToken } = generateTokens(user.id);
     await storeRefreshToken(user.id, refreshToken);
     setCookies(res, accessToken, refreshToken);
+    if(user.role === "ADMIN"){
+      return res.status(200).json({
+        success: true,
+        message: "User logged in successfully!",
+        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      });
+    }
 
     return res.status(200).json({
       success: true,

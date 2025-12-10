@@ -557,53 +557,72 @@ export default function ProductDetailPage() {
           )}
 
           {activeTab === "specs" && (
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h3 className="font-bold text-lg text-gray-900 mb-4">
-                  Frame Details
-                </h3>
-                <div className="flex justify-between py-3 border-b border-gray-200">
-                  <span className="text-gray-600">Frame Shape</span>
-                  <span className="font-semibold text-gray-900">
-                    {product.frameShape}
-                  </span>
+            <div className="space-y-8">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="font-bold text-lg text-gray-900 mb-4">
+                    Frame Details
+                  </h3>
+                  <div className="flex justify-between py-3 border-b border-gray-200">
+                    <span className="text-gray-600">Frame Shape</span>
+                    <span className="font-semibold text-gray-900">
+                      {product.frameShape}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-3 border-b border-gray-200">
+                    <span className="text-gray-600">Frame Material</span>
+                    <span className="font-semibold text-gray-900">
+                      {product.frameMaterial || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-3 border-b border-gray-200">
+                    <span className="text-gray-600">Frame Color</span>
+                    <span className="font-semibold text-gray-900">
+                      {product.frameColor || 'N/A'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between py-3 border-b border-gray-200">
-                  <span className="text-gray-600">Frame Material</span>
-                  <span className="font-semibold text-gray-900">
-                    {product.frameMaterial}
-                  </span>
-                </div>
-                <div className="flex justify-between py-3 border-b border-gray-200">
-                  <span className="text-gray-600">Frame Color</span>
-                  <span className="font-semibold text-gray-900">
-                    {product.frameColor}
-                  </span>
+                <div className="space-y-4">
+                  <h3 className="font-bold text-lg text-gray-900 mb-4">
+                    Lens Details
+                  </h3>
+                  <div className="flex justify-between py-3 border-b border-gray-200">
+                    <span className="text-gray-600">Lens Type</span>
+                    <span className="font-semibold text-gray-900">
+                      {product.lensType || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-3 border-b border-gray-200">
+                    <span className="text-gray-600">Lens Color</span>
+                    <span className="font-semibold text-gray-900">
+                      {product.lensColor || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-3 border-b border-gray-200">
+                    <span className="text-gray-600">Gender</span>
+                    <span className="font-semibold text-gray-900">
+                      {product.gender}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="space-y-4">
-                <h3 className="font-bold text-lg text-gray-900 mb-4">
-                  Lens Details
-                </h3>
-                <div className="flex justify-between py-3 border-b border-gray-200">
-                  <span className="text-gray-600">Lens Type</span>
-                  <span className="font-semibold text-gray-900">
-                    {product.lensType}
-                  </span>
-                </div>
-                <div className="flex justify-between py-3 border-b border-gray-200">
-                  <span className="text-gray-600">Lens Color</span>
-                  <span className="font-semibold text-gray-900">
-                    {product.lensColor}
-                  </span>
-                </div>
-                <div className="flex justify-between py-3 border-b border-gray-200">
-                  <span className="text-gray-600">Gender</span>
-                  <span className="font-semibold text-gray-900">
-                    {product.gender}
-                  </span>
-                </div>
-              </div>
+
+               {/* Additional Specifications */}
+               {product.specifications && Object.keys(product.specifications).length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900 mb-4 mt-4">
+                      More Specs
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-x-6 gap-y-0">
+                      {Object.entries(product.specifications).map(([key, value]) => (
+                        <div key={key} className="flex justify-between py-3 border-b border-gray-200">
+                          <span className="text-gray-600 capitalize">{key.replace(/_/g, ' ')}</span>
+                          <span className="font-semibold text-gray-900">{String(value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+               )}
             </div>
           )}
 

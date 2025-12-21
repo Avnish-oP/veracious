@@ -8,35 +8,26 @@ import {
   MergeCartsRequest,
 } from "@/types/cartTypes";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+import api from "../lib/axios";
 
 /**
  * Generic API call function with proper error handling
  */
 async function cartApiCall<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: any = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-
-  const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    credentials: "include", // Include cookies for authentication
-    ...options,
-  });
-  console.log("Response:", response);
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || "An error occurred");
+  try {
+    const response = await api({
+      url: endpoint,
+      method: options.method || 'GET',
+      data: options.body ? JSON.parse(options.body) : undefined,
+      ...options
+    });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "An error occurred");
   }
-
-  return data;
 }
 
 /**

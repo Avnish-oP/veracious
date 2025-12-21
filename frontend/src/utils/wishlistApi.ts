@@ -1,24 +1,17 @@
-import axios from "axios";
+import api from "../lib/axios";
 import {
   WishlistResponse,
   ToggleWishlistResponse,
 } from "@/types/wishlistTypes";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
-
-// Create axios instance with credentials
-const wishlistApi = axios.create({
-  baseURL: `${API_BASE_URL}/wishlist`,
-  withCredentials: true,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
+// Create axios instance with credentials (using the centralized api as base if possible, or just using api directly)
+// Since we want to use the interceptors from 'api', we should use 'api' directly and prepend '/wishlist'.
+// Unlike 'axios.create', we can't easily extend 'api' with a new baseURL while keeping interceptors without cloning.
+// So we will just use 'api' in the functions below.
 
 // Get user's wishlist
 export const fetchWishlist = async (): Promise<WishlistResponse> => {
-  const response = await wishlistApi.get("/");
+  const response = await api.get("/wishlist");
   return response.data;
 };
 
@@ -26,7 +19,7 @@ export const fetchWishlist = async (): Promise<WishlistResponse> => {
 export const toggleWishlistItem = async (
   productId: string
 ): Promise<ToggleWishlistResponse> => {
-  const response = await wishlistApi.post(`/toggle/${productId}`);
+  const response = await api.post(`/wishlist/toggle/${productId}`);
   return response.data;
 };
 

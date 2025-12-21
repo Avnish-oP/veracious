@@ -6,7 +6,7 @@ import ConditionalNavbar from "@/components/layout/ConditionalNavbar";
 import UserHydration from "@/components/providers/UserHydration";
 import CartHydration from "@/components/providers/CartHydration";
 import WishlistHydration from "@/components/providers/WishlistHydration";
-import TokenRefresher from "@/utils/tokenRefresher";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +38,7 @@ export default function RootLayout({
           <UserHydration />
           <CartHydration />
           <WishlistHydration />
-          <TokenRefresher />
+          <WishlistHydration />
           <ConditionalNavbar />
           {children}
         </Providers>

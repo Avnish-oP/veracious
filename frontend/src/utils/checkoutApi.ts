@@ -1,5 +1,6 @@
 // Checkout and payment API utilities
 
+import api from "../lib/axios";
 import {
   CreateOrderRequest,
   CreateOrderResponse,
@@ -7,31 +8,14 @@ import {
   VerifyOrderResponse,
 } from "@/types/orderTypes";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
-
 /**
  * Create a new order and get Razorpay order details
  */
 export const createOrder = async (
   data: CreateOrderRequest
 ): Promise<CreateOrderResponse> => {
-  const response = await fetch(`${API_BASE_URL}/checkout/create`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(data),
-  });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message || "Failed to create order");
-  }
-
-  return result;
+  const response = await api.post("/checkout/create", data);
+  return response.data;
 };
 
 /**
@@ -40,22 +24,8 @@ export const createOrder = async (
 export const verifyPayment = async (
   data: VerifyOrderRequest
 ): Promise<VerifyOrderResponse> => {
-  const response = await fetch(`${API_BASE_URL}/checkout/verify`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(data),
-  });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message || "Payment verification failed");
-  }
-
-  return result;
+  const response = await api.post("/checkout/verify", data);
+  return response.data;
 };
 
 /**

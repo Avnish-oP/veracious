@@ -4,31 +4,23 @@ import {
   CouponListResponse,
 } from "@/types/couponsTypes";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+import api from "../lib/axios";
 
 async function couponApiCall<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: any = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-
-  const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    credentials: "include",
-    ...options,
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || data.error || "Failed to process request");
+  try {
+    const response = await api({
+      url: endpoint,
+      method: options.method || 'GET',
+      data: options.body ? JSON.parse(options.body) : undefined,
+      ...options
+    });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || error.response?.data?.error || "Failed to process request");
   }
-
-  return data;
 }
 
 export const fetchCouponsForProduct = async (

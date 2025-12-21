@@ -8,35 +8,27 @@ import {
   ApiError,
 } from "@/types/registrationTypes";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+import api from "../lib/axios";
 
 // Generic API call function with proper error handling
 async function apiCall<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: any = {} // Changed to any to accept axios config
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-
-  const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    credentials: "include", // Important for cookies
-    ...options,
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    const error = new Error(data.message || `HTTP error! status: ${response.status}`) as any;
-    error.data = data;
-    error.status = response.status;
-    throw error;
+  try {
+    const response = await api({
+      url: endpoint,
+      method: options.method || 'GET',
+      data: options.body ? JSON.parse(options.body) : undefined,
+      ...options
+    });
+    return response.data;
+  } catch (error: any) {
+    const customError = new Error(error.response?.data?.message || error.message || "An error occurred") as any;
+    customError.data = error.response?.data;
+    customError.status = error.response?.status;
+    throw customError;
   }
-
-  return data;
 }
 
 // Step 1: Register user

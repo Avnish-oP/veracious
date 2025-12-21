@@ -1,9 +1,5 @@
 import { create } from "zustand";
-import axios from "axios";
-import { ensureAccessToken } from "@/utils/refreshToken";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+import api from "../lib/axios";
 
 // Define the User type or import it from the appropriate module
 interface User {
@@ -30,14 +26,9 @@ export const useUserStore = create<UserState>((set) => ({
   fetchUser: async () => {
     set({ loading: true });
     try {
-      console.log("🔄 Fetching user from:", `${API_URL}/auth/me`);
+      console.log("🔄 Fetching user from: /auth/me");
 
-      // First ensure we have a valid access token
-      await ensureAccessToken();
-
-      const response = await axios.get(`${API_URL}/auth/me`, {
-        withCredentials: true,
-      });
+      const response = await api.get("/auth/me");
 
       console.log("✅ User fetched successfully:", response.data.user);
       set({ user: response.data.user, loading: false });
@@ -51,10 +42,7 @@ export const useUserStore = create<UserState>((set) => ({
   },
   logout: async () => {
     try {
-      await fetch(`${API_URL}/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
+      await api.post("/auth/logout");
       console.log("✅ User logged out successfully");
     } catch (error) {
       console.error("❌ Logout error:", error);

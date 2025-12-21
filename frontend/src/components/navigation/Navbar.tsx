@@ -40,6 +40,8 @@ const navigationBase: NavItem[] = [
   { label: "Contact", href: "/contact" },
 ];
 
+import { SearchBar } from "@/components/ui/SearchBar";
+
 export const Navbar: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
@@ -51,6 +53,7 @@ export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const { user, loading, logout } = useUserStore();
   const { getTotalItems } = useCartStore();
   const { getWishlistCount } = useWishlistStore();
@@ -289,13 +292,28 @@ export const Navbar: React.FC = () => {
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
             {/* Search */}
-            <motion.button
-              className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 rounded-lg hover:bg-amber-50"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Search className="w-5 h-5" />
-            </motion.button>
+            {/* Search */}
+            {showSearch ? (
+               <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="absolute inset-x-4 top-2 md:inset-y-0 md:left-20 md:right-20 flex items-center justify-center z-[60]"
+               >
+                    <div className="w-full max-w-2xl relative">
+                        <SearchBar autoFocus onClose={() => setShowSearch(false)} />
+                    </div>
+               </motion.div>
+            ) : (
+                <motion.button
+                    className="p-2 text-gray-600 hover:text-amber-600 transition-colors duration-200 rounded-lg hover:bg-amber-50"
+                    onClick={() => setShowSearch(true)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                >
+                    <Search className="w-5 h-5" />
+                </motion.button>
+            )}
 
             {/* Wishlist */}
             <motion.button
@@ -552,7 +570,7 @@ export const Navbar: React.FC = () => {
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    // Add search functionality later
+                    setShowSearch(true);
                   }}
                   className="flex flex-col items-center justify-center p-4 text-gray-600 hover:text-amber-600 bg-gray-50 hover:bg-amber-50 rounded-lg transition-colors"
                 >

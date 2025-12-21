@@ -13,6 +13,7 @@ import addressRoutes from "./routes/address";
 
 import orderListingRoutes from "./routes/orders";
 import adminRoutes from "./routes/admin";
+import searchRoutes from "./routes/search";
 
 dotenv.config();
 
@@ -61,6 +62,7 @@ app.use("/api/v1/checkout", orderRoutes);
 app.use("/api/v1/address", addressRoutes);
 app.use("/api/v1/orders", orderListingRoutes);
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/search", searchRoutes);
 
 // Start server
 app.listen(PORT, () => {

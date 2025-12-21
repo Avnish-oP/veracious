@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../../utils/prisma";
+import { searchIndex } from "../../utils/upstash";
 
 export const getAdminProducts = async (req: Request, res: Response) => {
   try {
@@ -118,6 +119,38 @@ export const createProduct = async (req: Request, res: Response) => {
       }
     });
 
+    // Sync with Upstash
+    try {
+        await searchIndex.upsert([{
+            id: newProduct.id,
+            content: {
+                name: newProduct.name,
+                description: newProduct.description,
+                brand: newProduct.brand,
+                category: newProduct.categories.map((c: any) => c.name).join(", "),
+                specifications: newProduct.specifications ? JSON.stringify(newProduct.specifications) : "",
+            },
+            metadata: {
+                name: newProduct.name,
+                slug: newProduct.slug,
+                price: newProduct.price,
+                discountPrice: newProduct.discountPrice,
+                stock: newProduct.stock,
+                image: newProduct.images[0]?.url || "",
+                isFeatured: newProduct.isFeatured || false,
+                frameShape: newProduct.frameShape,
+                frameMaterial: newProduct.frameMaterial,
+                frameColor: newProduct.frameColor,
+                lensType: newProduct.lensType,
+                gender: newProduct.gender,
+                createdAt: newProduct.createdAt,
+            }
+        }]);
+    } catch (upsertError) {
+        console.error("Failed to sync new product to Upstash:", upsertError);
+        // We don't fail the request if search sync fails, just log it
+    }
+
     return res.status(201).json({
       success: true,
       product: newProduct,
@@ -144,6 +177,14 @@ export const deleteProduct = async (req: Request, res: Response) => {
         const deletedProduct = await prisma.product.delete({
             where: { id },
         });
+
+        // Sync with Upstash
+        try {
+            await searchIndex.delete([id]);
+        } catch (deleteError) {
+            console.error("Failed to delete product from Upstash:", deleteError);
+        }
+
         return res.status(200).json({
             success: true,
             message: "Product deleted successfully",
@@ -240,6 +281,39 @@ export const updateProduct = async (req: Request, res: Response) => {
             timeout: 20000
         });
 
+        // Sync with Upstash
+        try {
+             if (updatedProduct) {
+                 await searchIndex.upsert([{
+                     id: updatedProduct.id,
+                     content: {
+                         name: updatedProduct.name,
+                         description: updatedProduct.description,
+                         brand: updatedProduct.brand,
+                         category: updatedProduct.categories.map((c: any) => c.name).join(", "),
+                         specifications: updatedProduct.specifications ? JSON.stringify(updatedProduct.specifications) : "",
+                     },
+                     metadata: {
+                         name: updatedProduct.name,
+                         slug: updatedProduct.slug,
+                         price: updatedProduct.price,
+                         discountPrice: updatedProduct.discountPrice,
+                         stock: updatedProduct.stock,
+                         image: updatedProduct.images[0]?.url || "",
+                         isFeatured: updatedProduct.isFeatured || false,
+                         frameShape: updatedProduct.frameShape,
+                         frameMaterial: updatedProduct.frameMaterial,
+                         frameColor: updatedProduct.frameColor,
+                         lensType: updatedProduct.lensType,
+                         gender: updatedProduct.gender,
+                         createdAt: updatedProduct.createdAt,
+                     }
+                 }]);
+             }
+        } catch (upsertError) {
+            console.error("Failed to sync updated product to Upstash:", upsertError);
+        }
+
         return res.status(200).json({
             success: true,
             message: "Product updated successfully",
@@ -255,3 +329,4 @@ export const updateProduct = async (req: Request, res: Response) => {
         });
     }
 };
+

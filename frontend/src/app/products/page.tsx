@@ -34,6 +34,7 @@ export default function ProductsPage() {
   const [limit] = useState(12);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
+  const [gender, setGender] = useState("");
   const [activeFilter, setActiveFilter] = useState(filterParam);
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [quickViewProductId, setQuickViewProductId] = useState<string | null>(
@@ -46,10 +47,12 @@ export default function ProductsPage() {
     setPage(1); // Reset to first page when filter changes
   }, [filterParam]);
 
-  // Read category from URL search param (e.g. /products?category=<categoryId>)
+  // Read category and gender from URL search param
   useEffect(() => {
     const urlCategory = searchParams.get("category") || "";
+    const urlGender = searchParams.get("gender") || "";
     setCategory(urlCategory);
+    setGender(urlGender);
     setPage(1);
   }, [searchParams]);
 
@@ -64,6 +67,7 @@ export default function ProductsPage() {
     limit,
     search: search || undefined,
     category: category || undefined,
+    gender: gender || undefined,
   });
 
   const featuredProductsQuery = useFeaturedProducts({

@@ -9,6 +9,11 @@ import {
   useFeaturedProducts,
   useTrendingProducts,
 } from "@/hooks/useProducts";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
+import { NewArrivals } from "@/components/home/NewArrivals";
+import { RecentlyViewed } from "@/components/home/RecentlyViewed";
+import { CategoryGrid } from "@/components/home/CategoryGrid";
+import { PromoBanner } from "@/components/home/PromoBanner";
 import { motion } from "framer-motion";
 import {
   Sparkles,
@@ -62,6 +67,14 @@ export default function Home() {
     limit: 8,
   });
 
+  // Fetch New Arrivals (limit 8) - useProducts sorts by createdAt desc by default
+  const { data: newArrivalsData, isLoading: newArrivalsLoading } = useProducts({
+    page: 1,
+    limit: 8,
+  });
+
+  const { recentlyViewed } = useRecentlyViewed();
+
   // Fetch featured products (page 1)
   const { data: featuredProductsData, isLoading: featuredLoading } =
     useFeaturedProducts({ page: 1, limit: 8 });
@@ -88,6 +101,12 @@ export default function Home() {
         <HeroCarousel />
       </div>
 
+      {/* New Arrivals Section */}
+      <NewArrivals 
+        products={newArrivalsData?.products || []} 
+        loading={newArrivalsLoading} 
+      />
+
       {/* Featured Products */}
       <FeaturedProducts
         allProducts={allProductsData?.products || []}
@@ -101,141 +120,15 @@ export default function Home() {
         }}
       />
 
-      {/* Features Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <motion.div
-              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 rounded-full text-sm font-medium mb-4"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", bounce: 0.4 }}
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Why Choose Veracious
-            </motion.div>
+      {recentlyViewed.length > 0 && (
+        <RecentlyViewed products={recentlyViewed} />
+      )}
 
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Experience{" "}
-              <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent">
-                Premium Eyewear
-              </span>
-            </h2>
+      {/* Category Grid Section */}
+      <CategoryGrid />
 
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Discover why thousands of customers trust us for their eyewear
-              needs. From cutting-edge technology to exceptional service.
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {features.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <motion.div
-                  key={feature.title}
-                  className="text-center group"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.2, duration: 0.6 }}
-                  whileHover={{ y: -5 }}
-                >
-                  <motion.div
-                    className={`w-16 h-16 ${getColorClasses(
-                      feature.color
-                    )} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}
-                    whileHover={{ rotate: 5 }}
-                  >
-                    <Icon className="w-8 h-8" />
-                  </motion.div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 group-hover:text-amber-600 transition-colors duration-300">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="grid grid-cols-2 md:grid-cols-4 gap-8"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <motion.div
-                  key={stat.label}
-                  className="text-center"
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center mx-auto mb-4">
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-gray-600">{stat.label}</div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Call to Action Section */}
-      <section className="py-16 bg-amber-500">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Ready to Find Your Perfect Frames?
-            </h2>
-            <p className="text-xl text-amber-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of satisfied customers who've discovered their
-              ideal eyewear with our AI-powered face shape analysis.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button
-                size="lg"
-                onClick={() => router.push("/auth/register")}
-                className="bg-white text-amber-600 hover:bg-amber-50 border-none shadow-lg px-8"
-              >
-                <Sparkles className="w-5 h-5 mr-2" />
-                Start Your Journey
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => router.push("/products")}
-                className="border-white text-white hover:bg-white/10 px-8"
-              >
-                Browse Collection
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      {/* Promo Banner Section */}
+      <PromoBanner />
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">

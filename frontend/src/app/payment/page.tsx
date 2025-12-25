@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useUserStore } from "@/store/useUserStore";
-import { useCartStore } from "@/store/useCartStore";
+// import { useUserStore } from "@/store/useUserStore";
+// import { useCartStore } from "@/store/useCartStore";
+import { useUser } from "@/hooks/useUser";
+import { useCart } from "@/hooks/useCart";
 import {
   CreditCard,
   Shield,
@@ -21,8 +23,8 @@ import { CreateOrderResponse, RazorpayOptions } from "@/types/orderTypes";
 
 export default function PaymentPage() {
   const router = useRouter();
-  const { user } = useUserStore();
-  const { clearCart } = useCartStore();
+  const { user } = useUser();
+  const { clearCart } = useCart();
 
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);

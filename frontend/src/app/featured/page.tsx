@@ -1,0 +1,182 @@
+"use client";
+
+import React from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useFeaturedProducts, useProducts } from "@/hooks/useProducts";
+import { ProductCard } from "@/components/ui/ProductCard";
+import { Button } from "@/components/ui/form-components";
+import { Loader2, Sparkles, ArrowRight, Star } from "lucide-react";
+import { motion } from "framer-motion";
+import { Pagination } from "@/components/ui/Pagination";
+
+export default function FeaturedPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = 12;
+
+  // Fetch featured products for the grid (Paginated)
+  const { 
+    data: featuredData, 
+    isLoading: isFeaturedLoading, 
+    error: featuredError 
+  } = useFeaturedProducts({ page, limit });
+
+  // Fetch 'Spotlight' product (ADMIN CONTROLLED via 'spotlight' tag)
+  const { 
+    data: spotlightData, 
+    isLoading: isSpotlightLoading 
+  } = useProducts({ search: "spotlight", limit: 1 });
+
+  const products = featuredData?.products || [];
+  const totalPages = featuredData?.totalPages || 1;
+  const spotlightProduct = spotlightData?.products?.[0];
+
+  const handlePageChange = (newPage: number) => {
+    router.push(`/featured?page=${newPage}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  if (isFeaturedLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[50vh]">
+           <div className="flex flex-col items-center gap-4 text-gray-400">
+             <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
+             <p>Curating collection...</p>
+           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (featuredError) {
+    return (
+       <div className="min-h-screen pt-24 pb-12 flex flex-col items-center justify-center text-center px-4">
+          <p className="text-red-500 font-medium mb-2">Unable to load featured products</p>
+          <button 
+             onClick={() => window.location.reload()}
+             className="text-amber-600 hover:text-amber-700 font-semibold underline"
+          >
+             Try Again
+          </button>
+       </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white pt-20">
+      
+      {/* Spotlight Product - Controlled by Admin 'spotlight' tag */}
+      {spotlightProduct && (
+        <section className="py-12 bg-gray-50 mb-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+             <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl shadow-gray-200/50 overflow-hidden relative border border-gray-100">
+                
+                <div className="grid md:grid-cols-2 gap-12 items-center relative z-10">
+                   <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.6 }}
+                      className="relative aspect-square md:aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100"
+                   >
+                      <Image 
+                        src={spotlightProduct.image || spotlightProduct.images?.[0]?.url || "/placeholder.png"} 
+                        alt={spotlightProduct.name}
+                        fill
+                        className="object-cover"
+                      />
+                   </motion.div>
+
+                   <motion.div
+                      initial={{ opacity: 0, x: 30 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.6, delay: 0.2 }}
+                      className="space-y-6"
+                   >
+                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-xs font-bold uppercase tracking-wider">
+                         <Star className="w-3.5 h-3.5 fill-current" />
+                         <span>Editor's Choice</span>
+                      </div>
+                      
+                      <h2 className="text-4xl md:text-5xl font-bold text-gray-900 font-serif">
+                        {spotlightProduct.name}
+                      </h2>
+                      
+                      <p className="text-lg text-gray-600 leading-relaxed">
+                        {spotlightProduct.description || "Experience the pinnacle of craftsmanship and style. This featured piece embodies the essence of modern elegance."}
+                      </p>
+
+                      <div className="flex items-end gap-4">
+                         <span className="text-3xl font-bold text-gray-900">
+                           ₹{spotlightProduct.discountPrice || spotlightProduct.price}
+                         </span>
+                         {spotlightProduct.discountPrice && (
+                            <span className="text-xl text-gray-400 line-through mb-1">
+                               ₹{spotlightProduct.price}
+                            </span>
+                         )}
+                      </div>
+
+                      <div className="pt-4">
+                         <Link href={`/products/${spotlightProduct.id}`}>
+                            <Button size="lg" className="bg-gray-900 text-white hover:bg-black rounded-xl px-8 h-14 text-lg shadow-lg hover:shadow-xl transition-all">
+                               Shop This Style <ArrowRight className="ml-2 w-5 h-5" />
+                            </Button>
+                         </Link>
+                      </div>
+                   </motion.div>
+                </div>
+             </div>
+          </div>
+        </section>
+      )}
+
+      {/* Main Collection Grid */}
+      <section className="pb-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+           <div className="flex items-end justify-between mb-10">
+              <div>
+                 <h2 className="text-3xl font-bold text-gray-900">Featured Collection</h2>
+                 <p className="text-gray-500 mt-2">Handpicked styles for the season</p>
+              </div>
+           </div>
+
+           {products.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12 mb-16">
+                  {products.map((product, index) => (
+                    <motion.div
+                        key={product.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-50px" }}
+                        transition={{ delay: index * 0.05 }}
+                    >
+                        <ProductCard product={product} />
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                <Pagination 
+                   currentPage={page} 
+                   totalPages={totalPages} 
+                   onPageChange={handlePageChange}
+                   showTotalItems={false}
+                />
+              </>
+           ) : (
+              <div className="text-center py-20 bg-gray-50 rounded-3xl border border-gray-100">
+                 <p className="text-gray-500 text-lg">No featured products found.</p>
+              </div>
+           )}
+        </div>
+      </section>
+    </div>
+  );
+}

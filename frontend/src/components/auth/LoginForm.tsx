@@ -11,7 +11,9 @@ import { LoginFormData, loginSchema } from "@/types/authTypes";
 import { useLoginMutation } from "@/hooks/useRegistration";
 import { Button, Card, Input } from "@/components/ui/form-components";
 import { useUserStore } from "@/store/useUserStore";
-import { useCartStore } from "@/store/useCartStore";
+import { useCart } from "@/hooks/useCart";
+import { useQueryClient } from "@tanstack/react-query";
+import { USER_QUERY_KEY } from "@/hooks/useUser";
 
 interface LoginFormProps {
   onForgotPassword?: () => void;
@@ -22,8 +24,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   const loginMutation = useLoginMutation();
   const [showPassword, setShowPassword] = useState(false);
 
-  const { fetchUser } = useUserStore();
-  const { mergeGuestCart } = useCartStore();
+  // const { fetchUser } = useUserStore();
+  const queryClient = useQueryClient();
+  const { mergeGuestCart } = useCart();
 
   const {
     register,
@@ -38,7 +41,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await loginMutation.mutateAsync(data);
-      await fetchUser(); // Fetch user data after successful login
+      // await fetchUser(); // Fetch user data after successful login
+      await queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
+      
+      // Manually sync store to ensure mergeGuestCart has access to the user
+      const user = queryClient.getQueryData<any>(USER_QUERY_KEY);
+      if (user) {
+          useUserStore.getState().setUser(user);
+      }
 
       // Merge guest cart with user cart
       await mergeGuestCart();

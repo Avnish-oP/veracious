@@ -15,8 +15,8 @@ import {
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
 import { Product } from "@/types/productTypes";
-import { useCartStore } from "@/store/useCartStore";
-import { useWishlistStore } from "@/store/useWishlistStore";
+import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
 import Image from "next/image";
 
 interface ProductCardProps {
@@ -41,8 +41,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   layout = "vertical",
 }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const { getItemQuantity } = useCartStore();
-  const { isInWishlist, toggleItem } = useWishlistStore();
+  const { getItemQuantity } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
   const router = useRouter();
 
   const quantityInCart = getItemQuantity(product.id);
@@ -59,7 +59,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     e.preventDefault();
     e.stopPropagation();
     try {
-      await toggleItem(product.id);
+      toggleWishlist(product.id);
       onToggleWishlist?.(product);
     } catch (error) {
       console.error("Failed to toggle wishlist:", error);
@@ -130,9 +130,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {/* Product Image */}
           <div className="w-full h-full flex items-center justify-center p-2">
-            {product.image ? (
+            {product.image || product.images?.[0]?.url ? (
               <Image
-                src={product.image}
+                src={product.image || product.images?.[0]?.url || ""}
                 alt={product.name}
                 width={200}
                 height={200}
@@ -312,9 +312,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Product Image */}
         <div className="w-full h-full flex items-center justify-center p-4">
-          {product.image ? (
+          {product.image || product.images?.[0]?.url ? (
             <img
-              src={product.image}
+              src={product.image || product.images?.[0]?.url}
               alt={product.name}
               className={cn(
                 "w-full h-full object-cover transition-all duration-300 group-hover:scale-105",

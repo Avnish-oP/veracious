@@ -4,14 +4,14 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Package, MapPin, LogOut, Settings } from "lucide-react";
-import { useUserStore } from "@/store/useUserStore";
+import { useUser } from "@/hooks/useUser";
 import { ProfileInfo } from "@/components/profile/ProfileInfo";
 import { OrderHistory } from "@/components/profile/OrderHistory";
 import { AddressBook } from "@/components/profile/AddressBook";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, loading, logout } = useUserStore();
+  const { user, isLoading: loading, logout } = useUser();
   const [activeTab, setActiveTab] = useState("profile");
 
   useEffect(() => {

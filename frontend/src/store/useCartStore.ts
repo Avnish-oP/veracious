@@ -5,22 +5,15 @@ import { Cart, CartItem, CartSummary } from "@/types/cartTypes";
 import { ApplyCouponResponse, Coupons } from "@/types/couponsTypes";
 import { applyCouponCodeApi } from "@/utils/couponsApi";
 import {
-  addToCartAPI,
-  getCartAPI,
-  updateCartItemAPI,
-  removeFromCartAPI,
-  mergeCartsAPI,
-} from "@/utils/cartApi";
-import {
   getGuestCart,
   addToGuestCart,
   removeFromGuestCart,
   updateGuestCartItem,
   clearGuestCart,
-  hasGuestCartItems,
 } from "@/utils/guestCart";
 import { fetchMultipleProductDetails } from "@/utils/productDetailsApi";
-import { useUserStore } from "./useUserStore";
+// Removed useUserStore and API imports as this store will now strictly handle Guest State
+// API State for logged-in users is handled by useCart (TanStack Query)
 
 interface CartStore {
   cart: Cart | null;
@@ -34,9 +27,9 @@ interface CartStore {
   addToCart: (productId: string, quantity: number) => Promise<void>;
   removeFromCart: (productId: string) => Promise<void>;
   updateCartItem: (productId: string, quantity: number) => Promise<void>;
-  fetchCart: () => Promise<void>;
+  fetchCart: () => Promise<void>; // actually initializeGuestCart
   clearCart: () => void;
-  mergeGuestCart: () => Promise<void>;
+  // mergeGuestCart removed - handled by useCart hook
   initializeCart: () => Promise<void>;
   applyCouponToCart: (
     code: string,
@@ -91,12 +84,6 @@ export const useCartStore = create<CartStore>((set, get) => {
      * Initialize cart - load from localStorage (guest) or fetch from backend (logged-in)
      */
     initializeCart: async () => {
-      const { user } = useUserStore.getState();
-
-      if (user) {
-        // Logged-in user: fetch from backend
-        await get().fetchCart();
-      } else {
         // Guest user: load from localStorage and fetch product details
         const guestCart = getGuestCart();
 
@@ -132,22 +119,15 @@ export const useCartStore = create<CartStore>((set, get) => {
             },
           });
         }
-      }
     },
 
     /**
      * Add item to cart
      */
     addToCart: async (productId: string, quantity: number) => {
-      const { user } = useUserStore.getState();
       set({ loading: true, error: null });
 
       try {
-        if (user) {
-          // Logged-in user: call backend API
-          const response = await addToCartAPI(productId, quantity);
-          set({ cart: response.cart, loading: false });
-        } else {
           // Guest user: save to localStorage and fetch product details
           const guestCart = addToGuestCart(productId, quantity);
 
@@ -173,7 +153,6 @@ export const useCartStore = create<CartStore>((set, get) => {
             },
             loading: false,
           });
-        }
 
         await reapplyCouponIfNeeded();
       } catch (error: any) {
@@ -189,15 +168,9 @@ export const useCartStore = create<CartStore>((set, get) => {
      * Remove item from cart
      */
     removeFromCart: async (productId: string) => {
-      const { user } = useUserStore.getState();
       set({ loading: true, error: null });
 
       try {
-        if (user) {
-          // Logged-in user: call backend API
-          const response = await removeFromCartAPI(productId);
-          set({ cart: response.cart, loading: false });
-        } else {
           // Guest user: update localStorage and refresh product details
           const guestCart = removeFromGuestCart(productId);
 
@@ -234,7 +207,7 @@ export const useCartStore = create<CartStore>((set, get) => {
               loading: false,
             });
           }
-        }
+        
         await reapplyCouponIfNeeded();
       } catch (error: any) {
         set({
@@ -249,15 +222,9 @@ export const useCartStore = create<CartStore>((set, get) => {
      * Update item quantity in cart
      */
     updateCartItem: async (productId: string, quantity: number) => {
-      const { user } = useUserStore.getState();
       set({ loading: true, error: null });
 
       try {
-        if (user) {
-          // Logged-in user: call backend API
-          const response = await updateCartItemAPI(productId, quantity);
-          set({ cart: response.cart, loading: false });
-        } else {
           // Guest user: update localStorage and refresh product details
           const guestCart = updateGuestCartItem(productId, quantity);
 
@@ -294,7 +261,6 @@ export const useCartStore = create<CartStore>((set, get) => {
               loading: false,
             });
           }
-        }
 
         await reapplyCouponIfNeeded();
       } catch (error: any) {
@@ -309,124 +275,24 @@ export const useCartStore = create<CartStore>((set, get) => {
     /**
      * Fetch cart from backend (logged-in users only)
      */
+    // MERGE logic removed - handled in useCart hook
+    mergeGuestCart: async () => {},
+
+    // Fetch Cart is also redundant but kept for interface compatibility (will just init)
     fetchCart: async () => {
-      const { user } = useUserStore.getState();
-
-      if (!user) {
-        // Guest user: load from localStorage and fetch product details
-        const guestCart = getGuestCart();
-
-        if (guestCart.items.length > 0) {
-          set({ loading: true });
-
-          // Fetch product details for all items
-          const productIds = guestCart.items.map((item) => item.productId);
-          const productDetails = await fetchMultipleProductDetails(productIds);
-
-          // Populate cart items with product details
-          const itemsWithDetails = guestCart.items.map((item) => ({
-            ...item,
-            product: productDetails[item.productId] || {
-              id: item.productId,
-              name: "Product",
-              price: 0,
-              brand: "",
-              image: null,
-            },
-          }));
-
-          set({
-            cart: {
-              items: itemsWithDetails,
-            },
-            loading: false,
-          });
-        } else {
-          set({
-            cart: {
-              items: [],
-            },
-          });
-        }
-        await reapplyCouponIfNeeded();
-        return;
-      }
-
-      set({ loading: true, error: null });
-
-      try {
-        const response = await getCartAPI();
-        set({ cart: response.cart, loading: false });
-        await reapplyCouponIfNeeded();
-      } catch (error: any) {
-        set({
-          error: error.message || "Failed to fetch cart",
-          loading: false,
-        });
-      }
+        await get().initializeCart();
     },
 
-    /**
-     * Clear cart
-     */
     clearCart: () => {
-      const { user } = useUserStore.getState();
-
-      if (!user) {
         // Guest user: clear localStorage
         clearGuestCart();
-      }
-
-      set({
-        cart: { items: [] },
-        error: null,
-        appliedCoupon: null,
-        couponDiscount: 0,
-        couponApplying: false,
-      });
-    },
-
-    /**
-     * Merge guest cart with logged-in user cart
-     * Called after user logs in
-     */
-    mergeGuestCart: async () => {
-      const { user } = useUserStore.getState();
-
-      if (!user) {
-        console.warn("Cannot merge cart: user not logged in");
-        return;
-      }
-
-      // Check if guest cart has items
-      if (!hasGuestCartItems()) {
-        // No guest cart items, just fetch user cart
-        await get().fetchCart();
-        return;
-      }
-
-      set({ loading: true, error: null });
-
-      try {
-        // Get guest cart from localStorage
-        const guestCart = getGuestCart();
-
-        // Call merge API
-        const response = await mergeCartsAPI(guestCart);
-
-        // Update cart state
-        set({ cart: response.cart, loading: false });
-
-        // Clear localStorage cart
-        clearGuestCart();
-        await reapplyCouponIfNeeded();
-      } catch (error: any) {
         set({
-          error: error.message || "Failed to merge carts",
-          loading: false,
+            cart: { items: [] },
+            error: null,
+            appliedCoupon: null,
+            couponDiscount: 0,
+            couponApplying: false,
         });
-        console.error("Cart merge error:", error);
-      }
     },
 
     applyCouponToCart: async (

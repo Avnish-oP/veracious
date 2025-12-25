@@ -2,13 +2,18 @@
 
 import { useEffect } from "react";
 import { useUserStore } from "@/store/useUserStore";
+import { useUser } from "@/hooks/useUser";
 
 export default function UserHydration() {
-  const fetchUser = useUserStore((state) => state.fetchUser);
+  const setUser = useUserStore((state) => state.setUser);
+  const { user, isLoading } = useUser();
 
   useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+    if (!isLoading) {
+        // If loading is done, sync the result (user or null) to the store
+        setUser(user);
+    }
+  }, [user, isLoading, setUser]);
 
   return null;
 }

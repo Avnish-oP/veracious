@@ -4,8 +4,10 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Minus, ShoppingBag, Trash2, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCartStore } from "@/store/useCartStore";
-import { useUserStore } from "@/store/useUserStore";
+// import { useCartStore } from "@/store/useCartStore";
+// import { useUserStore } from "@/store/useUserStore";
+import { useCart } from "@/hooks/useCart";
+import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/form-components";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
@@ -17,18 +19,18 @@ interface CartDrawerProps {
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const router = useRouter();
-  const { user } = useUserStore();
+  const { user } = useUser();
   const {
     cart,
-    loading,
+    isLoading: loading,
     updateCartItem,
     removeFromCart,
     getCartSummary,
-    getTotalItems,
-  } = useCartStore();
+    // getTotalItems,
+  } = useCart();
 
   const cartSummary = getCartSummary();
-  const totalItems = getTotalItems();
+  // const totalItems = getTotalItems();
 
   // Prevent body scroll when drawer is open
   useEffect(() => {

@@ -4,23 +4,19 @@ import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Heart, ShoppingBag, Trash2, ArrowLeft, PackageX } from "lucide-react";
-import { useWishlistStore } from "@/store/useWishlistStore";
 import { useCartStore } from "@/store/useCartStore";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
+import { useWishlist } from "@/hooks/useWishlist";
 
 export default function WishlistPage() {
   const router = useRouter();
-  const { items, isLoading, fetchWishlist, toggleItem } = useWishlistStore();
+  const { items, isLoading, toggleWishlist } = useWishlist();
   const { addToCart } = useCartStore();
 
-  useEffect(() => {
-    fetchWishlist();
-  }, [fetchWishlist]);
-
-  const handleRemoveFromWishlist = async (productId: string) => {
+  const handleRemoveFromWishlist = (productId: string) => {
     try {
-      await toggleItem(productId);
+      toggleWishlist(productId);
     } catch (error) {
       console.error("Failed to remove from wishlist:", error);
     }

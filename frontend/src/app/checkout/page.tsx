@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useCartStore } from "@/store/useCartStore";
-import { useUserStore } from "@/store/useUserStore";
+// import { useCartStore } from "@/store/useCartStore";
+// import { useUserStore } from "@/store/useUserStore";
+import { useCart } from "@/hooks/useCart";
+import { useUser } from "@/hooks/useUser";
 import {
   ShoppingBag,
   MapPin,
@@ -34,12 +36,12 @@ export default function CheckoutPage() {
     cart,
     getCartSummary,
     clearCart,
-    applyCouponToCart,
+    applyCoupon,
     removeCoupon,
     appliedCoupon,
     couponApplying,
-  } = useCartStore();
-  const { user } = useUserStore();
+  } = useCart();
+  const { user, isLoading: userLoading } = useUser();
   const { getLocation, loading: locationLoading } = useGeolocation();
 
   const [loading, setLoading] = useState(false);
@@ -76,20 +78,25 @@ export default function CheckoutPage() {
   const finalTotal = itemsTotal + SHIPPING_COST + gstAmount;
 
   useEffect(() => {
-    // Redirect if cart is empty
-    if (!cart || cart.items.length === 0) {
-      toast.error("Your cart is empty");
-      router.push("/cart");
-    }
+    // Wait for hydration
+    if (userLoading || cart === null) return;
 
     // Redirect if not logged in
     if (!user) {
       toast.error("Please login to continue");
       router.push("/auth/login");
-    } else {
-      fetchAddresses();
+      return;
     }
-  }, [cart, user, router]);
+
+    // Redirect if cart is empty
+    if (cart.items.length === 0) {
+      toast.error("Your cart is empty");
+      router.push("/cart");
+      return;
+    }
+
+    fetchAddresses();
+  }, [cart, user, router, userLoading]);
 
   const fetchAddresses = async () => {
     setLoadingAddresses(true);
@@ -137,7 +144,7 @@ export default function CheckoutPage() {
     }
 
     try {
-      await applyCouponToCart(couponInput.trim().toUpperCase());
+      await applyCoupon(couponInput.trim().toUpperCase());
       toast.success("Coupon applied successfully!");
     } catch (error: any) {
       toast.error(error.message || "Failed to apply coupon");
@@ -248,6 +255,17 @@ export default function CheckoutPage() {
     }
   };
 
+  if (userLoading || cart === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+           <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
+           <p className="text-gray-500 font-medium">Loading checkout...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!cart || !user) {
     return null;
   }
@@ -289,7 +307,17 @@ export default function CheckoutPage() {
               </div>
 
               {/* Saved Addresses List */}
-              {!showAddressForm && savedAddresses.length > 0 && (
+              {loadingAddresses ? (
+                <div className="mb-6 grid gap-4 grid-cols-1 md:grid-cols-2 animate-pulse">
+                  {[...Array(2)].map((_, i) => (
+                    <div key={i} className="p-4 border-2 border-gray-100 rounded-xl h-32 bg-gray-50/50">
+                      <div className="h-4 w-16 bg-gray-200 rounded-full mb-3" />
+                      <div className="h-4 w-3/4 bg-gray-200 rounded mb-2" />
+                      <div className="h-4 w-1/2 bg-gray-200 rounded" />
+                    </div>
+                  ))}
+                </div>
+              ) : !showAddressForm && savedAddresses.length > 0 ? (
                 <div className="mb-6 grid gap-4 grid-cols-1 md:grid-cols-2">
                   {savedAddresses.map((addr) => (
                     <div
@@ -326,10 +354,10 @@ export default function CheckoutPage() {
                     <span>Add New Address</span>
                   </button>
                 </div>
-              )}
+              ) : null}
 
               {/* Address Form */}
-              {(showAddressForm || savedAddresses.length === 0) && (
+              {!loadingAddresses && (showAddressForm || savedAddresses.length === 0) && (
                 <div className="space-y-4">
                   <div className="flex justify-end gap-3 mb-4">
                      {savedAddresses.length > 0 && (
@@ -542,6 +570,54 @@ export default function CheckoutPage() {
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
                 Order Summary
               </h2>
+
+              <div className="mb-6 space-y-3">
+                {appliedCoupon ? (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-amber-600 font-bold uppercase tracking-wider mb-1">
+                        Applied Coupon
+                      </p>
+                      <p className="font-mono font-bold text-gray-900 flex items-center gap-2">
+                        <Tag className="w-4 h-4 text-amber-500" />
+                        {appliedCoupon.code}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleRemoveCoupon}
+                      className="text-sm font-medium text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Tag className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value)}
+                        placeholder="Promo Code"
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent text-sm font-medium text-gray-900 placeholder-gray-400 transition-all uppercase"
+                      />
+                    </div>
+                    <button
+                      onClick={handleApplyCoupon}
+                      disabled={couponApplying || !couponInput.trim()}
+                      className="px-4 py-2 bg-gray-900 text-white font-medium rounded-xl hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+                    >
+                      {couponApplying ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Apply"
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-600">

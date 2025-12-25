@@ -120,7 +120,7 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   return (
     <section
       id="featured-products"
-      className="py-16 bg-gradient-to-b from-white to-gray-50"
+      className="py-2 bg-gradient-to-b from-white to-gray-50"
     >
       {/* Quick View Modal */}
       {quickViewProductId && (
@@ -139,15 +139,6 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <motion.div
-            className="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium mb-4"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", bounce: 0.4 }}
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Featured Collection
-          </motion.div>
 
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Discover Our{" "}
@@ -155,11 +146,6 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
               Premium Selection
             </span>
           </h2>
-
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Handpicked sunglasses from the world's most prestigious brands,
-            designed to elevate your style and protect your vision.
-          </p>
         </motion.div>
 
         {/* Filters and Controls */}

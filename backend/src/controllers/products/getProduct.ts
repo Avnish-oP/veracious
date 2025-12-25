@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const { page, limit = 10, search, category } = req.query;
+    const { page, limit = 10, search, category, gender } = req.query;
     const pageNum = Number(page) || 1;
     const take = Number(limit);
     const skip = (pageNum - 1) * take;
@@ -14,6 +14,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
       where.OR = [
         { name: { contains: String(search), mode: "insensitive" as const } },
         { brand: { contains: String(search), mode: "insensitive" as const } },
+        { tags: { has: String(search) } },
       ];
     }
 
@@ -21,6 +22,10 @@ export const getAllProducts = async (req: Request, res: Response) => {
       where.categories = {
         some: { id: String(category) },
       };
+    }
+
+    if (gender) {
+      where.gender = String(gender).toUpperCase();
     }
 
     const [products, total] = await Promise.all([

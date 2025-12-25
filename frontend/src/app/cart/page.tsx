@@ -4,8 +4,10 @@ import React from "react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useCartStore } from "@/store/useCartStore";
-import { useUserStore } from "@/store/useUserStore";
+// import { useCartStore } from "@/store/useCartStore";
+// import { useUserStore } from "@/store/useUserStore";
+import { useCart } from "@/hooks/useCart";
+import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/form-components";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
@@ -25,19 +27,19 @@ import {
 
 export default function CartPage() {
   const router = useRouter();
-  const { user } = useUserStore();
+  const { user } = useUser();
   const {
     cart,
-    loading,
+    isLoading: loading,
     updateCartItem,
     removeFromCart,
     getCartSummary,
     getTotalItems,
-    applyCouponToCart,
+    applyCoupon,
     removeCoupon,
     appliedCoupon,
     couponApplying,
-  } = useCartStore();
+  } = useCart();
 
   const cartSummary = getCartSummary();
   const totalItems = getTotalItems();
@@ -91,7 +93,7 @@ export default function CartPage() {
     }
 
     try {
-      await applyCouponToCart(couponInput.trim().toUpperCase());
+      await applyCoupon(couponInput.trim().toUpperCase());
       toast.success("Coupon applied successfully");
     } catch (error: any) {
       toast.error(error.message || "Failed to apply coupon");
@@ -101,7 +103,7 @@ export default function CartPage() {
   const handleSelectSuggestedCoupon = async (code: string) => {
     setCouponInput(code);
     try {
-      await applyCouponToCart(code);
+      await applyCoupon(code);
       toast.success(`${code} applied`);
     } catch (error: any) {
       toast.error(error.message || "Failed to apply coupon");

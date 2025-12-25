@@ -1,22 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
-import { useWishlistStore } from "@/store/useWishlistStore";
 import { useUserStore } from "@/store/useUserStore";
+import { useWishlist } from "@/hooks/useWishlist";
 
 export default function WishlistHydration() {
   const { user } = useUserStore();
-  const { fetchWishlist, clearWishlist } = useWishlistStore();
+  const { clearWishlist } = useWishlist();
 
   useEffect(() => {
-    if (user) {
-      // Fetch wishlist when user is logged in
-      fetchWishlist();
-    } else {
-      // Clear wishlist when user logs out
-      clearWishlist();
+    if (!user) {
+        clearWishlist();
     }
-  }, [user, fetchWishlist, clearWishlist]);
+  }, [user, clearWishlist]);
 
   return null;
 }

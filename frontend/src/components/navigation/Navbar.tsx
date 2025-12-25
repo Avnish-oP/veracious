@@ -19,9 +19,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
-import { useUserStore } from "@/store/useUserStore";
-import { useCartStore } from "@/store/useCartStore";
-import { useWishlistStore } from "@/store/useWishlistStore";
+// import { useUserStore } from "@/store/useUserStore"; // Keeping for now if needed, but likely removing
+// import { useCartStore } from "@/store/useCartStore";
+import { useWishlist } from "@/hooks/useWishlist";
+import { useCart } from "@/hooks/useCart";
+import { useUser } from "@/hooks/useUser";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import Image from "next/image";
 import { fetchCategories } from "@/utils/api";
@@ -36,7 +38,6 @@ const navigationBase: NavItem[] = [
   { label: "Home", href: "/" },
   { label: "Categories", href: "/categories" },
   { label: "Featured", href: "/featured" },
-  { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -54,12 +55,11 @@ export const Navbar: React.FC = () => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
-  const { user, loading, logout } = useUserStore();
-  const { getTotalItems } = useCartStore();
-  const { getWishlistCount } = useWishlistStore();
+  const { user, isLoading: loading, logout } = useUser();
+  const { getTotalItems } = useCart();
+  const { count: wishlistItemCount } = useWishlist();
 
   const cartItemCount = getTotalItems();
-  const wishlistItemCount = getWishlistCount();
   console.log("User in Navbar:", user);
 
   // Handle scroll effect
@@ -410,16 +410,6 @@ export const Navbar: React.FC = () => {
                           <User className="w-4 h-4 mr-3" />
                           Profile
                         </button>
-                        <button
-                          onClick={() => {
-                            router.push("/dashboard");
-                            setUserDropdownOpen(false);
-                          }}
-                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <Settings className="w-4 h-4 mr-3" />
-                          Dashboard
-                        </button>
                         <hr className="my-1" />
                         <button
                           onClick={handleLogout}
@@ -642,16 +632,6 @@ export const Navbar: React.FC = () => {
                     >
                       <User className="w-4 h-4 mr-3" />
                       Profile
-                    </button>
-                    <button
-                      onClick={() => {
-                        router.push("/dashboard");
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="flex items-center w-full px-3 py-2 text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg"
-                    >
-                      <Settings className="w-4 h-4 mr-3" />
-                      Dashboard
                     </button>
                     <button
                       onClick={handleLogout}

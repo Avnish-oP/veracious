@@ -144,14 +144,16 @@ export const useProducts = ({
   limit = 10,
   search,
   category,
+  gender,
 }: {
   page?: number;
   limit?: number;
   search?: string;
   category?: string;
+  gender?: string;
 } = {}) => {
   return useQuery({
-    queryKey: ["products", { page, limit, search, category }],
+    queryKey: ["products", { page, limit, search, category, gender }],
     queryFn: () => fetchProducts({ page, limit, search, category }),
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: (failureCount, error: any) => {

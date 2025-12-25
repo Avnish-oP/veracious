@@ -8,7 +8,9 @@ import { Sparkles, Sun, Glasses } from "lucide-react";
 import { RegistrationState, Step1FormData } from "@/types/registrationTypes";
 import { useLoginMutation } from "@/hooks/useRegistration";
 import { useUserStore } from "@/store/useUserStore";
-import { useCartStore } from "@/store/useCartStore";
+import { useCart } from "@/hooks/useCart";
+import { useQueryClient } from "@tanstack/react-query";
+import { USER_QUERY_KEY } from "@/hooks/useUser";
 import { Progress } from "@/components/ui/form-components";
 import { Step1Form } from "./Step1Form";
 import { Step2Form } from "./Step2Form";
@@ -18,8 +20,9 @@ export const RegistrationFlow: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const loginMutation = useLoginMutation();
-  const { fetchUser } = useUserStore();
-  const { mergeGuestCart } = useCartStore();
+  // const { fetchUser } = useUserStore();
+  const queryClient = useQueryClient();
+  const { mergeGuestCart } = useCart();
 
   const [registrationState, setRegistrationState] =
     React.useState<RegistrationState>({
@@ -89,7 +92,14 @@ export const RegistrationFlow: React.FC = () => {
           email: registrationState.step1Data.email,
           password: registrationState.step1Data.password,
         });
-        await fetchUser(); // Fetch user data after successful login
+        // await fetchUser(); // Fetch user data after successful login
+        await queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
+
+        // Manually sync store
+        const user = queryClient.getQueryData<any>(USER_QUERY_KEY);
+        if (user) {
+            useUserStore.getState().setUser(user);
+        }
 
         // Merge guest cart with user cart
         await mergeGuestCart();
@@ -115,7 +125,14 @@ export const RegistrationFlow: React.FC = () => {
           email: registrationState.step1Data.email,
           password: registrationState.step1Data.password,
         });
-        await fetchUser(); // Fetch user data after successful login
+        // await fetchUser(); // Fetch user data after successful login
+        await queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
+
+        // Manually sync store
+        const user = queryClient.getQueryData<any>(USER_QUERY_KEY);
+        if (user) {
+            useUserStore.getState().setUser(user);
+        }
 
         // Merge guest cart with user cart
         await mergeGuestCart();

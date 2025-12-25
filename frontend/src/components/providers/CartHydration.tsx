@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useCartStore } from "@/store/useCartStore";
-import { useUserStore } from "@/store/useUserStore";
 
 /**
  * CartHydration component
@@ -10,14 +9,10 @@ import { useUserStore } from "@/store/useUserStore";
  */
 export default function CartHydration() {
   const { initializeCart } = useCartStore();
-  const { user, loading } = useUserStore();
 
   useEffect(() => {
-    // Wait for user loading to complete before initializing cart
-    if (!loading) {
-      initializeCart();
-    }
-  }, [user, loading, initializeCart]);
+     initializeCart();
+  }, [initializeCart]);
 
   return null;
 }

@@ -1,19 +1,26 @@
 import {
   Step1FormData,
-  Step2FormData,
-  Step3FormData,
   RegistrationResponse,
   VerificationResponse,
   Step3Response,
-  ApiError,
 } from "@/types/registrationTypes";
+import { AxiosRequestConfig } from "axios";
+
+export interface ExtendedApiError extends Error {
+  status?: number;
+  data?: unknown;
+}
+
+export interface ApiCallConfig extends AxiosRequestConfig {
+  body?: string;
+}
 
 import api from "../lib/axios";
 
 // Generic API call function with proper error handling
 async function apiCall<T>(
   endpoint: string,
-  options: any = {} // Changed to any to accept axios config
+  options: ApiCallConfig = {}
 ): Promise<T> {
   try {
     const response = await api({
@@ -23,8 +30,9 @@ async function apiCall<T>(
       ...options
     });
     return response.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
-    const customError = new Error(error.response?.data?.message || error.message || "An error occurred") as any;
+    const customError = new Error(error.response?.data?.message || error.message || "An error occurred") as ExtendedApiError;
     customError.data = error.response?.data;
     customError.status = error.response?.status;
     throw customError;
@@ -113,31 +121,32 @@ export const resetPassword = async (data: {
 };
 
 // Fetch categories from backend
-export const fetchCategories = async (): Promise<any> => {
-  return apiCall<any>("/categories");
+export const fetchCategories = async (): Promise<unknown> => {
+  return apiCall<unknown>("/categories");
 };
 
 // Fetch user orders
-export const fetchOrders = async (): Promise<any> => {
-  return apiCall<any>("/orders");
+export const fetchOrders = async (): Promise<unknown> => {
+  return apiCall<unknown>("/orders");
 };
 
 // Fetch user addresses
-export const fetchAddresses = async (): Promise<any> => {
-  return apiCall<any>("/address");
+export const fetchAddresses = async (): Promise<unknown> => {
+  return apiCall<unknown>("/address");
 };
 
 // Add new address
-export const addAddress = async (data: any): Promise<any> => {
-  return apiCall<any>("/address/add", {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const addAddress = async (data: any): Promise<unknown> => {
+  return apiCall<unknown>("/address/add", {
     method: "POST",
     body: JSON.stringify(data),
   });
 };
 
 // Delete address
-export const deleteAddress = async (id: string): Promise<any> => {
-  return apiCall<any>(`/address/${id}`, {
+export const deleteAddress = async (id: string): Promise<unknown> => {
+  return apiCall<unknown>(`/address/${id}`, {
     method: "DELETE",
   });
 };

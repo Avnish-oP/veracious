@@ -146,6 +146,7 @@ export default function CheckoutPage() {
     try {
       await applyCoupon(couponInput.trim().toUpperCase());
       toast.success("Coupon applied successfully!");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message || "Failed to apply coupon");
     }
@@ -247,6 +248,7 @@ export default function CheckoutPage() {
       sessionStorage.setItem("orderAddress", JSON.stringify(address));
 
       router.push("/payment");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Error creating order:", error);
       toast.error(error.message || "Failed to create order");

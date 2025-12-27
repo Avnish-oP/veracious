@@ -32,7 +32,7 @@ export default function ProductDetailPage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Product Not Found</h2>
           <p className="text-gray-600 mb-6">
-            We couldn't find the product you're looking for. It might have been removed or doesn't exist.
+            We couldn&apos;t find the product you&apos;re looking for. It might have been removed or doesn&apos;t exist.
           </p>
           <Button onClick={() => router.push("/products")} className="w-full">
             Back to Products

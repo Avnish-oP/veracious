@@ -87,7 +87,7 @@ export default function LoginPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.6 }}
           >
-            Continue your journey with the world's finest eyewear collection
+            Continue your journey with the world&apos;s finest eyewear collection
           </motion.p>
         </motion.div>
       </div>

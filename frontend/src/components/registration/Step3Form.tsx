@@ -4,7 +4,6 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  User,
   Glasses,
   CheckCircle,
   SkipForward,
@@ -191,7 +190,7 @@ export const Step3Form: React.FC<Step3Props> = ({
                 <Glasses className="w-4 h-4 text-white" />
               </div>
               <label className="text-lg font-semibold text-slate-800">
-                What's your face shape?
+                What&apos;s your face shape?
               </label>
             </div>
             <Select
@@ -337,7 +336,7 @@ export const Step3Form: React.FC<Step3Props> = ({
               whileTap={{ scale: 0.98 }}
             >
               <SkipForward className="w-4 h-4 mr-2" />
-              Skip for now - I'll set this up later
+              Skip for now - I&apos;ll set this up later
             </motion.button>
           </motion.div>
         </form>

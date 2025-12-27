@@ -45,6 +45,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
       await queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
       
       // Manually sync store to ensure mergeGuestCart has access to the user
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const user = queryClient.getQueryData<any>(USER_QUERY_KEY);
       if (user) {
           useUserStore.getState().setUser(user);
@@ -55,6 +56,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
 
       toast.success("Welcome back!");
       router.push("/");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.status === 403 && error.data?.userId) {
         toast.error("Account not verified. Redirecting to verification...", { duration: 4000 });

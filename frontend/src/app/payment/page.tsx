@@ -112,6 +112,7 @@ export default function PaymentPage() {
               setPaymentStatus("failed");
               toast.error("Payment verification failed");
             }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (error: any) {
             console.error("Payment verification error:", error);
             setPaymentStatus("failed");
@@ -139,6 +140,7 @@ export default function PaymentPage() {
       // Open Razorpay checkout
       const razorpay = new window.Razorpay(options);
       razorpay.open();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Payment error:", error);
       toast.error(error.message || "Failed to initiate payment");

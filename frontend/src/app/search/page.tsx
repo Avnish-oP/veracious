@@ -1,22 +1,26 @@
 "use client";
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { searchProducts } from "@/services/search";
 import { ProductCard } from "@/components/ui/ProductCard";
+import { Product } from "@/types/productTypes";
 import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 
-export default function SearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get("query");
   
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   const [filter, setFilter] = useState(""); 
+  /* eslint-enable @typescript-eslint/no-unused-vars */ 
   const [sort, setSort] = useState("");
   
   // Ref for intersection observer
@@ -73,7 +77,7 @@ export default function SearchPage() {
               
               setResults(prev => {
                   const existingIds = new Set(prev.map(p => p.id));
-                  const newUnique = formatted.filter((p: any) => !existingIds.has(p.id));
+                  const newUnique = formatted.filter((p: Product) => !existingIds.has(p.id));
                   return [...prev, ...newUnique];
               });
               if (data.length < 20) setHasMore(false); 
@@ -88,7 +92,9 @@ export default function SearchPage() {
   }, [offset, query, filter, sort]);
 
 
-  const formatResults = (data: any[]) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const formatResults = (data: any[]): Product[] => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return data.map((hit: any) => ({
           id: hit.id,
           name: hit.metadata?.name || hit.content?.name || "Unknown Product",
@@ -109,7 +115,7 @@ export default function SearchPage() {
           frameColor: hit.metadata?.frameColor,
           lensType: hit.metadata?.lensType,
           gender: hit.metadata?.gender,
-      }));
+      })) as unknown as Product[];
   }
 
   return (
@@ -117,7 +123,7 @@ export default function SearchPage() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            Search Results for "{query}"
+            Search Results for &quot;{query}&quot;
           </h1>
           <p className="text-gray-600 mt-2">
              {/* Note: Total count isn't returned by generic search usually unless asked. We show rendered count. */}
@@ -198,4 +204,16 @@ export default function SearchPage() {
       </div>
     </div>
   );
+}
+
+export default function SearchPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen pt-20">
+                <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
+            </div>
+        }>
+            <SearchContent />
+        </Suspense>
+    )
 }

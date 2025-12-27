@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Package, Calendar, ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ interface Order {
   totalAmount: number;
   status: string;
   createdAt: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   items: any[];
 }
 
@@ -33,7 +34,7 @@ export const OrderHistory: React.FC = () => {
           <Package className="w-8 h-8 text-gray-400" />
         </div>
         <h3 className="text-lg font-medium text-gray-900 mb-2">No orders yet</h3>
-        <p className="text-gray-500 mb-6">Looks like you haven't made any purchases yet.</p>
+        <p className="text-gray-500 mb-6">Looks like you haven&apos;t made any purchases yet.</p>
         <button
           onClick={() => router.push("/products")}
           className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"

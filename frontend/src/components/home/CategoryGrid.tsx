@@ -6,7 +6,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/utils/cn";
 import { fetchCategories } from "@/utils/api";
-import { Category } from "@/types/productTypes";
+// Category type unused in this file, removing import
 
 // Fallback/Static images mapping based on category names or types
 const getCategoryImage = (name: string) => {
@@ -47,12 +47,13 @@ export const CategoryGrid: React.FC = () => {
     const loadCategories = async () => {
       try {
         const res = await fetchCategories();
-        const apiCats: any[] = res.categories || [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const apiCats: any[] = (res as any).categories || [];
 
         // Prioritize: Men, Women, Unisex, then others
         // We want to fill 4 slots: 1 Large, 2 Normal, 1 Wide
         
-        let mapped: GridCategory[] = [];
+        const mapped: GridCategory[] = [];
         
         // Helper to find and map specific categories
         const findAndMap = (keyword: string, size: "large" | "normal" | "wide", desc: string) => {
@@ -75,10 +76,10 @@ export const CategoryGrid: React.FC = () => {
         };
 
         // 1. Slot 1 (Large): Men
-        const hasMen = findAndMap("men", "large", "Sophisticated frames for the modern gentleman.");
+        findAndMap("men", "large", "Sophisticated frames for the modern gentleman.");
         
         // 2. Slot 2 (Normal): Women
-        const hasWomen = findAndMap("women", "normal", "Elegant styles for every occasion.");
+        findAndMap("women", "normal", "Elegant styles for every occasion.");
 
         // 3. Slot 3 (Normal): Unisex or Kids or shape
         if (!findAndMap("unisex", "normal", "Versatile designs for everyone.")) {

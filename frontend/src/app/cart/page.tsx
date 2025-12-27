@@ -56,7 +56,7 @@ export default function CartPage() {
   ) => {
     try {
       await updateCartItem(productId, currentQuantity + 1);
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to update quantity");
     }
   };
@@ -72,7 +72,7 @@ export default function CartPage() {
       } else {
         await updateCartItem(productId, currentQuantity - 1);
       }
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to update quantity");
     }
   };
@@ -81,7 +81,7 @@ export default function CartPage() {
     try {
       await removeFromCart(productId);
       toast.success("Item removed from cart");
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to remove item");
     }
   };
@@ -95,6 +95,7 @@ export default function CartPage() {
     try {
       await applyCoupon(couponInput.trim().toUpperCase());
       toast.success("Coupon applied successfully");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message || "Failed to apply coupon");
     }
@@ -105,6 +106,7 @@ export default function CartPage() {
     try {
       await applyCoupon(code);
       toast.success(`${code} applied`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message || "Failed to apply coupon");
     }
@@ -211,7 +213,7 @@ export default function CartPage() {
               Your cart is empty
             </h2>
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Looks like you haven't added anything to your cart yet. Start
+              Looks like you haven&apos;t added anything to your cart yet. Start
               shopping to find amazing products!
             </p>
             <Button

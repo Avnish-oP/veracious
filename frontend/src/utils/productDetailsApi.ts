@@ -35,6 +35,7 @@ export const fetchMultipleProductDetails = async (productIds: string[]) => {
     const products = await Promise.all(promises);
 
     // Create a map of productId -> product details
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const productMap: Record<string, any> = {};
     products.forEach((product, index) => {
       if (product) {

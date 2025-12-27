@@ -155,9 +155,9 @@ export const useCartStore = create<CartStore>((set, get) => {
         });
 
         await reapplyCouponIfNeeded();
-      } catch (error: any) {
+      } catch (error) {
         set({
-          error: error.message || "Failed to add item to cart",
+          error: error instanceof Error ? error.message : "Failed to add item to cart",
           loading: false,
         });
         throw error;
@@ -207,9 +207,9 @@ export const useCartStore = create<CartStore>((set, get) => {
         }
 
         await reapplyCouponIfNeeded();
-      } catch (error: any) {
+      } catch (error) {
         set({
-          error: error.message || "Failed to remove item from cart",
+          error: error instanceof Error ? error.message : "Failed to remove item from cart",
           loading: false,
         });
         throw error;
@@ -259,9 +259,9 @@ export const useCartStore = create<CartStore>((set, get) => {
         }
 
         await reapplyCouponIfNeeded();
-      } catch (error: any) {
+      } catch (error) {
         set({
-          error: error.message || "Failed to update cart item",
+          error: error instanceof Error ? error.message : "Failed to update cart item",
           loading: false,
         });
         throw error;
@@ -329,11 +329,11 @@ export const useCartStore = create<CartStore>((set, get) => {
         });
 
         return response;
-      } catch (error: any) {
+      } catch (error) {
         if (!silent) {
           set({
             couponApplying: false,
-            error: error.message || "Failed to apply coupon",
+            error: error instanceof Error ? error.message : "Failed to apply coupon",
           });
         }
         throw error;

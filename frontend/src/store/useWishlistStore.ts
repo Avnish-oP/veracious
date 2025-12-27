@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { AxiosError } from "axios";
 import { WishlistItem } from "@/types/wishlistTypes";
 import { fetchWishlist, toggleWishlistItem } from "@/utils/wishlistApi";
 
@@ -29,10 +30,11 @@ export const useWishlistStore = create<WishlistState>()(
         try {
           const data = await fetchWishlist();
           set({ items: data.items, isLoading: false });
-        } catch (error: any) {
+        } catch (error) {
           console.error("Error fetching wishlist:", error);
           set({
-            error: error.response?.data?.message || "Failed to fetch wishlist",
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            error: ((error as AxiosError).response?.data as any)?.message || "Failed to fetch wishlist",
             isLoading: false,
           });
         }
@@ -62,10 +64,11 @@ export const useWishlistStore = create<WishlistState>()(
             // Refetch to get the complete item data with product details
             await get().fetchWishlist();
           }
-        } catch (error: any) {
+        } catch (error) {
           console.error("Error toggling wishlist item:", error);
           set({
-            error: error.response?.data?.message || "Failed to update wishlist",
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            error: ((error as AxiosError).response?.data as any)?.message || "Failed to update wishlist",
             isLoading: false,
           });
         }

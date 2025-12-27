@@ -70,7 +70,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       lg: "h-14 px-8 text-lg rounded-xl",
     };
 
-    const { onDrag, onDragEnd, onDragStart, ...buttonProps } = props;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { onDrag: _onDrag, onDragEnd: _onDragEnd, onDragStart: _onDragStart, ...buttonProps } = props;
 
     return (
       <button
@@ -764,14 +765,22 @@ export const Card = ({
 
   // Filter out conflicting event handlers
   const {
-    onDrag,
-    onDragEnd,
-    onDragStart,
-    draggable,
-    onAnimationStart,
-    onAnimationEnd,
-    onAnimationIteration,
-    onTransitionEnd,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onDrag: _onDrag,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onDragEnd: _onDragEnd,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onDragStart: _onDragStart,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    draggable: _draggable,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onAnimationStart: _onAnimationStart,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onAnimationEnd: _onAnimationEnd,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onAnimationIteration: _onAnimationIteration,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    onTransitionEnd: _onTransitionEnd,
     ...safeProps
   } = props;
 

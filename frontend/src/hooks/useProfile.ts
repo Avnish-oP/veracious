@@ -13,7 +13,8 @@ export const useOrdersQuery = () => {
     queryKey: ["orders"],
     queryFn: fetchOrders,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    select: (data) => data.orders,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    select: (data: any) => data.orders,
   });
 };
 
@@ -38,7 +39,7 @@ export const useAddAddressMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
       toast.success("Address added successfully");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Failed to add address");
     },
   });
@@ -54,7 +55,7 @@ export const useDeleteAddressMutation = () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
       toast.success("Address deleted successfully");
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Failed to delete address");
     },
   });

@@ -61,7 +61,7 @@ export function useWishlist() {
       }
       toast.error("Failed to update wishlist");
     },
-    onSuccess: (data, productId) => {
+    onSuccess: (_data, _productId) => {
         // Invalidate to refetch the true state (especially to get full product details after adding)
         queryClient.invalidateQueries({ queryKey: WISHLIST_QUERY_KEY });
         

@@ -48,7 +48,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     }
   }, [product, addToRecentlyViewed]);
 
-  const [mainImage, setMainImage] = useState(product.image);
+  // const [mainImage, setMainImage] = useState(product.image); // Unused
   const {
     data: couponsData,
     isLoading: couponsLoading,
@@ -64,16 +64,16 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   const coupons = couponsData?.coupons ?? fallbackCoupons;
   const hasCoupons = coupons.length > 0;
   const visibleCoupons = showAllCoupons ? coupons : coupons.slice(0, 3);
-  const couponErrorMessage = couponsError
-    ? "Unable to load coupons right now."
-    : null;
+  // const couponErrorMessage = couponsError
+  //   ? "Unable to load coupons right now."
+  //   : null;
 
   const handleAddToCart = async () => {
     setIsAddingToCart(true);
     try {
       await addToCart(product.id, quantity);
       toast.success(`${product.name} added to cart!`);
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to add to cart");
     } finally {
       setIsAddingToCart(false);
@@ -85,7 +85,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     try {
       await addToCart(product.id, quantity);
       router.push("/cart");
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to add to cart");
       setIsAddingToCart(false);
     }

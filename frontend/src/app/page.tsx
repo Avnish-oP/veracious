@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import {
@@ -25,38 +26,11 @@ import {
   RefreshCw,
   Phone,
 } from "lucide-react";
-import { Button } from "@/components/ui/form-components";
 
-const features = [
-  {
-    icon: Shield,
-    title: "Perfect Fit Guarantee",
-    description:
-      "Our advanced face shape analysis ensures you find frames that complement your unique features perfectly.",
-    color: "blue",
-  },
-  {
-    icon: Award,
-    title: "Premium Quality",
-    description:
-      "Curated collection of high-quality frames from trusted brands with lifetime warranties and excellent support.",
-    color: "emerald",
-  },
-  {
-    icon: Sparkles,
-    title: "Face Shape Analysis",
-    description:
-      "Advanced AI technology to determine your face shape and find the most flattering frames for your style.",
-    color: "purple",
-  },
-];
 
-const stats = [
-  { icon: Users, label: "Happy Customers", value: "50,000+" },
-  { icon: Star, label: "Average Rating", value: "4.9/5" },
-  { icon: Award, label: "Premium Brands", value: "100+" },
-  { icon: Truck, label: "Free Shipping", value: "Worldwide" },
-];
+// features array removed (unused)
+
+// stats array removed (unused)
 
 export default function Home() {
   const router = useRouter();
@@ -85,14 +59,7 @@ export default function Home() {
 
   const isLoading = allLoading || featuredLoading || trendingLoading;
 
-  const getColorClasses = (color: string) => {
-    const colors = {
-      blue: "bg-blue-100 text-blue-600",
-      emerald: "bg-emerald-100 text-emerald-600",
-      purple: "bg-purple-100 text-purple-600",
-    };
-    return colors[color as keyof typeof colors] || colors.blue;
-  };
+  // getColorClasses removed (unused)
 
   return (
     <div className="min-h-screen bg-white">
@@ -156,36 +123,36 @@ export default function Home() {
               <h3 className="font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <a
+                  <Link
                     href="/products"
                     className="hover:text-white transition-colors duration-200"
                   >
                     All Products
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
+                  <Link
                     href="/featured"
                     className="hover:text-white transition-colors duration-200"
                   >
                     Featured
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
+                  <Link
                     href="/categories"
                     className="hover:text-white transition-colors duration-200"
                   >
                     Categories
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a
+                   <Link
                     href="/brands"
                     className="hover:text-white transition-colors duration-200"
                   >
                     Brands
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>

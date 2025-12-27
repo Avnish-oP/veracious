@@ -306,7 +306,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           transition={{ delay: 0.9, duration: 0.5 }}
         >
           <p className="text-xs text-slate-500">
-            After resetting your password, you'll be automatically redirected to
+            After resetting your password, you&apos;ll be automatically redirected to
             the login page
           </p>
         </motion.div>

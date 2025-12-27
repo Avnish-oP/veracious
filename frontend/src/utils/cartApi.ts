@@ -7,13 +7,15 @@ import {
 } from "@/types/cartTypes";
 
 import api from "../lib/axios";
+import { ApiCallConfig } from "./api";
+import { AxiosError } from "axios";
 
 /**
  * Generic API call function with proper error handling
  */
 async function cartApiCall<T>(
   endpoint: string,
-  options: any = {}
+  options: ApiCallConfig = {}
 ): Promise<T> {
   try {
     const response = await api({
@@ -23,8 +25,10 @@ async function cartApiCall<T>(
       ...options
     });
     return response.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.message || "An error occurred");
+  } catch (error) {
+    const err = error as AxiosError;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    throw new Error((err.response?.data as any)?.message || "An error occurred");
   }
 }
 

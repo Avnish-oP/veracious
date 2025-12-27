@@ -4,11 +4,12 @@ import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
-import { Sparkles, Sun, Glasses } from "lucide-react";
+import { Glasses } from "lucide-react";
 import { RegistrationState, Step1FormData } from "@/types/registrationTypes";
 import { useLoginMutation } from "@/hooks/useRegistration";
 import { useUserStore } from "@/store/useUserStore";
 import { useCart } from "@/hooks/useCart";
+import { User } from "@/types/userTypes";
 import { useQueryClient } from "@tanstack/react-query";
 import { USER_QUERY_KEY } from "@/hooks/useUser";
 import { Progress } from "@/components/ui/form-components";
@@ -39,7 +40,8 @@ export const RegistrationFlow: React.FC = () => {
         ...prev,
         currentStep: 2,
         userId: userIdParam,
-        step1Data: { email: emailParam } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        step1Data: { email: emailParam } as any, // TODO: Fix proper type
       }));
     }
   }, [searchParams]);
@@ -62,7 +64,8 @@ export const RegistrationFlow: React.FC = () => {
     );
   };
 
-  // Step 1 Back Handler (go to login)
+  // Step 1 Back Handler (go to login) - Unused but kept for logic if needed
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleStep1Back = () => {
     router.push("/auth/login");
   };
@@ -96,6 +99,7 @@ export const RegistrationFlow: React.FC = () => {
         await queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
 
         // Manually sync store
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const user = queryClient.getQueryData<any>(USER_QUERY_KEY);
         if (user) {
             useUserStore.getState().setUser(user);
@@ -129,6 +133,7 @@ export const RegistrationFlow: React.FC = () => {
         await queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
 
         // Manually sync store
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const user = queryClient.getQueryData<any>(USER_QUERY_KEY);
         if (user) {
             useUserStore.getState().setUser(user);

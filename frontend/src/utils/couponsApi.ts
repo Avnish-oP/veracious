@@ -5,10 +5,12 @@ import {
 } from "@/types/couponsTypes";
 
 import api from "../lib/axios";
+import { ApiCallConfig } from "./api";
+import { AxiosError } from "axios";
 
 async function couponApiCall<T>(
   endpoint: string,
-  options: any = {}
+  options: ApiCallConfig = {}
 ): Promise<T> {
   try {
     const response = await api({
@@ -18,8 +20,11 @@ async function couponApiCall<T>(
       ...options
     });
     return response.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.message || error.response?.data?.error || "Failed to process request");
+  } catch (error) {
+    const err = error as AxiosError;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = err.response?.data as any;
+    throw new Error(data?.message || data?.error || "Failed to process request");
   }
 }
 

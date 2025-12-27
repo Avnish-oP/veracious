@@ -1,12 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Search,
-  Filter,
-  SlidersHorizontal,
   Loader2,
   Grid3X3,
   List,
@@ -18,14 +15,13 @@ import {
 } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { Pagination } from "@/components/ui/Pagination";
-import { Input } from "@/components/ui/form-components";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "react-hot-toast";
 import { Product } from "@/types/productTypes";
 import { cn } from "@/utils/cn";
 import { QuickViewModal } from "@/components/products/QuickViewModal";
 
-export default function ProductsPage() {
+function ProductsContent() {
   const searchParams = useSearchParams();
   const filterParam = searchParams.get("filter") || "all";
   const { addToCart, isUserLoading } = useCart();
@@ -105,10 +101,7 @@ export default function ProductsPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    setPage(1); // Reset to first page when searching
-  };
+
 
   // Handle add to cart
   const handleAddToCart = async (product: Product) => {
@@ -119,7 +112,7 @@ export default function ProductsPage() {
     try {
       await addToCart(product.id, 1);
       toast.success(`${product.name} added to cart!`);
-    } catch (error) {
+    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to add item to cart");
     }
   };
@@ -291,4 +284,16 @@ export default function ProductsPage() {
       </div>
     </div>
   );
+}
+
+export default function ProductsPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center pt-20">
+                <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
+            </div>
+        }>
+            <ProductsContent />
+        </Suspense>
+    )
 }

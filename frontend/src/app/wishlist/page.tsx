@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Heart, ShoppingBag, Trash2, ArrowLeft, PackageX } from "lucide-react";
+import Image from "next/image";
 import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
@@ -125,10 +126,12 @@ export default function WishlistPage() {
               >
                 {/* Product Image */}
                 <div className="relative aspect-[4/3] overflow-hidden bg-gray-50">
-                  <img
+                  <Image
                     src={item.product.image || "/placeholder-product.png"}
                     alt={item.product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
 
                   {/* Remove Button */}

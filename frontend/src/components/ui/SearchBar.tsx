@@ -6,6 +6,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSearchSuggestions } from "@/services/search";
 import { cn } from "@/utils/cn";
+import Image from "next/image";
+
+interface SearchSuggestion {
+  id: string;
+  text: string;
+  image?: string;
+  price?: number | string;
+}
 
 interface SearchBarProps {
   onClose?: () => void;
@@ -17,7 +25,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onClose, className, autoFo
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("query") || "";
   const [query, setQuery] = useState(initialQuery);
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -29,7 +37,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onClose, className, autoFo
         // setQuery(currentQuery); // Actually, we might not want to overwrite user typing if they are typing.
         // Let's just initialize it.
     }
-  }, [searchParams]);
+  }, [searchParams, query, isOpen]);
 
   // Debounce logic
   useEffect(() => {
@@ -115,7 +123,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onClose, className, autoFo
                   >
                     {item.image ? (
                         <div className="w-10 h-10 relative flex-shrink-0">
-                            <img src={item.image} alt={item.text} className="w-full h-full object-cover rounded-md" />
+                            <Image src={item.image} alt={item.text} fill className="object-cover rounded-md" sizes="40px" />
                         </div>
                     ) : (
                         <div className="w-10 h-10 bg-gray-200 rounded-md flex items-center justify-center flex-shrink-0">

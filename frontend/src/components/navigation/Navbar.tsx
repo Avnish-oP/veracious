@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Glasses,
   Search,
   ShoppingCart,
   User,
@@ -15,7 +14,6 @@ import {
   Heart,
   Sparkles,
   LogOut,
-  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
@@ -27,6 +25,7 @@ import { useUser } from "@/hooks/useUser";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import Image from "next/image";
 import { fetchCategories } from "@/utils/api";
+import { Category } from "@/types/productTypes";
 
 interface NavItem {
   label: string;
@@ -47,8 +46,8 @@ export const Navbar: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
   const [navigation, setNavigation] = useState<NavItem[]>(navigationBase);
-  const [categoryChildren, setCategoryChildren] = useState<NavItem[]>([]);
-  const [categoriesRaw, setCategoriesRaw] = useState<any[]>([]);
+  // categoryChildren state removed as it was unused
+  const [categoriesRaw, setCategoriesRaw] = useState<Category[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -84,14 +83,15 @@ export const Navbar: React.FC = () => {
     (async () => {
       try {
         const res = await fetchCategories();
-        const cats = res.categories || [];
-        const children = cats.map((c: any) => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cats = (res as any).categories || [];
+        const children = cats.map((c: Category) => ({
           label: c.name,
           href: `/products?category=${c.id}`,
         }));
         if (mounted) {
           setCategoriesRaw(cats);
-          setCategoryChildren(children);
+          // setCategoryChildren(children);
           // build navigation with categories children (flat fallback)
           const nav = navigationBase.map((item) =>
             item.label === "Categories" ? { ...item, children } : item
@@ -224,7 +224,7 @@ export const Navbar: React.FC = () => {
                                   MATERIAL: "Material",
                                   OTHER: "Other",
                                 };
-                                const grouped: Record<string, any[]> = {};
+                                const grouped: Record<string, Category[]> = {};
                                 categoriesRaw.forEach((c) => {
                                   const t = c.type || "OTHER";
                                   if (!grouped[t]) grouped[t] = [];
@@ -496,6 +496,7 @@ export const Navbar: React.FC = () => {
                                     MATERIAL: "Material",
                                     OTHER: "Other",
                                   };
+                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                   const grouped: Record<string, any[]> = {};
                                   categoriesRaw.forEach((c) => {
                                     const t = c.type || "OTHER";

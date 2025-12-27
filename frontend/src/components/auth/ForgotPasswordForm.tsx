@@ -70,7 +70,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
           </h1>
 
           <p className="text-slate-600 max-w-sm mx-auto">
-            Enter your email address and we'll send you instructions to reset
+            Enter your email address and we&apos;ll send you instructions to reset
             your password
           </p>
         </motion.div>

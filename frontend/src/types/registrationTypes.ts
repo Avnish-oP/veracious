@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { User } from "./userTypes";
 
 // Step 1: Basic registration schema
 export const step1Schema = z
@@ -92,7 +93,7 @@ export interface VerificationResponse {
 export interface Step3Response {
   success: boolean;
   message: string;
-  user: any;
+  user: User;
 }
 
 // Error response type

@@ -8,6 +8,7 @@ import {
   removeFromCartAPI,
   mergeCartsAPI,
 } from "@/utils/cartApi";
+import { ExtendedApiError } from "@/utils/api";
 import {
   getGuestCart,
   clearGuestCart as clearGuestCartStorage,
@@ -103,7 +104,7 @@ export function useCart() {
       }
       toast.success("Added to cart");
     },
-    onError: (err: any) => {
+    onError: (err: ExtendedApiError) => {
       toast.error(err.message || "Failed to add to cart");
     },
   });
@@ -126,7 +127,7 @@ export function useCart() {
       }
       toast.success("Removed from cart");
     },
-    onError: (err: any) => {
+    onError: (err: ExtendedApiError) => {
       toast.error(err.message || "Failed to remove from cart");
     },
   });
@@ -157,7 +158,7 @@ export function useCart() {
         queryClient.setQueryData(CART_QUERY_KEY, data.cart);
       }
     },
-    onError: (err: any) => {
+    onError: (err: ExtendedApiError) => {
       toast.error(err.message || "Failed to update cart");
     },
   });

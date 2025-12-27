@@ -1,17 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFeaturedProducts, useProducts } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { Button } from "@/components/ui/form-components";
-import { Loader2, Sparkles, ArrowRight, Star } from "lucide-react";
+import { Loader2, ArrowRight, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { Pagination } from "@/components/ui/Pagination";
 
-export default function FeaturedPage() {
+function FeaturedContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
@@ -27,7 +27,7 @@ export default function FeaturedPage() {
   // Fetch 'Spotlight' product (ADMIN CONTROLLED via 'spotlight' tag)
   const { 
     data: spotlightData, 
-    isLoading: isSpotlightLoading 
+    // isLoading: isSpotlightLoading 
   } = useProducts({ search: "spotlight", limit: 1 });
 
   const products = featuredData?.products || [];
@@ -100,7 +100,7 @@ export default function FeaturedPage() {
                    >
                       <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-xs font-bold uppercase tracking-wider">
                          <Star className="w-3.5 h-3.5 fill-current" />
-                         <span>Editor's Choice</span>
+                         <span>Editor&apos;s Choice</span>
                       </div>
                       
                       <h2 className="text-4xl md:text-5xl font-bold text-gray-900 font-serif">
@@ -178,5 +178,17 @@ export default function FeaturedPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function FeaturedPage() {
+  return (
+    <Suspense fallback={
+       <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4 flex items-center justify-center">
+         <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
+       </div>
+    }>
+      <FeaturedContent />
+    </Suspense>
   );
 }

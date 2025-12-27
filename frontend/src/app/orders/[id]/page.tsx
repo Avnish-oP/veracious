@@ -1,13 +1,13 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CheckCircle, Package, ArrowRight, Home } from "lucide-react";
 import Link from "next/link";
 
 export default function OrderSuccessPage() {
   const params = useParams();
-  const router = useRouter();
+  // const router = useRouter();
   const orderId = params.id as string;
 
   return (
@@ -67,9 +67,9 @@ export default function OrderSuccessPage() {
           className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8"
         >
           <p className="text-sm text-blue-900">
-            <strong>What's next?</strong>
+            <strong>What&apos;s next?</strong>
             <br />
-            We'll send you a confirmation email with your order details and
+            We&apos;ll send you a confirmation email with your order details and
             tracking information once your order has been shipped.
           </p>
         </motion.div>

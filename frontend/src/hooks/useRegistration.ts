@@ -10,9 +10,6 @@ import {
 } from "@/utils/api";
 import {
   Step1FormData,
-  RegistrationResponse,
-  VerificationResponse,
-  Step3Response,
 } from "@/types/registrationTypes";
 import { toast } from "react-hot-toast";
 

@@ -3,7 +3,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, RefreshCw, Shield, CheckCircle } from "lucide-react";
+import { RefreshCw, Shield, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Step2FormData, step2Schema } from "@/types/registrationTypes";
 import {
@@ -97,6 +97,7 @@ export const Step2Form: React.FC<Step2Props> = ({
     if (verificationCode && verificationCode.length === 6) {
       handleSubmit(onSubmit)();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [verificationCode]);
 
   const onSubmit = async (data: Step2FormData) => {
@@ -165,7 +166,7 @@ export const Step2Form: React.FC<Step2Props> = ({
             Verify Your Email
           </h1>
           <p className="text-slate-600 mb-2">
-            We've sent a 6-digit verification code to
+            We&apos;ve sent a 6-digit verification code to
           </p>
           <motion.p
             className="text-amber-600 font-semibold text-lg"
@@ -295,7 +296,7 @@ export const Step2Form: React.FC<Step2Props> = ({
             transition={{ delay: 0.6 }}
             className="text-center space-y-3"
           >
-            <p className="text-sm text-slate-600">Didn't receive the code?</p>
+            <p className="text-sm text-slate-600">Didn&apos;t receive the code?</p>
             <button
               type="button"
               onClick={handleResendCode}
@@ -336,7 +337,7 @@ export const Step2Form: React.FC<Step2Props> = ({
           className="mt-6 p-4 bg-amber-50/50 backdrop-blur-sm rounded-xl border border-amber-200/30"
         >
           <p className="text-xs text-slate-600 text-center leading-relaxed">
-            💡 Check your spam folder if you don't see the email. The code
+            💡 Check your spam folder if you don&apos;t see the email. The code
             expires in 10 minutes.
           </p>
         </motion.div>

@@ -100,7 +100,9 @@ export default function ResetPasswordPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <ResetPasswordForm />
+            <React.Suspense fallback={<div className="h-96 bg-white/50 backdrop-blur rounded-2xl animate-pulse" />}>
+              <ResetPasswordForm />
+            </React.Suspense>
           </motion.div>
         </div>
       </main>

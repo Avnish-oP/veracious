@@ -86,6 +86,7 @@ export interface Order {
 // Razorpay types for window object
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Razorpay: any;
   }
 }

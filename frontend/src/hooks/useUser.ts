@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/axios";
+import { AxiosError } from "axios";
 import { User } from "@/types/userTypes";
 import { useUserStore } from "@/store/useUserStore";
 
@@ -11,8 +12,8 @@ const fetchUser = async (): Promise<User | null> => {
     const response = await api.get("/auth/me");
     console.log("User fetched:", response.data.user);
     return response.data.user;
-  } catch (error: any) {
-    if (error.response?.status === 401) {
+  } catch (error) {
+    if ((error as AxiosError).response?.status === 401) {
       return null;
     }
     // For other errors, we might want to throw or return null depending on strategy

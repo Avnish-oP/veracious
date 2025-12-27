@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/form-components";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface CarouselSlide {
   id: string;
@@ -424,11 +425,12 @@ export const HeroCarousel: React.FC = () => {
                   {/* Main Image Container */}
                   <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-white p-2 backdrop-blur-sm border border-white/50">
                     <div className="relative aspect-[4/3] rounded-2xl overflow-hidden">
-                      <img
+                      <Image
                         src={currentSlideData.image}
                         alt={currentSlideData.title}
-                        className="w-full h-full object-cover"
-                        loading="eager"
+                        fill
+                        className="object-cover"
+                        priority
                       />
                       {/* Image Overlay Gradient */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />

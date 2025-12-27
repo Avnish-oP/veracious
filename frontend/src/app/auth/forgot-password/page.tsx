@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.6 }}
           >
-            We'll help you regain access to your premium eyewear account
+            We&apos;ll help you regain access to your premium eyewear account
           </motion.p>
         </motion.div>
       </div>

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, ZoomIn } from "lucide-react";
 import { cn } from "@/utils/cn";
-import { Product, ProductImage } from "@/types/productTypes";
+import { Product } from "@/types/productTypes";
 
 interface ProductImageGalleryProps {
   product: Product;

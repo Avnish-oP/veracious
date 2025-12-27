@@ -26,7 +26,7 @@ export interface Product {
   reviews?: Review[];
   categories?: Category[];
   tags?: string[];
-  specifications?: Record<string, any>;
+  specifications?: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -45,6 +45,7 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
+  type?: string;
   createdAt: string;
   updatedAt: string;
 }

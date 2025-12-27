@@ -313,9 +313,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Product Image */}
         <div className="w-full h-full flex items-center justify-center p-4">
           {product.image || product.images?.[0]?.url ? (
-            <img
-              src={product.image || product.images?.[0]?.url}
+            <Image
+              src={product.image || product.images?.[0]?.url || ""}
               alt={product.name}
+              width={400}
+              height={300}
               className={cn(
                 "w-full h-full object-cover transition-all duration-300 group-hover:scale-105",
                 isImageLoaded ? "opacity-100" : "opacity-0"

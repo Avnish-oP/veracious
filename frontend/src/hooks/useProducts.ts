@@ -1,14 +1,15 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React from "react";
 import {
   Product,
   ProductsResponse,
   FeaturedProductsResponse,
-  ProductFilters,
 } from "@/types/productTypes";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+
+import { ExtendedApiError } from "@/utils/api";
 
 // Generic API call function
 async function apiCall<T>(
@@ -90,10 +91,10 @@ export const useProductDetail = (productId: string) => {
     queryFn: () => fetchProductById(productId),
     enabled: !!productId,
     staleTime: 1000 * 60 * 10, // 10 minutes
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: ExtendedApiError) => {
       if (
         error?.status === 404 ||
-        (error?.status >= 400 && error?.status < 500)
+        (error?.status && error.status >= 400 && error.status < 500)
       ) {
         return false;
       }
@@ -156,8 +157,8 @@ export const useProducts = ({
     queryKey: ["products", { page, limit, search, category, gender }],
     queryFn: () => fetchProducts({ page, limit, search, category }),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: (failureCount, error: any) => {
-      if (error?.status >= 400 && error?.status < 500) {
+    retry: (failureCount, error: ExtendedApiError) => {
+      if (error?.status && error.status >= 400 && error.status < 500) {
         return false;
       }
       return failureCount < 3;
@@ -177,8 +178,8 @@ export const useFeaturedProducts = ({
     queryKey: ["products", "featured", page, limit],
     queryFn: () => fetchFeaturedProducts({ page, limit }),
     staleTime: 1000 * 60 * 10, // 10 minutes for featured products
-    retry: (failureCount, error: any) => {
-      if (error?.status >= 400 && error?.status < 500) {
+    retry: (failureCount, error: ExtendedApiError) => {
+      if (error?.status && error.status >= 400 && error.status < 500) {
         return false;
       }
       return failureCount < 3;
@@ -193,8 +194,8 @@ export const useProduct = (productId: string) => {
     queryFn: () => fetchProductById(productId),
     enabled: !!productId,
     staleTime: 1000 * 60 * 15, // 15 minutes
-    retry: (failureCount, error: any) => {
-      if (error?.status >= 400 && error?.status < 500) {
+    retry: (failureCount, error: ExtendedApiError) => {
+      if (error?.status && error.status >= 400 && error.status < 500) {
         return false;
       }
       return failureCount < 3;
@@ -217,8 +218,8 @@ export const useProductsByCategory = ({
     queryFn: () => fetchProductsByCategory({ categoryId, page, limit }),
     enabled: !!categoryId,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: (failureCount, error: any) => {
-      if (error?.status >= 400 && error?.status < 500) {
+    retry: (failureCount, error: ExtendedApiError) => {
+      if (error?.status && error.status >= 400 && error.status < 500) {
         return false;
       }
       return failureCount < 3;
@@ -238,8 +239,8 @@ export const useTrendingProducts = ({
     queryKey: ["products", "trending", page, limit],
     queryFn: () => fetchTrendingProducts({ page, limit }),
     staleTime: 1000 * 60 * 10, // 10 minutes for trending products
-    retry: (failureCount, error: any) => {
-      if (error?.status >= 400 && error?.status < 500) {
+    retry: (failureCount, error: ExtendedApiError) => {
+      if (error?.status && error.status >= 400 && error.status < 500) {
         return false;
       }
       return failureCount < 3;

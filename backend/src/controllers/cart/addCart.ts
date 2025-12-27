@@ -38,6 +38,7 @@ export const addToCart = async (
       }
       cart.items.push({ productId, quantity });
     }
+    console.log(cart);
     await redisClient.set(key, JSON.stringify(cart));
     //now db
 

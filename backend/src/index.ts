@@ -63,6 +63,9 @@ app.use("/api/v1/address", addressRoutes);
 app.use("/api/v1/orders", orderListingRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/search", searchRoutes);
+app.use("/health", (req, res) => {
+  res.status(200).json({ message: "ok" });
+});
 
 // Start server
 app.listen(PORT, () => {

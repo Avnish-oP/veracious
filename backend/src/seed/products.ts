@@ -1,4 +1,4 @@
-import { Gender } from "../generated/prisma";
+import { Gender } from "@prisma/client";
 import prisma from "../utils/prisma";
 const sunglassesImages = [
   "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400",

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, History } from "lucide-react";
 import { Product } from "@/types/productTypes";
 import { ProductCard } from "@/components/ui/ProductCard";
-import { useCartStore } from "@/store/useCartStore";
+import { useCart } from "@/hooks/useCart";
 import { toast } from "react-hot-toast";
 import { QuickViewModal } from "@/components/products/QuickViewModal";
 
@@ -18,7 +18,7 @@ export const RecentlyViewed: React.FC<RecentlyViewedProps> = ({ products }) => {
   const [quickViewProductId, setQuickViewProductId] = React.useState<
     string | null
   >(null);
-  const { addToCart } = useCartStore();
+  const { addToCart } = useCart();
 
   const handleAddToCart = async (product: Product) => {
     try {
@@ -49,34 +49,38 @@ export const RecentlyViewed: React.FC<RecentlyViewedProps> = ({ products }) => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-            className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
+          className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
         >
           <div>
             <div className="flex items-center gap-2 text-gray-500 mb-2">
-                <History className="w-5 h-5" />
-                <span className="text-sm font-semibold tracking-wide uppercase">History</span>
+              <History className="w-5 h-5" />
+              <span className="text-sm font-semibold tracking-wide uppercase">
+                History
+              </span>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">Recently Viewed</h2>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Recently Viewed
+            </h2>
           </div>
-          
+
           {products.length > 4 && (
             <div className="flex gap-2">
-                <button
+              <button
                 onClick={() => scroll(-320)}
                 className="p-2 rounded-full bg-white border border-gray-200 hover:bg-white hover:border-amber-300 transition-colors shadow-sm"
-                >
+              >
                 <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
+              </button>
+              <button
                 onClick={() => scroll(320)}
                 className="p-2 rounded-full bg-white border border-gray-200 hover:bg-white hover:border-amber-300 transition-colors shadow-sm"
-                >
+              >
                 <ChevronRight className="w-5 h-5" />
-                </button>
+              </button>
             </div>
           )}
         </motion.div>

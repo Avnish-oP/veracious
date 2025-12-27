@@ -1,5 +1,3 @@
-// Cart API service for backend communication
-
 import {
   CartResponse,
   AddToCartRequest,
@@ -30,9 +28,6 @@ async function cartApiCall<T>(
   }
 }
 
-/**
- * Add item to cart (logged-in user)
- */
 export const addToCartAPI = async (
   productId: string,
   quantity: number

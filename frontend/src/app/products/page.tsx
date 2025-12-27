@@ -19,7 +19,7 @@ import {
 import { ProductCard } from "@/components/ui/ProductCard";
 import { Pagination } from "@/components/ui/Pagination";
 import { Input } from "@/components/ui/form-components";
-import { useCartStore } from "@/store/useCartStore";
+import { useCart } from "@/hooks/useCart";
 import { toast } from "react-hot-toast";
 import { Product } from "@/types/productTypes";
 import { cn } from "@/utils/cn";
@@ -28,7 +28,7 @@ import { QuickViewModal } from "@/components/products/QuickViewModal";
 export default function ProductsPage() {
   const searchParams = useSearchParams();
   const filterParam = searchParams.get("filter") || "all";
-  const { addToCart } = useCartStore();
+  const { addToCart, isUserLoading } = useCart();
 
   const [page, setPage] = useState(1);
   const [limit] = useState(12);
@@ -112,6 +112,10 @@ export default function ProductsPage() {
 
   // Handle add to cart
   const handleAddToCart = async (product: Product) => {
+    if (isUserLoading) {
+      toast.loading("Loading...", { duration: 1000 });
+      return;
+    }
     try {
       await addToCart(product.id, 1);
       toast.success(`${product.name} added to cart!`);

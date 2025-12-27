@@ -9,6 +9,7 @@ export const USER_QUERY_KEY = ["user"];
 const fetchUser = async (): Promise<User | null> => {
   try {
     const response = await api.get("/auth/me");
+    console.log("User fetched:", response.data.user);
     return response.data.user;
   } catch (error: any) {
     if (error.response?.status === 401) {

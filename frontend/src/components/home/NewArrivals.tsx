@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Sparkles, Clock } from "lucide-react";
 import { Product } from "@/types/productTypes";
 import { ProductCard } from "@/components/ui/ProductCard";
-import { useCartStore } from "@/store/useCartStore";
+import { useCart } from "@/hooks/useCart";
 import { toast } from "react-hot-toast";
 import { QuickViewModal } from "@/components/products/QuickViewModal";
 
@@ -22,7 +22,7 @@ export const NewArrivals: React.FC<NewArrivalsProps> = ({
   const [quickViewProductId, setQuickViewProductId] = React.useState<
     string | null
   >(null);
-  const { addToCart } = useCartStore();
+  const { addToCart } = useCart();
 
   const handleAddToCart = async (product: Product) => {
     try {
@@ -40,21 +40,21 @@ export const NewArrivals: React.FC<NewArrivalsProps> = ({
   };
 
   if (loading) {
-     return (
-        <section className="py-16 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-             <div className="flex gap-6 overflow-hidden">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex-shrink-0 w-72 animate-pulse">
-                     <div className="bg-gray-200 aspect-square rounded-2xl mb-4" />
-                     <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-                     <div className="h-4 bg-gray-200 rounded w-1/4" />
-                  </div>
-                ))}
-            </div>
+    return (
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-6 overflow-hidden">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex-shrink-0 w-72 animate-pulse">
+                <div className="bg-gray-200 aspect-square rounded-2xl mb-4" />
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-1/4" />
+              </div>
+            ))}
           </div>
-        </section>
-     )
+        </div>
+      </section>
+    );
   }
 
   if (products.length === 0) return null;
@@ -71,19 +71,21 @@ export const NewArrivals: React.FC<NewArrivalsProps> = ({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
-            className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+          className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         >
           <div>
             <div className="flex items-center gap-2 text-amber-600 mb-2">
-                <Sparkles className="w-5 h-5" />
-                <span className="text-sm font-semibold tracking-wide uppercase">Just In</span>
+              <Sparkles className="w-5 h-5" />
+              <span className="text-sm font-semibold tracking-wide uppercase">
+                Just In
+              </span>
             </div>
             <h2 className="text-3xl font-bold text-gray-900">New Arrivals</h2>
           </div>
-          
+
           <div className="flex gap-2">
             <button
               onClick={() => scroll(-320)}

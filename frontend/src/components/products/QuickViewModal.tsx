@@ -19,7 +19,7 @@ import { Product } from "@/types/productTypes";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
 import { useProductDetail } from "@/hooks/useProducts";
-import { useCartStore } from "@/store/useCartStore";
+import { useCart } from "@/hooks/useCart";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 
@@ -35,7 +35,7 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
   productId,
 }) => {
   const { data, isLoading, error } = useProductDetail(productId);
-  const { addToCart } = useCartStore();
+  const { addToCart, isUserLoading } = useCart();
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);

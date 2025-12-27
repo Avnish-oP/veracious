@@ -38,7 +38,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
 }) => {
   const router = useRouter();
   const { toggleWishlist, isInWishlist } = useWishlist();
-  const { addToCart } = useCart();
+  const { addToCart, isUserLoading } = useCart();
   const { addToRecentlyViewed } = useRecentlyViewed();
 
   // Track view
@@ -113,14 +113,14 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
       {/* Brand & Name */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-           <p className="text-sm text-amber-600 font-bold uppercase tracking-wider">
-             {product.brand}
-           </p>
-           {product.stock > 0 && product.stock < 10 && (
-             <span className="text-xs font-bold text-red-500 animate-pulse">
-               Only {product.stock} items left!
-             </span>
-           )}
+          <p className="text-sm text-amber-600 font-bold uppercase tracking-wider">
+            {product.brand}
+          </p>
+          {product.stock > 0 && product.stock < 10 && (
+            <span className="text-xs font-bold text-red-500 animate-pulse">
+              Only {product.stock} items left!
+            </span>
+          )}
         </div>
         <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight">
           {product.name}
@@ -145,7 +145,9 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             <div className="flex items-center gap-2 group cursor-pointer hover:opacity-80 transition-opacity">
               <div className="flex items-center">
                 <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-                <span className="ml-1 font-bold text-gray-900">{avgRating.toFixed(1)}</span>
+                <span className="ml-1 font-bold text-gray-900">
+                  {avgRating.toFixed(1)}
+                </span>
               </div>
               <span className="text-sm text-gray-500 underline decoration-gray-300 underline-offset-4 group-hover:decoration-amber-400 transition-all">
                 {product.reviews.length} reviews
@@ -187,14 +189,19 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                 className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1"
               >
                 {showAllCoupons ? "Show less" : `View all ${coupons.length}`}
-                <ChevronRight className={cn("w-3 h-3 transition-transform", showAllCoupons && "rotate-90")} />
+                <ChevronRight
+                  className={cn(
+                    "w-3 h-3 transition-transform",
+                    showAllCoupons && "rotate-90"
+                  )}
+                />
               </button>
             )}
           </div>
 
           {couponsLoading ? (
             <div className="flex items-center gap-2 text-sm text-gray-500">
-               <Loader2 className="w-3 h-3 animate-spin"/> Loading offers...
+              <Loader2 className="w-3 h-3 animate-spin" /> Loading offers...
             </div>
           ) : hasCoupons ? (
             <div className="space-y-3">
@@ -210,12 +217,16 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-mono font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
-                           {coupon.code}
+                          {coupon.code}
                         </span>
                         <span className="text-xs text-green-600 font-semibold truncate">
-                           {coupon.discountType === "PERCENTAGE" 
-                              ? `${coupon.discountValue ?? coupon.discount ?? 0}% OFF` 
-                              : `₹${coupon.discountValue ?? coupon.discount ?? 0} OFF`}
+                          {coupon.discountType === "PERCENTAGE"
+                            ? `${
+                                coupon.discountValue ?? coupon.discount ?? 0
+                              }% OFF`
+                            : `₹${
+                                coupon.discountValue ?? coupon.discount ?? 0
+                              } OFF`}
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1 truncate">
@@ -247,52 +258,54 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
 
       {/* Stock & Quantity */}
       <div className="flex flex-col sm:flex-row gap-6">
-          <div className="w-full sm:w-auto">
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                Quantity
-              </label>
-              <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl w-fit">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={quantity <= 1}
-                  className="p-3 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-600 rounded-l-xl"
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="w-12 text-center text-lg font-bold text-gray-900 tabular-nums">
-                  {quantity}
-                </span>
-                <button
-                  onClick={() =>
-                    setQuantity(Math.min(product.stock, quantity + 1))
-                  }
-                  disabled={quantity >= product.stock}
-                  className="p-3 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-600 rounded-r-xl"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+        <div className="w-full sm:w-auto">
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+            Quantity
+          </label>
+          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-xl w-fit">
+            <button
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              disabled={quantity <= 1}
+              className="p-3 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-600 rounded-l-xl"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+            <span className="w-12 text-center text-lg font-bold text-gray-900 tabular-nums">
+              {quantity}
+            </span>
+            <button
+              onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+              disabled={quantity >= product.stock}
+              className="p-3 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-600 rounded-r-xl"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1">
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+            Availability
+          </label>
+          {product.stock > 0 ? (
+            <div className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-xl border border-green-100">
+              <div className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
               </div>
-          </div>
-          
-          <div className="flex-1">
-             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                Availability
-              </label>
-             {product.stock > 0 ? (
-                <div className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-xl border border-green-100">
-                   <div className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                    </div>
-                   <span className="font-semibold text-sm">In Stock & Ready to Ship</span>
-                </div>
-             ) : (
-                <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-xl border border-red-100">
-                   <div className="h-3 w-3 bg-red-500 rounded-full" />
-                   <span className="font-semibold text-sm">Currently Out of Stock</span>
-                </div>
-             )}
-          </div>
+              <span className="font-semibold text-sm">
+                In Stock & Ready to Ship
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-xl border border-red-100">
+              <div className="h-3 w-3 bg-red-500 rounded-full" />
+              <span className="font-semibold text-sm">
+                Currently Out of Stock
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Action Buttons */}
@@ -300,15 +313,15 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
         <div className="flex gap-3 h-14">
           <Button
             onClick={handleAddToCart}
-            disabled={product.stock === 0 || isAddingToCart}
+            disabled={product.stock === 0 || isAddingToCart || isUserLoading}
             className="flex-1 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:translate-y-0 active:shadow-md"
           >
-            {isAddingToCart ? (
+            {isAddingToCart || isUserLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
               <ShoppingCart className="w-5 h-5" />
             )}
-            Add to Cart
+            {isUserLoading ? "Loading..." : "Add to Cart"}
           </Button>
           <button
             onClick={() => toggleWishlist(product.id)}
@@ -318,18 +331,27 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                 ? "border-red-200 bg-red-50 text-red-500 hover:bg-red-100 hover:border-red-300"
                 : "border-amber-200 text-amber-500 hover:bg-amber-50 hover:border-amber-300"
             )}
-            aria-label={isInWishlist(product.id) ? "Remove from wishlist" : "Add to wishlist"}
+            aria-label={
+              isInWishlist(product.id)
+                ? "Remove from wishlist"
+                : "Add to wishlist"
+            }
           >
-            <Heart className={cn("w-6 h-6", isInWishlist(product.id) && "fill-current")} />
+            <Heart
+              className={cn(
+                "w-6 h-6",
+                isInWishlist(product.id) && "fill-current"
+              )}
+            />
           </button>
         </div>
 
         <Button
           onClick={handleBuyNow}
-          disabled={product.stock === 0 || isAddingToCart}
+          disabled={product.stock === 0 || isAddingToCart || isUserLoading}
           className="w-full bg-gray-900 hover:bg-black text-white h-14 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:translate-y-0"
         >
-          Buy Now - Fast Checkout
+          {isUserLoading ? "Loading..." : "Buy Now - Fast Checkout"}
         </Button>
       </div>
 
@@ -337,21 +359,21 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
       <div className="grid grid-cols-3 gap-4 pt-6 border-t border-gray-100">
         <div className="flex flex-col items-center text-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
           <div className="p-2 bg-amber-100 text-amber-600 rounded-full mb-2">
-             <Truck className="w-5 h-5" />
+            <Truck className="w-5 h-5" />
           </div>
           <p className="text-xs font-bold text-gray-900">Free Delivery</p>
           <p className="text-[10px] text-gray-500 mt-0.5">Orders over ₹4175</p>
         </div>
         <div className="flex flex-col items-center text-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
           <div className="p-2 bg-amber-100 text-amber-600 rounded-full mb-2">
-             <RefreshCw className="w-5 h-5" />
+            <RefreshCw className="w-5 h-5" />
           </div>
           <p className="text-xs font-bold text-gray-900">Easy Returns</p>
           <p className="text-[10px] text-gray-500 mt-0.5">30 Days Policy</p>
         </div>
         <div className="flex flex-col items-center text-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
           <div className="p-2 bg-amber-100 text-amber-600 rounded-full mb-2">
-             <Shield className="w-5 h-5" />
+            <Shield className="w-5 h-5" />
           </div>
           <p className="text-xs font-bold text-gray-900">Secure Payment</p>
           <p className="text-[10px] text-gray-500 mt-0.5">100% Protected</p>

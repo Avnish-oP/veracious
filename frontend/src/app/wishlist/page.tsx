@@ -4,7 +4,7 @@ import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Heart, ShoppingBag, Trash2, ArrowLeft, PackageX } from "lucide-react";
-import { useCartStore } from "@/store/useCartStore";
+import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
 import { useWishlist } from "@/hooks/useWishlist";
@@ -12,7 +12,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 export default function WishlistPage() {
   const router = useRouter();
   const { items, isLoading, toggleWishlist } = useWishlist();
-  const { addToCart } = useCartStore();
+  const { addToCart } = useCart();
 
   const handleRemoveFromWishlist = (productId: string) => {
     try {

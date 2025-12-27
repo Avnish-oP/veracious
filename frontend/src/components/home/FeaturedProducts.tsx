@@ -17,7 +17,7 @@ import { ProductCard } from "@/components/ui/ProductCard";
 import { Product } from "@/types/productTypes";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
-import { useCartStore } from "@/store/useCartStore";
+import { useCart } from "@/hooks/useCart";
 import { toast } from "react-hot-toast";
 import { QuickViewModal } from "@/components/products/QuickViewModal";
 
@@ -51,7 +51,7 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
     null
   );
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-  const { addToCart } = useCartStore();
+  const { addToCart } = useCart();
 
   // Get products based on active filter
   const getFilteredProducts = () => {
@@ -139,7 +139,6 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Discover Our{" "}
             <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent">

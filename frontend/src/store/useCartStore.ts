@@ -84,12 +84,149 @@ export const useCartStore = create<CartStore>((set, get) => {
      * Initialize cart - load from localStorage (guest) or fetch from backend (logged-in)
      */
     initializeCart: async () => {
-        // Guest user: load from localStorage and fetch product details
-        const guestCart = getGuestCart();
+      // Guest user: load from localStorage and fetch product details
+      const guestCart = getGuestCart();
+
+      if (guestCart.items.length > 0) {
+        set({ loading: true });
+
+        // Fetch product details for all items
+        const productIds = guestCart.items.map((item) => item.productId);
+        const productDetails = await fetchMultipleProductDetails(productIds);
+
+        // Populate cart items with product details
+        const itemsWithDetails = guestCart.items.map((item) => ({
+          ...item,
+          product: productDetails[item.productId] || {
+            id: item.productId,
+            name: "Product",
+            price: 0,
+            brand: "",
+            image: null,
+          },
+        }));
+
+        set({
+          cart: {
+            items: itemsWithDetails,
+          },
+          loading: false,
+        });
+      } else {
+        set({
+          cart: {
+            items: [],
+          },
+        });
+      }
+    },
+
+    /**
+     * Add item to cart
+     */
+    addToCart: async (productId: string, quantity: number) => {
+      set({ loading: true, error: null });
+
+      try {
+        // Guest user: save to localStorage and fetch product details
+        const guestCart = addToGuestCart(productId, quantity);
+
+        // Fetch product details for all items
+        const productIds = guestCart.items.map((item) => item.productId);
+        const productDetails = await fetchMultipleProductDetails(productIds);
+
+        // Populate cart items with product details
+        const itemsWithDetails = guestCart.items.map((item) => ({
+          ...item,
+          product: productDetails[item.productId] || {
+            id: item.productId,
+            name: "Product",
+            price: 0,
+            brand: "",
+            image: null,
+          },
+        }));
+
+        set({
+          cart: {
+            items: itemsWithDetails,
+          },
+          loading: false,
+        });
+
+        await reapplyCouponIfNeeded();
+      } catch (error: any) {
+        set({
+          error: error.message || "Failed to add item to cart",
+          loading: false,
+        });
+        throw error;
+      }
+    },
+
+    /**
+     * Remove item from cart
+     */
+    removeFromCart: async (productId: string) => {
+      set({ loading: true, error: null });
+
+      try {
+        // Guest user: update localStorage and refresh product details
+        const guestCart = removeFromGuestCart(productId);
 
         if (guestCart.items.length > 0) {
-          set({ loading: true });
+          // Fetch product details for remaining items
+          const productIds = guestCart.items.map((item) => item.productId);
+          const productDetails = await fetchMultipleProductDetails(productIds);
 
+          // Populate cart items with product details
+          const itemsWithDetails = guestCart.items.map((item) => ({
+            ...item,
+            product: productDetails[item.productId] || {
+              id: item.productId,
+              name: "Product",
+              price: 0,
+              brand: "",
+              image: null,
+            },
+          }));
+
+          set({
+            cart: {
+              items: itemsWithDetails,
+            },
+            loading: false,
+          });
+        } else {
+          set({
+            cart: {
+              items: [],
+            },
+            loading: false,
+          });
+        }
+
+        await reapplyCouponIfNeeded();
+      } catch (error: any) {
+        set({
+          error: error.message || "Failed to remove item from cart",
+          loading: false,
+        });
+        throw error;
+      }
+    },
+
+    /**
+     * Update item quantity in cart
+     */
+    updateCartItem: async (productId: string, quantity: number) => {
+      set({ loading: true, error: null });
+
+      try {
+        // Guest user: update localStorage and refresh product details
+        const guestCart = updateGuestCartItem(productId, quantity);
+
+        if (guestCart.items.length > 0) {
           // Fetch product details for all items
           const productIds = guestCart.items.map((item) => item.productId);
           const productDetails = await fetchMultipleProductDetails(productIds);
@@ -117,150 +254,9 @@ export const useCartStore = create<CartStore>((set, get) => {
             cart: {
               items: [],
             },
-          });
-        }
-    },
-
-    /**
-     * Add item to cart
-     */
-    addToCart: async (productId: string, quantity: number) => {
-      set({ loading: true, error: null });
-
-      try {
-          // Guest user: save to localStorage and fetch product details
-          const guestCart = addToGuestCart(productId, quantity);
-
-          // Fetch product details for all items
-          const productIds = guestCart.items.map((item) => item.productId);
-          const productDetails = await fetchMultipleProductDetails(productIds);
-
-          // Populate cart items with product details
-          const itemsWithDetails = guestCart.items.map((item) => ({
-            ...item,
-            product: productDetails[item.productId] || {
-              id: item.productId,
-              name: "Product",
-              price: 0,
-              brand: "",
-              image: null,
-            },
-          }));
-
-          set({
-            cart: {
-              items: itemsWithDetails,
-            },
             loading: false,
           });
-
-        await reapplyCouponIfNeeded();
-      } catch (error: any) {
-        set({
-          error: error.message || "Failed to add item to cart",
-          loading: false,
-        });
-        throw error;
-      }
-    },
-
-    /**
-     * Remove item from cart
-     */
-    removeFromCart: async (productId: string) => {
-      set({ loading: true, error: null });
-
-      try {
-          // Guest user: update localStorage and refresh product details
-          const guestCart = removeFromGuestCart(productId);
-
-          if (guestCart.items.length > 0) {
-            // Fetch product details for remaining items
-            const productIds = guestCart.items.map((item) => item.productId);
-            const productDetails = await fetchMultipleProductDetails(
-              productIds
-            );
-
-            // Populate cart items with product details
-            const itemsWithDetails = guestCart.items.map((item) => ({
-              ...item,
-              product: productDetails[item.productId] || {
-                id: item.productId,
-                name: "Product",
-                price: 0,
-                brand: "",
-                image: null,
-              },
-            }));
-
-            set({
-              cart: {
-                items: itemsWithDetails,
-              },
-              loading: false,
-            });
-          } else {
-            set({
-              cart: {
-                items: [],
-              },
-              loading: false,
-            });
-          }
-        
-        await reapplyCouponIfNeeded();
-      } catch (error: any) {
-        set({
-          error: error.message || "Failed to remove item from cart",
-          loading: false,
-        });
-        throw error;
-      }
-    },
-
-    /**
-     * Update item quantity in cart
-     */
-    updateCartItem: async (productId: string, quantity: number) => {
-      set({ loading: true, error: null });
-
-      try {
-          // Guest user: update localStorage and refresh product details
-          const guestCart = updateGuestCartItem(productId, quantity);
-
-          if (guestCart.items.length > 0) {
-            // Fetch product details for all items
-            const productIds = guestCart.items.map((item) => item.productId);
-            const productDetails = await fetchMultipleProductDetails(
-              productIds
-            );
-
-            // Populate cart items with product details
-            const itemsWithDetails = guestCart.items.map((item) => ({
-              ...item,
-              product: productDetails[item.productId] || {
-                id: item.productId,
-                name: "Product",
-                price: 0,
-                brand: "",
-                image: null,
-              },
-            }));
-
-            set({
-              cart: {
-                items: itemsWithDetails,
-              },
-              loading: false,
-            });
-          } else {
-            set({
-              cart: {
-                items: [],
-              },
-              loading: false,
-            });
-          }
+        }
 
         await reapplyCouponIfNeeded();
       } catch (error: any) {
@@ -280,19 +276,19 @@ export const useCartStore = create<CartStore>((set, get) => {
 
     // Fetch Cart is also redundant but kept for interface compatibility (will just init)
     fetchCart: async () => {
-        await get().initializeCart();
+      await get().initializeCart();
     },
 
     clearCart: () => {
-        // Guest user: clear localStorage
-        clearGuestCart();
-        set({
-            cart: { items: [] },
-            error: null,
-            appliedCoupon: null,
-            couponDiscount: 0,
-            couponApplying: false,
-        });
+      // Guest user: clear localStorage
+      clearGuestCart();
+      set({
+        cart: { items: [] },
+        error: null,
+        appliedCoupon: null,
+        couponDiscount: 0,
+        couponApplying: false,
+      });
     },
 
     applyCouponToCart: async (

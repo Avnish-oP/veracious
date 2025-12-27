@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useUser } from "./useUser";
+import { useUser, USER_QUERY_KEY } from "./useUser";
 import { useCartStore } from "@/store/useCartStore";
 import {
   getCartAPI,
@@ -8,16 +8,26 @@ import {
   removeFromCartAPI,
   mergeCartsAPI,
 } from "@/utils/cartApi";
-import { getGuestCart, clearGuestCart as clearGuestCartStorage } from "@/utils/guestCart";
+import {
+  getGuestCart,
+  clearGuestCart as clearGuestCartStorage,
+} from "@/utils/guestCart";
 import { Cart } from "@/types/cartTypes";
 import { toast } from "react-hot-toast";
 import { CartSummary } from "@/types/cartTypes";
-import { Coupons } from "@/types/couponsTypes";
+import { User } from "@/types/userTypes";
 
 export const CART_QUERY_KEY = ["cart"];
 
+// Helper to get current user from query cache (always fresh)
+const getCurrentUser = (
+  queryClient: ReturnType<typeof useQueryClient>
+): User | null => {
+  return queryClient.getQueryData<User | null>(USER_QUERY_KEY) ?? null;
+};
+
 export function useCart() {
-  const { user } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
   const queryClient = useQueryClient();
 
   // Guest Store Logic
@@ -28,7 +38,7 @@ export function useCart() {
   const updateGuestCartItem = useCartStore((state) => state.updateCartItem);
   const initializeGuestCart = useCartStore((state) => state.initializeCart);
   const clearGuestCartStore = useCartStore((state) => state.clearCart);
-  
+
   // Coupon State (Client-side for now, synced via store)
   const appliedCoupon = useCartStore((state) => state.appliedCoupon);
   const couponDiscount = useCartStore((state) => state.couponDiscount);
@@ -54,9 +64,13 @@ export function useCart() {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Determine active cart
-  const cart: Cart | null = user ? (serverCart ?? null) : guestCart;
-  const isLoading = user ? isServerLoading : guestLoading;
+  // Determine active cart - wait for user loading to complete first
+  const cart: Cart | null = isUserLoading
+    ? null
+    : user
+    ? serverCart ?? null
+    : guestCart;
+  const isLoading = isUserLoading || (user ? isServerLoading : guestLoading);
 
   // --- MUTATIONS ---
 
@@ -69,21 +83,25 @@ export function useCart() {
       productId: string;
       quantity: number;
     }) => {
-      if (user) {
-        return addToCartAPI(productId, quantity);
+      // Get fresh user from query cache at mutation time
+      const currentUser = getCurrentUser(queryClient);
+
+      if (currentUser) {
+        return {
+          ...(await addToCartAPI(productId, quantity)),
+          isServerCart: true,
+        };
       } else {
-        // Use store action which handles localStorage + product details fetch
         await addToGuestCart(productId, quantity);
-        return { cart: useCartStore.getState().cart }; // Mock response
+        const cartState = useCartStore.getState().cart;
+        return { cart: cartState, isServerCart: false };
       }
     },
     onSuccess: (data) => {
-      if (user) {
+      if (data.isServerCart) {
         queryClient.setQueryData(CART_QUERY_KEY, data.cart);
-        toast.success("Added to cart");
-      } else {
-        toast.success("Added to cart");
       }
+      toast.success("Added to cart");
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to add to cart");
@@ -92,19 +110,21 @@ export function useCart() {
 
   // Remove Item
   const removeFromCartMutation = useMutation({
-    mutationFn: async (productId: string) => {
-      if (user) {
-        return removeFromCartAPI(productId);
+    mutationFn: async ({ productId }: { productId: string }) => {
+      const currentUser = getCurrentUser(queryClient);
+
+      if (currentUser) {
+        return { ...(await removeFromCartAPI(productId)), isServerCart: true };
       } else {
         await removeFromGuestCart(productId);
-        return { cart: useCartStore.getState().cart };
+        return { cart: useCartStore.getState().cart, isServerCart: false };
       }
     },
     onSuccess: (data) => {
-      if (user) {
+      if (data.isServerCart) {
         queryClient.setQueryData(CART_QUERY_KEY, data.cart);
-        toast.success("Removed from cart");
       }
+      toast.success("Removed from cart");
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to remove from cart");
@@ -120,15 +140,20 @@ export function useCart() {
       productId: string;
       quantity: number;
     }) => {
-      if (user) {
-        return updateCartItemAPI(productId, quantity);
+      const currentUser = getCurrentUser(queryClient);
+
+      if (currentUser) {
+        return {
+          ...(await updateCartItemAPI(productId, quantity)),
+          isServerCart: true,
+        };
       } else {
         await updateGuestCartItem(productId, quantity);
-        return { cart: useCartStore.getState().cart };
+        return { cart: useCartStore.getState().cart, isServerCart: false };
       }
     },
     onSuccess: (data) => {
-      if (user) {
+      if (data.isServerCart) {
         queryClient.setQueryData(CART_QUERY_KEY, data.cart);
       }
     },
@@ -142,7 +167,7 @@ export function useCart() {
     mutationFn: async () => {
       const guestItems = getGuestCart().items;
       if (guestItems.length === 0) return null;
-      
+
       const response = await mergeCartsAPI({ items: guestItems });
       return response.cart;
     },
@@ -203,9 +228,7 @@ export function useCart() {
     // Calculate actual amount after discount
     const subtotalAfterDiscount = cart.items.reduce((sum, item) => {
       const price =
-        Number(item.product?.discountPrice) ||
-        Number(item.product?.price) ||
-        0;
+        Number(item.product?.discountPrice) || Number(item.product?.price) || 0;
       return sum + price * item.quantity;
     }, 0);
 
@@ -214,10 +237,7 @@ export function useCart() {
       subtotalAfterDiscount
     );
 
-    const total = Math.max(
-      0,
-      subtotalAfterDiscount - normalizedCouponDiscount
-    );
+    const total = Math.max(0, subtotalAfterDiscount - normalizedCouponDiscount);
 
     return {
       totalItems,
@@ -232,13 +252,13 @@ export function useCart() {
   // Safe Actions (wrappers)
   const addToCart = (productId: string, quantity: number) =>
     addToCartMutation.mutateAsync({ productId, quantity });
-    
+
   const removeFromCart = (productId: string) =>
-    removeFromCartMutation.mutateAsync(productId);
-    
+    removeFromCartMutation.mutateAsync({ productId });
+
   const updateCartItem = (productId: string, quantity: number) =>
     updateCartItemMutation.mutateAsync({ productId, quantity });
-    
+
   const mergeGuestCart = () => mergeGuestCartMutation.mutateAsync();
 
   const applyCoupon = (code: string) => applyCouponToStore(code);
@@ -247,6 +267,7 @@ export function useCart() {
   return {
     cart,
     isLoading,
+    isUserLoading,
     isError,
     error,
     addToCart,
@@ -267,7 +288,7 @@ export function useCart() {
       // Clear Guest
       clearGuestCartStorage();
       clearGuestCartStore();
-      
+
       // Clear Server State (Optimistic)
       if (user) {
         queryClient.setQueryData(CART_QUERY_KEY, { items: [] });

@@ -4,18 +4,21 @@ import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Sun, Glasses } from "lucide-react";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { useUserStore } from "@/store/useUserStore";
-import { useRouter } from "next/navigation";
+import { useUser } from "@/hooks/useUser";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, loading } = useUserStore();
+  const searchParams = useSearchParams();
+  const { user, isLoading } = useUser();
 
   useEffect(() => {
-    if (!loading && user) {
-      router.replace("/");
+    if (!isLoading && user) {
+      // Redirect to the original page they were trying to access, or home
+      const redirectTo = searchParams.get("redirect") || "/";
+      router.replace(redirectTo);
     }
-  }, [user, loading, router]);
+  }, [user, isLoading, router, searchParams]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 relative overflow-hidden">
@@ -87,7 +90,8 @@ export default function LoginPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.6 }}
           >
-            Continue your journey with the world&apos;s finest eyewear collection
+            Continue your journey with the world&apos;s finest eyewear
+            collection
           </motion.p>
         </motion.div>
       </div>

@@ -2,18 +2,18 @@
 
 import { useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
-import { useUserStore } from "@/store/useUserStore";
+import { useUser } from "@/hooks/useUser";
 import { RegistrationFlow } from "@/components/registration/RegistrationFlow";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { user, loading } = useUserStore();
+  const { user, isLoading } = useUser();
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!isLoading && user) {
       router.replace("/");
     }
-  }, [user, loading, router]);
+  }, [user, isLoading, router]);
 
   return (
     <Suspense fallback={<div>Loading...</div>}>

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "../lib/axios";
+import api, { setAuthenticated } from "../lib/axios";
 import { AxiosError } from "axios";
 import { User } from "@/types/userTypes";
 import { useUserStore } from "@/store/useUserStore";
@@ -17,7 +17,7 @@ const fetchUser = async (): Promise<User | null> => {
       return null;
     }
     // For other errors, we might want to throw or return null depending on strategy
-    // Returning null for now to avoid error boundary splashes on network glitches, 
+    // Returning null for now to avoid error boundary splashes on network glitches,
     // but React Query retries will handle glitches.
     return null;
   }
@@ -25,7 +25,7 @@ const fetchUser = async (): Promise<User | null> => {
 
 // Logout API call
 const logoutUser = async () => {
-    await api.post("/auth/logout");
+  await api.post("/auth/logout");
 };
 
 export function useUser() {
@@ -46,23 +46,25 @@ export function useUser() {
   });
 
   // Sync with Zustand store whenever data changes
-  // This is a side effect. Putting it in render body is okay for simple syncs 
+  // This is a side effect. Putting it in render body is okay for simple syncs
   // if guarded, but useEffect is safer for state updates.
-  // However, React Query onSuccess is deprecated in v5. 
+  // However, React Query onSuccess is deprecated in v5.
   // We can use an effect here.
   // NOTE: We must be careful not to trigger infinite re-renders.
   // useUserStore.setState({ user }) is stable.
-  
+
   if (user !== undefined) {
-      // We only sync if user is defined (loaded). 
-      // If isLoading, user is undefined (or old data if placeholder).
-      // Actually strictly speaking we should sync in useEffect.
+    // We only sync if user is defined (loaded).
+    // If isLoading, user is undefined (or old data if placeholder).
+    // Actually strictly speaking we should sync in useEffect.
   }
 
   // Logout Mutation
   const logoutMutation = useMutation({
     mutationFn: logoutUser,
     onSuccess: () => {
+      // Clear authenticated state for axios interceptor
+      setAuthenticated(false);
       // Clear Query Cache
       queryClient.setQueryData(USER_QUERY_KEY, null);
       // Clear Store

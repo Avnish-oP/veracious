@@ -8,10 +8,9 @@ import {
   forgotPassword,
   resetPassword,
 } from "@/utils/api";
-import {
-  Step1FormData,
-} from "@/types/registrationTypes";
+import { Step1FormData } from "@/types/registrationTypes";
 import { toast } from "react-hot-toast";
+import { setAuthenticated } from "@/lib/axios";
 
 // Step 1: Registration mutation
 export const useRegisterMutation = () => {
@@ -75,6 +74,9 @@ export const useLoginMutation = () => {
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       loginUser({ email, password }),
     onSuccess: () => {
+      // Mark user as authenticated for axios interceptor
+      setAuthenticated(true);
+
       // Invalidate and refetch user data after login
       queryClient.invalidateQueries({ queryKey: ["user"] });
 

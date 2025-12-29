@@ -20,29 +20,29 @@ dotenv.config();
 const app = express();
 
 // CORS configuration
-const allowedOrigins = process.env.CORS_ORIGIN?.split(",") || [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "http://localhost:3002", // Just in case
-];
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map(o => o.trim())
+  : [];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
+    origin: (origin, callback) => {
+      // Allow server-to-server & health checks
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
       }
+
+      console.error("❌ Blocked by CORS:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 
 app.use(cookieParser());
 
@@ -63,9 +63,11 @@ app.use("/api/v1/address", addressRoutes);
 app.use("/api/v1/orders", orderListingRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/search", searchRoutes);
-app.use("/health", (req, res) => {
+app.get("/health", (req, res) => {
   res.status(200).json({ message: "ok" });
 });
+
+app.set("trust proxy", 1);
 
 // Start server
 app.listen(PORT, () => {

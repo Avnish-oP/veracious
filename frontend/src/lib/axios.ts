@@ -5,33 +5,44 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// Response interceptor for handling token expiration
+const PUBLIC_ROUTES = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/verify',
+  '/categories',
+  '/products',
+];
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Check if error is 401 and we haven't tried refreshing yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isPublicRoute = PUBLIC_ROUTES.some((route) =>
+      originalRequest.url?.includes(route)
+    );
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isPublicRoute
+    ) {
       originalRequest._retry = true;
 
       try {
-        // Attempt to refresh token
         await api.post('/auth/refresh-token');
-
-        // If successful, retry the original request
         return api(originalRequest);
-      } catch (refreshError) {
-        // If refresh fails, redirect to login
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-            window.location.href = '/login';
+      } catch {
+        // redirect ONLY if user was logged in
+        if (typeof window !== 'undefined') {
+          window.location.href = '/auth/login';
         }
-        return Promise.reject(refreshError);
       }
     }
 
     return Promise.reject(error);
   }
 );
+
 
 export default api;

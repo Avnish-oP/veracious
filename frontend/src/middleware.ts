@@ -5,6 +5,8 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get("accessToken")?.value;
   const refreshToken = request.cookies.get("refreshToken")?.value;
+  console.log("HOST:", request.nextUrl.hostname);
+  console.log("COOKIES:", request.cookies.getAll());
 
   // Consider user potentially authenticated if they have refresh token
   // Access token may be expired, but refresh token allows re-authentication

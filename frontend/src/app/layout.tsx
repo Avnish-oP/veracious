@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
 import ConditionalNavbar from "@/components/layout/ConditionalNavbar";
+import { Footer } from "@/components/layout/Footer";
 import UserHydration from "@/components/providers/UserHydration";
 import CartHydration from "@/components/providers/CartHydration";
 import WishlistHydration from "@/components/providers/WishlistHydration";
@@ -41,6 +42,7 @@ export default function RootLayout({
           <WishlistHydration />
           <ConditionalNavbar />
           {children}
+          <Footer />
         </Providers>
       </body>
     </html>

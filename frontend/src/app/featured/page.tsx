@@ -5,11 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFeaturedProducts, useProducts } from "@/hooks/useProducts";
-import { ProductCard } from "@/components/ui/ProductCard";
+import { ProductListingLayout } from "@/components/products/ProductListingLayout";
 import { Button } from "@/components/ui/form-components";
 import { Loader2, ArrowRight, Star } from "lucide-react";
 import { motion } from "framer-motion";
-import { Pagination } from "@/components/ui/Pagination";
+
 
 function FeaturedContent() {
   const router = useRouter();
@@ -137,46 +137,25 @@ function FeaturedContent() {
       )}
 
       {/* Main Collection Grid */}
-      <section className="pb-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-           <div className="flex items-end justify-between mb-10">
-              <div>
-                 <h2 className="text-3xl font-bold text-gray-900">Featured Collection</h2>
-                 <p className="text-gray-500 mt-2">Handpicked styles for the season</p>
-              </div>
-           </div>
-
-           {products.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-12 mb-16">
-                  {products.map((product, index) => (
-                    <motion.div
-                        key={product.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true, margin: "-50px" }}
-                        transition={{ delay: index * 0.05 }}
-                    >
-                        <ProductCard product={product} />
-                    </motion.div>
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                <Pagination 
-                   currentPage={page} 
-                   totalPages={totalPages} 
-                   onPageChange={handlePageChange}
-                   showTotalItems={false}
-                />
-              </>
-           ) : (
-              <div className="text-center py-20 bg-gray-50 rounded-3xl border border-gray-100">
-                 <p className="text-gray-500 text-lg">No featured products found.</p>
-              </div>
-           )}
-        </div>
-      </section>
+      <ProductListingLayout
+          title="Featured Collection"
+          subtitle="Handpicked styles for the season"
+          products={products}
+          totalProducts={featuredData?.total || 0}
+          currentPage={page}
+          itemsPerPage={limit}
+          totalPages={totalPages}
+          loading={isFeaturedLoading}
+          error={featuredError}
+          activeFilters={{ page, limit, filter: 'featured' }}
+          onFilterChange={(f) => {
+              if (f.page) handlePageChange(f.page);
+          }}
+          onPageChange={handlePageChange}
+          onAddToCart={() => {}} // TODO
+          onQuickView={() => {}} // TODO
+          // Sidebar now enabled by default
+      />
     </div>
   );
 }

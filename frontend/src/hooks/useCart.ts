@@ -101,6 +101,15 @@ export function useCart() {
     onSuccess: (data) => {
       if (data.isServerCart) {
         queryClient.setQueryData(CART_QUERY_KEY, data.cart);
+        
+        // Re-validate coupon if applied
+        const appliedCoupon = useCartStore.getState().appliedCoupon;
+        if (appliedCoupon) {
+          applyCoupon(appliedCoupon.code, { silent: true, cartData: data.cart }).catch(() => {
+             // If validation fails (e.g. min spend not met), remove coupon
+             useCartStore.getState().removeCoupon();
+          });
+        }
       }
       toast.success("Added to cart");
     },
@@ -124,6 +133,14 @@ export function useCart() {
     onSuccess: (data) => {
       if (data.isServerCart) {
         queryClient.setQueryData(CART_QUERY_KEY, data.cart);
+
+        // Re-validate coupon if applied
+        const appliedCoupon = useCartStore.getState().appliedCoupon;
+        if (appliedCoupon) {
+          applyCoupon(appliedCoupon.code, { silent: true, cartData: data.cart }).catch(() => {
+             useCartStore.getState().removeCoupon();
+          });
+        }
       }
       toast.success("Removed from cart");
     },
@@ -156,6 +173,14 @@ export function useCart() {
     onSuccess: (data) => {
       if (data.isServerCart) {
         queryClient.setQueryData(CART_QUERY_KEY, data.cart);
+
+        // Re-validate coupon if applied
+        const appliedCoupon = useCartStore.getState().appliedCoupon;
+        if (appliedCoupon) {
+          applyCoupon(appliedCoupon.code, { silent: true, cartData: data.cart }).catch(() => {
+             useCartStore.getState().removeCoupon();
+          });
+        }
       }
     },
     onError: (err: ExtendedApiError) => {
@@ -262,7 +287,57 @@ export function useCart() {
 
   const mergeGuestCart = () => mergeGuestCartMutation.mutateAsync();
 
-  const applyCoupon = (code: string) => applyCouponToStore(code);
+  const applyCoupon = async (code: string, options?: { silent?: boolean, cartData?: Cart | null }) => {
+    // If logged in, use provided cart data or hook state cart
+    const cartToUse = options?.cartData || cart;
+    const silent = options?.silent;
+
+    if (user && cartToUse && cartToUse.items.length > 0) {
+      if (!silent) {
+        useCartStore.setState({ couponApplying: true, error: null });
+      }
+      
+      try {
+        const orderValue =
+        cartToUse.items.reduce((sum, item) => {
+            const price =
+              Number(item.product?.discountPrice) ||
+              Number(item.product?.price) ||
+              0;
+            return sum + price * item.quantity;
+          }, 0);
+
+        const productIds = cartToUse.items.map((item) => item.productId);
+
+        const { applyCouponCodeApi } = await import("@/utils/couponsApi");
+        
+        const response = await applyCouponCodeApi({
+          code,
+          orderValue,
+          productIds,
+        });
+
+        useCartStore.setState({
+          appliedCoupon: response.coupon,
+          couponDiscount: Number(response.discountAmount) || 0,
+          couponApplying: false,
+        });
+
+        return response;
+      } catch (error) {
+        if (!silent) {
+          useCartStore.setState({
+            couponApplying: false,
+            error: error instanceof Error ? error.message : "Failed to apply coupon",
+          });
+        }
+        throw error;
+      }
+    } 
+    
+    // Fallback to store logic
+    return applyCouponToStore(code, options);
+  };
   const removeCoupon = () => removeCouponFromStore();
 
   return {

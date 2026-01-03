@@ -140,22 +140,60 @@ export const fetchTrendingProducts = async ({
 // React Query Hooks
 
 // Hook for fetching all products
+// Hooks for fetching filters
+export const useProductFilters = () => {
+  return useQuery({
+    queryKey: ["productFilters"],
+    queryFn: () => apiCall<{
+      success: boolean;
+      minPrice: number;
+      maxPrice: number;
+      brands: string[];
+      categories: { id: string; name: string; slug: string }[];
+      genders: string[];
+    }>("/products/filters"),
+    staleTime: 1000 * 60 * 30, // 30 minutes
+  });
+};
+
+// Hook for fetching all products
 export const useProducts = ({
   page = 1,
   limit = 10,
   search,
   category,
   gender,
+  minPrice,
+  maxPrice,
+  brand,
+  sort,
 }: {
   page?: number;
   limit?: number;
   search?: string;
   category?: string;
   gender?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  brand?: string;
+  sort?: string;
 } = {}) => {
   return useQuery({
-    queryKey: ["products", { page, limit, search, category, gender }],
-    queryFn: () => fetchProducts({ page, limit, search, category }),
+    queryKey: ["products", { page, limit, search, category, gender, minPrice, maxPrice, brand, sort }],
+    queryFn: () => {
+        const params = new URLSearchParams();
+        if (page) params.append("page", page.toString());
+        if (limit) params.append("limit", limit.toString());
+        if (search) params.append("search", search);
+        if (category) params.append("category", category);
+        if (gender) params.append("gender", gender);
+        if (minPrice !== undefined) params.append("minPrice", minPrice.toString());
+        if (maxPrice !== undefined) params.append("maxPrice", maxPrice.toString());
+        if (brand) params.append("brand", brand);
+        if (sort) params.append("sort", sort);
+
+        return apiCall<ProductsResponse>(`/products?${params.toString()}`);
+    },
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: (failureCount, error: ExtendedApiError) => {
       if (error?.status && error.status >= 400 && error.status < 500) {

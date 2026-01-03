@@ -3,13 +3,25 @@ import { Request, Response } from "express";
 
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const { page, limit = 10, search, category, gender } = req.query;
+    const {
+      page,
+      limit = 10,
+      search,
+      category,
+      gender,
+      minPrice,
+      maxPrice,
+      brand,
+      sort,
+    } = req.query;
+
     const pageNum = Number(page) || 1;
     const take = Number(limit);
     const skip = (pageNum - 1) * take;
 
     const where: any = {};
 
+    // Search
     if (search) {
       where.OR = [
         { name: { contains: String(search), mode: "insensitive" as const } },
@@ -18,14 +30,67 @@ export const getAllProducts = async (req: Request, res: Response) => {
       ];
     }
 
+    // Categories (comma separated or single)
     if (category) {
-      where.categories = {
-        some: { id: String(category) },
-      };
+      const categoryIds = String(category).split(",");
+      if (categoryIds.length > 0) {
+        where.categories = {
+          some: { id: { in: categoryIds } },
+        };
+      }
     }
 
+    // Brands (comma separated or single)
+    if (brand) {
+      const brands = String(brand).split(",");
+      if (brands.length > 0) {
+        where.brand = { in: brands, mode: "insensitive" as const };
+      }
+    }
+
+    // Gender
     if (gender) {
       where.gender = String(gender).toUpperCase();
+    }
+
+    // Price Range
+    if (minPrice || maxPrice) {
+      where.OR = [
+        {
+          discountPrice: {
+            gte: minPrice ? Number(minPrice) : undefined,
+            lte: maxPrice ? Number(maxPrice) : undefined,
+          },
+        },
+        {
+          discountPrice: null,
+          price: {
+            gte: minPrice ? Number(minPrice) : undefined,
+            lte: maxPrice ? Number(maxPrice) : undefined,
+          },
+        },
+      ];
+    }
+
+    // Sorting
+    let orderBy: any = { createdAt: "desc" };
+    if (sort) {
+      switch (sort) {
+        case "price_asc":
+          orderBy = { price: "asc" };
+          break;
+        case "price_desc":
+          orderBy = { price: "desc" };
+          break;
+        case "newest":
+          orderBy = { createdAt: "desc" };
+          break;
+        case "popularity":
+          orderBy = { reviews: { _count: "desc" } };
+          break;
+        default:
+          orderBy = { createdAt: "desc" };
+      }
     }
 
     const [products, total] = await Promise.all([
@@ -52,7 +117,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
             select: { url: true },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy,
       }),
       prisma.product.count({ where }),
     ]);
@@ -74,6 +139,52 @@ export const getAllProducts = async (req: Request, res: Response) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, error: "Failed to fetch products" });
+  }
+};
+
+export const getProductsFilters = async (req: Request, res: Response) => {
+  try {
+    const [priceRange, brands, categories, genders] = await Promise.all([
+      prisma.product.aggregate({
+        _min: { price: true },
+        _max: { price: true },
+      }),
+      prisma.product.findMany({
+        select: { brand: true },
+        distinct: ["brand"],
+        orderBy: { brand: "asc" }
+      }),
+      prisma.category.findMany({
+        select: { id: true, name: true, slug: true },
+        orderBy: { name: "asc" }
+      }),
+      prisma.product.findMany({
+        select: { gender: true },
+        distinct: ["gender"],
+      })
+    ]);
+
+    const uniqueBrands = brands
+      .map(b => b.brand)
+      .filter((b): b is string => b !== null); // Type guard
+
+    const uniqueGenders = genders
+      .map(g => g.gender)
+      .filter((g) => g !== null);
+
+
+    res.status(200).json({
+      success: true,
+      minPrice: priceRange._min.price || 0,
+      maxPrice: priceRange._max.price || 10000,
+      brands: uniqueBrands,
+      categories,
+      genders: uniqueGenders
+    });
+
+  } catch (error) {
+    console.error("Error fetching filters:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch filters" });
   }
 };
 

@@ -296,6 +296,7 @@ export const useCartStore = create<CartStore>((set, get) => {
       options?: { silent?: boolean }
     ): Promise<ApplyCouponResponse> => {
       const { cart } = get();
+      console.log("cart", cart);
       const silent = Boolean(options?.silent);
 
       if (!cart || !cart.items || cart.items.length === 0) {

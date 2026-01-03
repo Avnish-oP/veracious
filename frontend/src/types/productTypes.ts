@@ -88,17 +88,21 @@ export interface ProductFilters {
   page?: number;
   limit?: number;
   search?: string;
-  category?: string;
-  brand?: string;
+  category?: string; // Comma separated IDs
+  brand?: string; // Comma separated names
   minPrice?: number;
   maxPrice?: number;
-  gender?: "MALE" | "FEMALE" | "UNISEX";
-  frameShape?: string;
-  frameMaterial?: string;
-  lensType?: string;
-  isFeatured?: boolean;
-  sortBy?: "price" | "name" | "createdAt" | "rating";
-  sortOrder?: "asc" | "desc";
+  gender?: string;
+  sort?: "price_asc" | "price_desc" | "newest" | "popularity";
+  filter?: string; // e.g. "all", "featured", "trending"
+}
+
+export interface FilterOptions {
+  minPrice: number;
+  maxPrice: number;
+  brands: string[];
+  categories: Category[];
+  genders: string[];
 }
 
 // Cart and Wishlist types

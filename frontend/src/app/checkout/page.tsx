@@ -541,7 +541,13 @@ export default function CheckoutPage() {
                         <h3 className="font-semibold text-gray-900 truncate">
                           {item.product?.name}
                         </h3>
-                        <p className="text-sm text-gray-600">
+                        {item.configuration && (
+                          <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+                              {item.configuration.power && <p><span className="font-medium">Power:</span> {item.configuration.power}</p>}
+                              {item.configuration.type && <p><span className="font-medium">Lens:</span> {item.configuration.type} {item.configuration.coating && `(${item.configuration.coating})`}</p>}
+                          </div>
+                        )}
+                        <p className="text-sm text-gray-600 mt-1">
                           Qty: {item.quantity}
                         </p>
                       </div>

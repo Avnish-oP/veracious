@@ -34,11 +34,12 @@ async function cartApiCall<T>(
 
 export const addToCartAPI = async (
   productId: string,
-  quantity: number
+  quantity: number,
+  configuration?: any
 ): Promise<CartResponse> => {
   return cartApiCall<CartResponse>("/cart/add", {
     method: "POST",
-    body: JSON.stringify({ productId, quantity } as AddToCartRequest),
+    body: JSON.stringify({ productId, quantity, configuration } as AddToCartRequest),
   });
 };
 

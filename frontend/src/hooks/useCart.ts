@@ -80,20 +80,22 @@ export function useCart() {
     mutationFn: async ({
       productId,
       quantity,
+      configuration,
     }: {
       productId: string;
       quantity: number;
+      configuration?: any;
     }) => {
       // Get fresh user from query cache at mutation time
       const currentUser = getCurrentUser(queryClient);
 
       if (currentUser) {
         return {
-          ...(await addToCartAPI(productId, quantity)),
+          ...(await addToCartAPI(productId, quantity, configuration)),
           isServerCart: true,
         };
       } else {
-        await addToGuestCart(productId, quantity);
+        await addToGuestCart(productId, quantity, configuration);
         const cartState = useCartStore.getState().cart;
         return { cart: cartState, isServerCart: false };
       }
@@ -276,8 +278,8 @@ export function useCart() {
   };
 
   // Safe Actions (wrappers)
-  const addToCart = (productId: string, quantity: number) =>
-    addToCartMutation.mutateAsync({ productId, quantity });
+  const addToCart = (productId: string, quantity: number, configuration?: any) =>
+    addToCartMutation.mutateAsync({ productId, quantity, configuration });
 
   const removeFromCart = (productId: string) =>
     removeFromCartMutation.mutateAsync({ productId });

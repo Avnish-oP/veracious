@@ -46,6 +46,8 @@ export interface Category {
   name: string;
   slug: string;
   type?: string;
+  parentId?: string | null;
+  icon?: string | null;
   createdAt: string;
   updatedAt: string;
 }

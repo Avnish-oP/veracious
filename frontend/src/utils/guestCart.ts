@@ -44,12 +44,15 @@ export const saveGuestCart = (cart: LocalStorageCart): void => {
  */
 export const addToGuestCart = (
   productId: string,
-  quantity: number
+  quantity: number,
+  configuration?: any
 ): LocalStorageCart => {
   const cart = getGuestCart();
 
   const existingItemIndex = cart.items.findIndex(
-    (item) => item.productId === productId
+    (item) => 
+      item.productId === productId && 
+      JSON.stringify(item.configuration) === JSON.stringify(configuration)
   );
 
   if (existingItemIndex !== -1) {
@@ -57,7 +60,7 @@ export const addToGuestCart = (
     cart.items[existingItemIndex].quantity += quantity;
   } else {
     // Add new item
-    cart.items.push({ productId, quantity });
+    cart.items.push({ productId, quantity, configuration });
   }
 
   saveGuestCart(cart);

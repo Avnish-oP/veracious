@@ -10,7 +10,7 @@ export const addToCart = async (
   if (!userId) {
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }
-  const { productId, quantity } = req.body;
+  const { productId, quantity, configuration } = req.body;
   if (!productId || !quantity || quantity <= 0) {
     return res.status(400).json({ success: false, message: "Invalid input" });
   }
@@ -22,8 +22,11 @@ export const addToCart = async (
     let cart = cartData ? JSON.parse(cartData) : { items: [] };
 
     const existingItemIndex = cart.items.findIndex(
-      (item: any) => item.productId === productId
+      (item: any) => 
+        item.productId === productId && 
+        JSON.stringify(item.configuration) === JSON.stringify(configuration)
     );
+
     if (existingItemIndex !== -1) {
       cart.items[existingItemIndex].quantity += quantity;
     } else {
@@ -36,7 +39,7 @@ export const addToCart = async (
           .status(404)
           .json({ success: false, message: "Product not found" });
       }
-      cart.items.push({ productId, quantity });
+      cart.items.push({ productId, quantity, configuration });
     }
     console.log(cart);
     await redisClient.set(key, JSON.stringify(cart));
@@ -50,6 +53,7 @@ export const addToCart = async (
           create: cart.items.map((item: any) => ({
             productId: item.productId,
             quantity: item.quantity,
+            configuration: item.configuration
           })),
         },
       },
@@ -59,6 +63,7 @@ export const addToCart = async (
           create: cart.items.map((item: any) => ({
             productId: item.productId,
             quantity: item.quantity,
+            configuration: item.configuration
           })),
         },
       },

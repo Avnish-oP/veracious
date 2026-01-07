@@ -35,8 +35,9 @@ interface NavItem {
 
 const navigationBase: NavItem[] = [
   { label: "Home", href: "/" },
-  { label: "Categories", href: "/categories" },
-  { label: "Featured", href: "/featured" },
+  { label: "Sunglasses", href: "/products?category=sunglasses" },
+  { label: "Contact Lenses", href: "/products?category=contact-lenses" },
+  { label: "Eyewear", href: "/products?category=eyewear" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -46,7 +47,6 @@ export const Navbar: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
   const [navigation, setNavigation] = useState<NavItem[]>(navigationBase);
-  // categoryChildren state removed as it was unused
   const [categoriesRaw, setCategoriesRaw] = useState<Category[]>([]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -59,7 +59,6 @@ export const Navbar: React.FC = () => {
   const { count: wishlistItemCount } = useWishlist();
 
   const cartItemCount = getTotalItems();
-  console.log("User in Navbar:", user);
 
   // Handle scroll effect
   useEffect(() => {
@@ -85,21 +84,55 @@ export const Navbar: React.FC = () => {
         const res = await fetchCategories();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const cats = (res as any).categories || [];
-        const children = cats.map((c: Category) => ({
-          label: c.name,
-          href: `/products?category=${c.id}`,
-        }));
+        
         if (mounted) {
           setCategoriesRaw(cats);
-          // setCategoryChildren(children);
-          // build navigation with categories children (flat fallback)
-          const nav = navigationBase.map((item) =>
-            item.label === "Categories" ? { ...item, children } : item
-          );
+
+          // Find specific categories to attach children
+          const contactLensCat = cats.find((c: Category) => c.slug === "contact-lenses");
+          
+          let contactLensChildren: NavItem[] = [];
+          
+          if (contactLensCat) {
+             // Filter categories that are children of Contact Lenses or have specific types
+             // Since we populated types (MANUFACTURER, LENS_TYPE, DISPOSABILITY), we can use that.
+             // OR check parentId if available in frontend model.
+             // Assuming cats contains all categories including sub-categories.
+             
+             contactLensChildren = cats
+                .filter((c: Category) => c.parentId === contactLensCat.id || ["MANUFACTURER", "LENS_TYPE", "DISPOSABILITY"].includes(c.type || ""))
+                .map((c: Category) => ({
+                   label: c.name,
+                   href: `/products?category=${c.id}`,
+                   type: c.type 
+                }));
+          }
+
+          const sunglassesCat = cats.find((c: Category) => c.slug === "sunglasses");
+          let sunglassesChildren: NavItem[] = [];
+          if (sunglassesCat) {
+             sunglassesChildren = cats
+                .filter((c: Category) => c.parentId === sunglassesCat.id)
+                .map((c: Category) => ({
+                   label: c.name,
+                   href: `/products?category=${c.id}`,
+                   type: c.type 
+                }));
+          }
+
+          const nav = navigationBase.map((item) => {
+            if (item.label === "Contact Lenses") {
+               return { ...item, children: contactLensChildren };
+            }
+            if (item.label === "Sunglasses") {
+               return { ...item, children: sunglassesChildren };
+            }
+            return item;
+          });
+          
           setNavigation(nav);
         }
       } catch (e) {
-        // swallow error and keep default navigation
         console.error("Failed to load categories for navbar", e);
       }
     })();
@@ -146,23 +179,7 @@ export const Navbar: React.FC = () => {
             <Link href="/" className="flex items-center space-x-2">
               <div className="relative flex items-center">
                 {/* <ShoppingCart className="w-6 h-6 text-white" /> */}
-                <Image src="/logo.png" alt="Logo" width={50} height={50} />
-
-                <motion.div
-                  className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-300 rounded-full"
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.8, 1, 0.8],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                />
-                <div className="text-2xl font-bold font-serif bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent -ml-2 mt-2  ">
-                  OtticaMart
-                </div>
+                <Image src="/otticamart1.png" alt="Logo" width={130} height={120} />
               </div>
             </Link>
           </motion.div>
@@ -171,13 +188,14 @@ export const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center space-x-8">
             {navigation.map((item) => (
               <div key={item.label} className="relative">
-                {item.children ? (
+                {item.children && item.children.length > 0 ? (
                   <div
                     className="relative"
                     onMouseEnter={() => setActiveDropdown(item.label)}
                     onMouseLeave={() => setActiveDropdown(null)}
                   >
-                    <button
+                    <Link
+                      href={item.href}
                       className={cn(
                         "flex items-center space-x-1 px-3 py-2 text-sm font-medium transition-all duration-200 rounded-lg",
                         isActivePage(item.href)
@@ -192,7 +210,7 @@ export const Navbar: React.FC = () => {
                           activeDropdown === item.label ? "rotate-180" : ""
                         )}
                       />
-                    </button>
+                    </Link>
 
                     <AnimatePresence>
                       {activeDropdown === item.label && (
@@ -201,59 +219,105 @@ export const Navbar: React.FC = () => {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: -10, scale: 0.95 }}
                           transition={{ duration: 0.2 }}
-                          className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden p-4 z-40"
+                          className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden p-4 z-40 min-w-[500px]"
                         >
-                          {/* If this is the Categories menu, render grouped by type */}
-                          {item.label === "Categories" ? (
-                            <div className="flex space-x-6 p-4 w-full">
-                              {(() => {
-                                // group categories by type and render in preferred order
-                                const order = [
-                                  "SEX",
-                                  "SHAPE",
-                                  "COLLECTION",
-                                  "BRAND",
-                                  "MATERIAL",
-                                  "OTHER",
-                                ];
-                                const typeNames: Record<string, string> = {
-                                  SEX: "Gender",
-                                  SHAPE: "Shape",
-                                  COLLECTION: "Collections",
-                                  BRAND: "Brands",
-                                  MATERIAL: "Material",
-                                  OTHER: "Other",
-                                };
-                                const grouped: Record<string, Category[]> = {};
-                                categoriesRaw.forEach((c) => {
-                                  const t = c.type || "OTHER";
-                                  if (!grouped[t]) grouped[t] = [];
-                                  grouped[t].push(c);
-                                });
+                          {/* Contact Lenses Specific Menu */}
+                          {item.label === "Contact Lenses" ? (
+                            <div className="flex justify-between gap-6 p-2 w-full">
+                              {[
+                                { title: "Brands", type: "MANUFACTURER" },
+                                { title: "Type", type: "LENS_TYPE" },
+                                { title: "Disposability", type: "DISPOSABILITY" }
+                              ].map((group) => {
+                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                 const groupItems = item.children?.filter((child: any) => child.type === group.type);
+                                 
+                                 if (!groupItems || groupItems.length === 0) return null;
 
-                                return order.map((t) => {
-                                  const list = grouped[t];
-                                  if (!list || list.length === 0) return null;
-                                  return (
-                                    <div key={t}>
-                                      <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                                        {typeNames[t] || t}
-                                      </h4>
-                                      <div className="space-y-1">
-                                        {list.map((c) => (
-                                          <Link
-                                            key={c.id}
-                                            href={`/products?category=${c.id}`}
-                                            className="block px-2 py-1 text-sm text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-md"
-                                          >
-                                            {c.name}
-                                          </Link>
-                                        ))}
-                                      </div>
+                                 return (
+                                    <div key={group.title} className="flex-1">
+                                       <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">{group.title}</h4>
+                                       <div className="space-y-1">
+                                          {groupItems.map((child) => (
+                                             <Link
+                                                key={child.href}
+                                                href={child.href}
+                                                className="block px-2 py-1.5 text-sm text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                                             >
+                                                {child.label}
+                                             </Link>
+                                          ))}
+                                       </div>
                                     </div>
-                                  );
-                                });
-                              })()}
+                                 );
+                              })}
+                            </div>
+                          ) : item.label === "Sunglasses" ? (
+                            <div className="flex gap-8 p-4 w-full min-w-[600px]">
+                               {/* Group 1: Gender/Sex - Manually split for better UI if type is SEX */}
+                               {(() => {
+                                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                   const sexItems = item.children?.filter((child: any) => child.type === "SEX") || [];
+                                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                   const shapeItems = item.children?.filter((child: any) => child.type === "SHAPE") || [];
+                                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                   const brandItems = item.children?.filter((child: any) => child.type === "BRAND") || [];
+                                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                   const otherItems = item.children?.filter((child: any) => !["SEX", "SHAPE", "BRAND"].includes(child.type)) || [];
+
+                                   return (
+                                      <>
+                                        {sexItems.length > 0 && (
+                                            <div className="flex-1 min-w-[120px]">
+                                                <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">Shop By Sex</h4>
+                                                <div className="space-y-2">
+                                                    {sexItems.map(child => (
+                                                        <Link key={child.href} href={child.href} className="block text-sm text-gray-600 hover:text-amber-600 hover:underline">
+                                                            {child.label}
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {shapeItems.length > 0 && (
+                                            <div className="flex-1 min-w-[120px]">
+                                                <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">Shop By Shape</h4>
+                                                <div className="space-y-2">
+                                                    {shapeItems.map(child => (
+                                                        <Link key={child.href} href={child.href} className="block text-sm text-gray-600 hover:text-amber-600 hover:underline">
+                                                            {child.label}
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {brandItems.length > 0 && (
+                                            <div className="flex-1 min-w-[120px]">
+                                                <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">Brands</h4>
+                                                <div className="space-y-2">
+                                                    {brandItems.map(child => (
+                                                        <Link key={child.href} href={child.href} className="block text-sm text-gray-600 hover:text-amber-600 hover:underline">
+                                                            {child.label}
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {otherItems.length > 0 && (
+                                            <div className="flex-1 min-w-[120px]">
+                                                <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">More</h4>
+                                                <div className="space-y-2">
+                                                    {otherItems.map(child => (
+                                                        <Link key={child.href} href={child.href} className="block text-sm text-gray-600 hover:text-amber-600 hover:underline">
+                                                            {child.label}
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                      </>
+                                   );
+                               })()}
                             </div>
                           ) : (
                             <div className="py-2">

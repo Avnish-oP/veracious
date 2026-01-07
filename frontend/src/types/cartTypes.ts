@@ -7,6 +7,7 @@ export interface CartItem {
   id?: string; // DB cart item ID (only for logged-in users)
   productId: string;
   quantity: number;
+  configuration?: any;
   product?: Product; // Populated product details
 }
 
@@ -28,6 +29,7 @@ export interface CartResponse {
 export interface AddToCartRequest {
   productId: string;
   quantity: number;
+  configuration?: any;
 }
 
 export interface UpdateCartItemRequest {
@@ -44,6 +46,7 @@ export interface MergeCartsRequest {
     items: Array<{
       productId: string;
       quantity: number;
+      configuration?: any;
     }>;
   };
 }
@@ -53,6 +56,7 @@ export interface LocalStorageCart {
   items: Array<{
     productId: string;
     quantity: number;
+    configuration?: any;
   }>;
 }
 

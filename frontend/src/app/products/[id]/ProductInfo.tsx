@@ -68,10 +68,38 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   //   ? "Unable to load coupons right now."
   //   : null;
 
+  const [selectedPower, setSelectedPower] = useState<string>("");
+  const [lensConfig, setLensConfig] = useState<any>(null);
+  const [showLensModal, setShowLensModal] = useState(false);
+
+  const isContactLens = product.categories?.some(c => c.slug.includes("contact-lenses") || c.name.includes("Contact Lenses"));
+  const isEyewear = product.categories?.some(c => c.slug.includes("eyewear") || c.name.includes("Eyewear"));
+
+  const generatePowers = () => {
+    const powers = [];
+    for (let i = -8.0; i <= 8.0; i += 0.25) {
+      if (i === 0) continue;
+      const sign = i > 0 ? "+" : "";
+      powers.push({ value: i.toFixed(2), label: `${sign}${i.toFixed(2)}` });
+    }
+    return powers;
+  };
+
+  const powers = generatePowers();
+
   const handleAddToCart = async () => {
+    if (isContactLens && !selectedPower) {
+      toast.error("Please select a power");
+      return;
+    }
+    
+    // For eyewear, if users click regular add to cart, we assume frame only unless they used the "Select Lenses" flow
+    // But maybe we should prompt them? For now, standard flow is Frame Only if not configured.
+    
     setIsAddingToCart(true);
     try {
-      await addToCart(product.id, quantity);
+      const config = isContactLens ? { power: selectedPower } : (isEyewear ? lensConfig : null);
+      await addToCart(product.id, quantity, config);
       toast.success(`${product.name} added to cart!`);
     } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to add to cart");
@@ -81,9 +109,15 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   };
 
   const handleBuyNow = async () => {
+    if (isContactLens && !selectedPower) {
+       toast.error("Please select a power");
+       return;
+    }
+
     setIsAddingToCart(true);
     try {
-      await addToCart(product.id, quantity);
+      const config = isContactLens ? { power: selectedPower } : (isEyewear ? lensConfig : null);
+      await addToCart(product.id, quantity, config);
       router.push("/cart");
     } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to add to cart");
@@ -254,6 +288,83 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             </p>
           )}
         </div>
+      </div>
+
+      {/* Product Configuration */}
+      <div className="border-t border-b border-gray-100 py-6 space-y-4">
+        {isContactLens && (
+          <div>
+             <label className="block text-sm font-bold text-gray-700 mb-2">Select Power (SPH)</label>
+             <div className="relative">
+               <select 
+                  value={selectedPower}
+                  onChange={(e) => setSelectedPower(e.target.value)}
+                  className="w-full p-3 bg-white border border-gray-300 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 font-medium cursor-pointer"
+               >
+                 <option value="" disabled>Choose Power</option>
+                 {powers.map((p) => (
+                   <option key={p.value} value={p.value}>{p.label}</option>
+                 ))}
+               </select>
+               <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
+                  <ChevronRight className="w-4 h-4 rotate-90" />
+               </div>
+             </div>
+          </div>
+        )}
+
+        {isEyewear && (
+           <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+              <div className="flex items-center justify-between mb-2">
+                 <span className="font-bold text-gray-900">Lens Configuration</span>
+                 {lensConfig ? (
+                    <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">Selected</span>
+                 ) : (
+                    <span className="text-xs font-bold text-gray-500">Frame Only</span>
+                 )}
+              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                 {lensConfig ? `Type: ${lensConfig.type} (${lensConfig.coating || 'Standard'})` : "Customize your lenses with prescription, blue-light protection, and more."}
+              </p>
+              
+              {!showLensModal ? (
+                <button 
+                  onClick={() => setShowLensModal(true)}
+                  className="w-full py-2 bg-white border border-amber-300 text-amber-600 font-bold rounded-lg hover:bg-amber-50 transition-colors"
+                >
+                  {lensConfig ? "Edit Lenses" : "Select Lenses"}
+                </button>
+              ) : (
+                <div className="space-y-3 bg-white p-3 rounded-lg border border-amber-200 animate-in fade-in zoom-in-95 duration-200">
+                   <p className="text-xs font-bold text-gray-500 uppercase">Lens Type</p>
+                   <div className="grid grid-cols-1 gap-2">
+                      {['Zero Power', 'Single Vision', 'Bifocal'].map((type) => (
+                        <button
+                           key={type}
+                           onClick={() => {
+                              setLensConfig({ type, coating: 'Anti-Glare' }); // Simplified for demo
+                              setShowLensModal(false);
+                              toast.success(`Selected ${type} lenses`);
+                           }}
+                           className="text-left px-3 py-2 rounded-md hover:bg-amber-50 text-sm font-medium text-gray-700 hover:text-amber-700 transition-colors"
+                        >
+                           {type}
+                        </button>
+                      ))}
+                   </div>
+                   <button 
+                     onClick={() => {
+                        setLensConfig(null);
+                        setShowLensModal(false);
+                     }}
+                     className="text-xs text-red-500 hover:underline w-full text-center mt-2"
+                   >
+                     Remove Lenses (Frame Only)
+                   </button>
+                </div>
+              )}
+           </div>
+        )}
       </div>
 
       {/* Stock & Quantity */}

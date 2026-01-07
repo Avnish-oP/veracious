@@ -24,7 +24,7 @@ interface CartStore {
   couponApplying: boolean;
 
   // Actions
-  addToCart: (productId: string, quantity: number) => Promise<void>;
+  addToCart: (productId: string, quantity: number, configuration?: any) => Promise<void>;
   removeFromCart: (productId: string) => Promise<void>;
   updateCartItem: (productId: string, quantity: number) => Promise<void>;
   fetchCart: () => Promise<void>; // actually initializeGuestCart
@@ -124,12 +124,12 @@ export const useCartStore = create<CartStore>((set, get) => {
     /**
      * Add item to cart
      */
-    addToCart: async (productId: string, quantity: number) => {
+    addToCart: async (productId: string, quantity: number, configuration?: any) => {
       set({ loading: true, error: null });
 
       try {
         // Guest user: save to localStorage and fetch product details
-        const guestCart = addToGuestCart(productId, quantity);
+        const guestCart = addToGuestCart(productId, quantity, configuration);
 
         // Fetch product details for all items
         const productIds = guestCart.items.map((item) => item.productId);

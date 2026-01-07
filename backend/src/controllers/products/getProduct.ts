@@ -1,17 +1,89 @@
 import prisma from "../../utils/prisma";
 import { Request, Response } from "express";
 
+const buildProductWhereClause = (query: any) => {
+  const {
+    search,
+    category,
+    gender,
+    minPrice,
+    maxPrice,
+    brand,
+  } = query;
+
+  const where: any = {};
+
+  // Search
+  if (search) {
+    where.OR = [
+      { name: { contains: String(search), mode: "insensitive" as const } },
+      { brand: { contains: String(search), mode: "insensitive" as const } },
+      { tags: { has: String(search) } },
+    ];
+  }
+
+  // Categories (comma separated or single) - Support ID or Slug
+  if (category) {
+    const categoryValues = String(category).split(",");
+    if (categoryValues.length > 0) {
+      where.categories = {
+        some: {
+          OR: [
+             { id: { in: categoryValues } },
+             { slug: { in: categoryValues } }
+          ]
+        },
+      };
+    }
+  }
+
+  // Brands (comma separated or single)
+  if (brand) {
+    const brands = String(brand).split(",");
+    if (brands.length > 0) {
+      where.brand = { in: brands, mode: "insensitive" as const };
+    }
+  }
+
+  // Gender
+  if (gender) {
+    const genderValue = String(gender).toUpperCase();
+    if (["MALE", "FEMALE", "UNISEX"].includes(genderValue)) {
+         where.gender = genderValue;
+    } else if (genderValue === "MEN") {
+         where.gender = "MALE";
+    } else if (genderValue === "WOMEN") {
+         where.gender = "FEMALE";
+    }
+  }
+
+  // Price Range
+  if (minPrice || maxPrice) {
+    where.OR = [
+      {
+        discountPrice: {
+          gte: minPrice ? Number(minPrice) : undefined,
+          lte: maxPrice ? Number(maxPrice) : undefined,
+        },
+      },
+      {
+        discountPrice: null,
+        price: {
+          gte: minPrice ? Number(minPrice) : undefined,
+          lte: maxPrice ? Number(maxPrice) : undefined,
+        },
+      },
+    ];
+  }
+
+  return where;
+}
+
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const {
       page,
       limit = 10,
-      search,
-      category,
-      gender,
-      minPrice,
-      maxPrice,
-      brand,
       sort,
     } = req.query;
 
@@ -19,58 +91,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
     const take = Number(limit);
     const skip = (pageNum - 1) * take;
 
-    const where: any = {};
-
-    // Search
-    if (search) {
-      where.OR = [
-        { name: { contains: String(search), mode: "insensitive" as const } },
-        { brand: { contains: String(search), mode: "insensitive" as const } },
-        { tags: { has: String(search) } },
-      ];
-    }
-
-    // Categories (comma separated or single)
-    if (category) {
-      const categoryIds = String(category).split(",");
-      if (categoryIds.length > 0) {
-        where.categories = {
-          some: { id: { in: categoryIds } },
-        };
-      }
-    }
-
-    // Brands (comma separated or single)
-    if (brand) {
-      const brands = String(brand).split(",");
-      if (brands.length > 0) {
-        where.brand = { in: brands, mode: "insensitive" as const };
-      }
-    }
-
-    // Gender
-    if (gender) {
-      where.gender = String(gender).toUpperCase();
-    }
-
-    // Price Range
-    if (minPrice || maxPrice) {
-      where.OR = [
-        {
-          discountPrice: {
-            gte: minPrice ? Number(minPrice) : undefined,
-            lte: maxPrice ? Number(maxPrice) : undefined,
-          },
-        },
-        {
-          discountPrice: null,
-          price: {
-            gte: minPrice ? Number(minPrice) : undefined,
-            lte: maxPrice ? Number(maxPrice) : undefined,
-          },
-        },
-      ];
-    }
+    const where = buildProductWhereClause(req.query);
 
     // Sorting
     let orderBy: any = { createdAt: "desc" };
@@ -138,35 +159,70 @@ export const getAllProducts = async (req: Request, res: Response) => {
       totalPages: Math.ceil(total / take),
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ success: false, error: "Failed to fetch products" });
   }
 };
 
 export const getProductsFilters = async (req: Request, res: Response) => {
   try {
-    const [priceRange, brands, categories, genders] = await Promise.all([
+    // We want filters based on CURRENT context.
+    const where = buildProductWhereClause(req.query);
+
+    // Remove specific filters from the "where" clause for specific aggregations if we want "OR" behavior for that facet? 
+    // E.g. If I select Brand A, I still want to see Brand B in the list.
+    // For now, let's simply aggregate based on the OTHER filters.
+    // Actually, usually:
+    // Brands list: Filter by Category, MinPrice, Gender, Search (BUT NOT Brand)
+    // Genders list: Filter by Category, MinPrice, Brand, Search (BUT NOT Gender)
+    // Price Range: Filter by Category, Brand, Gender, Search (BUT NOT Price)
+    
+    const { brand, gender, minPrice, maxPrice, ...otherFilters } = req.query;
+
+    const brandWhere = buildProductWhereClause({ ...req.query, brand: undefined }); 
+    const genderWhere = buildProductWhereClause({ ...req.query, gender: undefined });
+    const priceWhere = buildProductWhereClause({ ...req.query, minPrice: undefined, maxPrice: undefined });
+    
+    // For Categories, we usually show all subcategories of current category? 
+    // Or just all categories compatible with current result?
+    // Let's stick to returning *available* brands and genders for the current search/category scope.
+    
+    const [priceRange, brands, genders] = await Promise.all([
       prisma.product.aggregate({
+        where: priceWhere,
         _min: { price: true },
         _max: { price: true },
       }),
       prisma.product.findMany({
+        where: brandWhere,
         select: { brand: true },
         distinct: ["brand"],
         orderBy: { brand: "asc" }
       }),
-      prisma.category.findMany({
-        select: { id: true, name: true, slug: true },
-        orderBy: { name: "asc" }
-      }),
       prisma.product.findMany({
+        where: genderWhere,
         select: { gender: true },
         distinct: ["gender"],
       })
     ]);
 
+    // Fetch categories relevant to this? Usually we show the tree.
+    // For now, let's return all top level categories or just static ones.
+    // But user wants dynamic filters.
+    // Let's just return all categories for now as that's a navigation tree usually.
+    const categories = await prisma.category.findMany({
+        where: {
+             products: {
+                 some: where
+             }
+        },
+        select: { id: true, name: true, slug: true },
+        orderBy: { name: "asc" }
+    });
+
     const uniqueBrands = brands
       .map(b => b.brand)
-      .filter((b): b is string => b !== null); // Type guard
+      .filter((b): b is string => b !== null);
 
     const uniqueGenders = genders
       .map(g => g.gender)

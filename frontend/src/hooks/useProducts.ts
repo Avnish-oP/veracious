@@ -141,18 +141,36 @@ export const fetchTrendingProducts = async ({
 
 // Hook for fetching all products
 // Hooks for fetching filters
-export const useProductFilters = () => {
+// Hooks for fetching filters
+export const useProductFilters = (filters: {
+  search?: string;
+  category?: string;
+  gender?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  brand?: string;
+} = {}) => {
   return useQuery({
-    queryKey: ["productFilters"],
-    queryFn: () => apiCall<{
-      success: boolean;
-      minPrice: number;
-      maxPrice: number;
-      brands: string[];
-      categories: { id: string; name: string; slug: string }[];
-      genders: string[];
-    }>("/products/filters"),
-    staleTime: 1000 * 60 * 30, // 30 minutes
+    queryKey: ["productFilters", filters],
+    queryFn: () => {
+        const params = new URLSearchParams();
+        if (filters.search) params.append("search", filters.search);
+        if (filters.category) params.append("category", filters.category);
+        if (filters.gender) params.append("gender", filters.gender);
+        if (filters.minPrice !== undefined) params.append("minPrice", filters.minPrice.toString());
+        if (filters.maxPrice !== undefined) params.append("maxPrice", filters.maxPrice.toString());
+        if (filters.brand) params.append("brand", filters.brand);
+
+        return apiCall<{
+          success: boolean;
+          minPrice: number;
+          maxPrice: number;
+          brands: string[];
+          categories: { id: string; name: string; slug: string }[];
+          genders: string[];
+        }>(`/products/filters?${params.toString()}`);
+    },
+    staleTime: 1000 * 60 * 5, // Reduced stale time for dynamic filters
   });
 };
 

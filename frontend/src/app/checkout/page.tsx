@@ -517,7 +517,7 @@ export default function CheckoutPage() {
               </div>
 
               <div className="space-y-4">
-                {cart.items.map((item) => {
+                {cart.items.map((item, index) => {
                   const firstImage = item.product?.images?.[0];
                   const imageUrl =
                     typeof firstImage === "string"
@@ -526,7 +526,7 @@ export default function CheckoutPage() {
 
                   return (
                     <div
-                      key={item.productId}
+                      key={item.id || `${item.productId}-${index}`}
                       className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
                     >
                       <div className="relative w-20 h-20 flex-shrink-0">

@@ -36,29 +36,12 @@ async function main() {
   console.log("Upserted Eyewear");
 
   // Sunglasses Sub-categories
-  const sunglassesShapes = [
-    { name: "Aviator", slug: "aviator", type: "SHAPE" },
-    { name: "Wayfarer", slug: "wayfarer", type: "SHAPE" },
-    { name: "Round", slug: "round-sunglasses", type: "SHAPE" },
-    { name: "Square", slug: "square-sunglasses", type: "SHAPE" },
-  ];
-
-  for (const s of sunglassesShapes) {
-    await prisma.category.upsert({
-      where: { slug: s.slug },
-      update: { parentId: sunglasses.id, type: s.type as CategoryType },
-      create: {
-        name: s.name,
-        slug: s.slug,
-        type: s.type as CategoryType,
-        parentId: sunglasses.id,
-      },
-    });
-  }
   
+  // 1. GENDER (SEX)
   const sunglassesGenders = [
     { name: "Men", slug: "men-sunglasses", type: "SEX" },
     { name: "Women", slug: "women-sunglasses", type: "SEX" },
+    { name: "Unisex", slug: "unisex-sunglasses", type: "SEX" },
   ];
 
   for (const g of sunglassesGenders) {
@@ -73,6 +56,84 @@ async function main() {
       },
     });
   }
+
+  // 2. SHAPE
+  const sunglassesShapes = [
+    { name: "Aviator", slug: "aviator", type: "SHAPE" },
+    { name: "Browline", slug: "browline", type: "SHAPE" },
+    { name: "Cat Eye", slug: "cat-eye", type: "SHAPE" },
+    { name: "Geometric", slug: "geometric", type: "SHAPE" },
+    { name: "Oval", slug: "oval", type: "SHAPE" },
+    { name: "Rectangle", slug: "rectangle", type: "SHAPE" },
+    { name: "Rimless", slug: "rimless", type: "SHAPE" },
+    { name: "Round", slug: "round-sunglasses", type: "SHAPE" },
+    { name: "Square", slug: "square-sunglasses", type: "SHAPE" },
+    { name: "Wayfarer", slug: "wayfarer", type: "SHAPE" },
+  ];
+
+  for (const s of sunglassesShapes) {
+    await prisma.category.upsert({
+      where: { slug: s.slug },
+      update: { parentId: sunglasses.id, type: s.type as CategoryType },
+      create: {
+        name: s.name,
+        slug: s.slug,
+        type: s.type as CategoryType,
+        parentId: sunglasses.id,
+      },
+    });
+  }
+
+  // 3. COLLECTIONS
+  const sunglassesCollections = [
+    { name: "Eco", slug: "eco-collection", type: "COLLECTION" },
+    { name: "Festival", slug: "festival-collection", type: "COLLECTION" },
+    { name: "Luxury", slug: "luxury-collection", type: "COLLECTION" },
+    { name: "Sport", slug: "sport-collection", type: "COLLECTION" },
+    { name: "Tech", slug: "tech-collection", type: "COLLECTION" },
+    { name: "Vintage", slug: "vintage-collection", type: "COLLECTION" },
+  ];
+
+  for (const c of sunglassesCollections) {
+    await prisma.category.upsert({
+      where: { slug: c.slug },
+      update: { parentId: sunglasses.id, type: c.type as CategoryType },
+      create: {
+        name: c.name,
+        slug: c.slug,
+        type: c.type as CategoryType,
+        parentId: sunglasses.id,
+      },
+    });
+  }
+
+  // 4. BRANDS
+  const sunglassesBrands = [
+    { name: "CityStyle", slug: "citystyle", type: "BRAND" },
+    { name: "SkyVision", slug: "skyvision", type: "BRAND" },
+  ];
+
+  for (const b of sunglassesBrands) {
+    await prisma.category.upsert({
+      where: { slug: b.slug },
+      update: { parentId: sunglasses.id, type: b.type as CategoryType },
+      create: {
+        name: b.name,
+        slug: b.slug,
+        type: b.type as CategoryType,
+        parentId: sunglasses.id,
+      },
+    });
+  }
+
+  // 5. OTHER (Manual addition just to catch the user's list, though likely overlaps with main categories)
+  // "Sunglasses", "Eyewear", "Contact Lenses" are top categories, but user listed them.
+  // We added them as top level. 
+  // Let's ensure they are not added as sub-categories to keep data clean, unless explicitly needed as "Other"
+  // User input: "Other \n Sunglasses \n Eyewear \n Contact Lenses"
+  // Assuming these are links perhaps? For now, we'll skip adding them as *sub-categories* of Sunglasses
+  // because that would be recursive or weird. "Other" might be a header.
+
   // 3. Contact Lenses
   const contactLenses = await prisma.category.upsert({
     where: { slug: "contact-lenses" },

@@ -263,13 +263,13 @@ export const Navbar: React.FC = () => {
                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                    const brandItems = item.children?.filter((child: any) => child.type === "BRAND") || [];
                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                   const otherItems = item.children?.filter((child: any) => !["SEX", "SHAPE", "BRAND"].includes(child.type)) || [];
+                                   const otherItems = item.children?.filter((child: any) => !["SEX", "SHAPE", "BRAND", "COLLECTION"].includes(child.type)) || [];
 
                                    return (
                                       <>
                                         {sexItems.length > 0 && (
                                             <div className="flex-1 min-w-[120px]">
-                                                <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">Shop By Sex</h4>
+                                                <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">Gender</h4>
                                                 <div className="space-y-2">
                                                     {sexItems.map(child => (
                                                         <Link key={child.href} href={child.href} className="block text-sm text-gray-600 hover:text-amber-600 hover:underline">
@@ -281,7 +281,7 @@ export const Navbar: React.FC = () => {
                                         )}
                                         {shapeItems.length > 0 && (
                                             <div className="flex-1 min-w-[120px]">
-                                                <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">Shop By Shape</h4>
+                                                <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">Shape</h4>
                                                 <div className="space-y-2">
                                                     {shapeItems.map(child => (
                                                         <Link key={child.href} href={child.href} className="block text-sm text-gray-600 hover:text-amber-600 hover:underline">
@@ -291,6 +291,22 @@ export const Navbar: React.FC = () => {
                                                 </div>
                                             </div>
                                         )}
+                                        {(() => { 
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                            const collectionItems = item.children?.filter((child: any) => child.type === "COLLECTION") || [];
+                                            return collectionItems.length > 0 ? (
+                                                <div className="flex-1 min-w-[120px]">
+                                                    <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">Collections</h4>
+                                                    <div className="space-y-2">
+                                                        {collectionItems.map((child: any) => (
+                                                            <Link key={child.href} href={child.href} className="block text-sm text-gray-600 hover:text-amber-600 hover:underline">
+                                                                {child.label}
+                                                            </Link>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : null;
+                                        })()}
                                         {brandItems.length > 0 && (
                                             <div className="flex-1 min-w-[120px]">
                                                 <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">Brands</h4>

@@ -21,7 +21,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   activeFilters,
   onApplyFilters,
 }) => {
-  const { data: filterOptions, isLoading } = useProductFilters();
+  const { data: filterOptions, isLoading } = useProductFilters(activeFilters);
   const [localFilters, setLocalFilters] = useState<ProductFilters>(activeFilters);
 
   const [activeTab, setActiveTab] = useState<"category" | "brand" | "price" | "gender">("category");

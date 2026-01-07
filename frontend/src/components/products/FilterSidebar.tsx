@@ -15,7 +15,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
   activeFilters,
   onApplyFilters,
 }) => {
-  const { data: filterOptions, isLoading } = useProductFilters();
+  const { data: filterOptions, isLoading } = useProductFilters(activeFilters);
   const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
     category: true,
     brand: true,

@@ -24,6 +24,7 @@ import { useCart } from "@/hooks/useCart";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { useProductCoupons } from "@/hooks/useCoupons";
 import { Product } from "@/types/productTypes";
+import { LensSelectionModal, LensConfig } from "@/components/products/LensSelectionModal";
 
 interface ProductInfoProps {
   product: Product;
@@ -69,7 +70,9 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   //   : null;
 
   const [selectedPower, setSelectedPower] = useState<string>("");
-  const [lensConfig, setLensConfig] = useState<any>(null);
+  const [selectedCylinder, setSelectedCylinder] = useState<string>("");
+  const [selectedAxis, setSelectedAxis] = useState<string>("");
+  const [lensConfig, setLensConfig] = useState<LensConfig | null>(null);
   const [showLensModal, setShowLensModal] = useState(false);
 
   const isContactLens = product.categories?.some(c => c.slug.includes("contact-lenses") || c.name.includes("Contact Lenses"));
@@ -88,9 +91,18 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   const powers = generatePowers();
 
   const handleAddToCart = async () => {
-    if (isContactLens && !selectedPower) {
-      toast.error("Please select a power");
-      return;
+    if (isContactLens) {
+       if (!selectedPower) {
+          toast.error("Please select a power");
+          return;
+       }
+       // Basic validation for Toric lenses
+       if (product.name.toLowerCase().includes('toric') || product.name.toLowerCase().includes('astigmatism')) {
+          if (!selectedCylinder || !selectedAxis) {
+               toast.error("Please select Cylinder and Axis details");
+               return;
+          }
+       }
     }
     
     // For eyewear, if users click regular add to cart, we assume frame only unless they used the "Select Lenses" flow
@@ -98,7 +110,9 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     
     setIsAddingToCart(true);
     try {
-      const config = isContactLens ? { power: selectedPower } : (isEyewear ? lensConfig : null);
+      const config = isContactLens 
+        ? { power: selectedPower, cylinder: selectedCylinder || undefined, axis: selectedAxis || undefined } 
+        : (isEyewear ? lensConfig : null);
       await addToCart(product.id, quantity, config);
       toast.success(`${product.name} added to cart!`);
     } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -109,14 +123,24 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   };
 
   const handleBuyNow = async () => {
-    if (isContactLens && !selectedPower) {
-       toast.error("Please select a power");
-       return;
+    if (isContactLens) {
+       if (!selectedPower) {
+          toast.error("Please select a power");
+          return;
+       }
+       if (product.name.toLowerCase().includes('toric') || product.name.toLowerCase().includes('astigmatism')) {
+          if (!selectedCylinder || !selectedAxis) {
+               toast.error("Please select Cylinder and Axis details");
+               return;
+          }
+       }
     }
 
     setIsAddingToCart(true);
     try {
-      const config = isContactLens ? { power: selectedPower } : (isEyewear ? lensConfig : null);
+      const config = isContactLens 
+        ? { power: selectedPower, cylinder: selectedCylinder || undefined, axis: selectedAxis || undefined } 
+        : (isEyewear ? lensConfig : null);
       await addToCart(product.id, quantity, config);
       router.push("/cart");
     } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -293,23 +317,71 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
       {/* Product Configuration */}
       <div className="border-t border-b border-gray-100 py-6 space-y-4">
         {isContactLens && (
-          <div>
-             <label className="block text-sm font-bold text-gray-700 mb-2">Select Power (SPH)</label>
-             <div className="relative">
-               <select 
-                  value={selectedPower}
-                  onChange={(e) => setSelectedPower(e.target.value)}
-                  className="w-full p-3 bg-white border border-gray-300 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 font-medium cursor-pointer"
-               >
-                 <option value="" disabled>Choose Power</option>
-                 {powers.map((p) => (
-                   <option key={p.value} value={p.value}>{p.label}</option>
-                 ))}
-               </select>
-               <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
-                  <ChevronRight className="w-4 h-4 rotate-90" />
-               </div>
+          <div className="space-y-4">
+             {/* Power Selection */}
+             <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Select Power (SPH)</label>
+                <div className="relative">
+                  <select 
+                     value={selectedPower}
+                     onChange={(e) => setSelectedPower(e.target.value)}
+                     className="w-full p-3 bg-white border border-gray-300 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 font-medium cursor-pointer"
+                  >
+                    <option value="" disabled>Choose Power</option>
+                    {powers.map((p) => (
+                      <option key={p.value} value={p.value}>{p.label}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
+                     <ChevronRight className="w-4 h-4 rotate-90" />
+                  </div>
+                </div>
              </div>
+
+             {/* Cylinder & Axis (Conditional or always show optional if unsure) - Showing always for now based on user request for "configuration according to type" */}
+             {/* Ideally we check if product type is Toric, but since we want to be safe, let's show them if potentially relevant or just add them. 
+                 User mentioned "should be configuration according to type". 
+                 Let's check if name contains 'Toric' or 'Astigmatism'. */}
+             {(product.name.toLowerCase().includes('toric') || product.name.toLowerCase().includes('astigmatism')) && (
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Cylinder (CYL)</label>
+                        <div className="relative">
+                           <select 
+                              value={selectedCylinder}
+                              onChange={(e) => setSelectedCylinder(e.target.value)}
+                              className="w-full p-3 bg-white border border-gray-300 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 font-medium cursor-pointer"
+                           >
+                              <option value="" disabled>Select</option>
+                              {['-0.75', '-1.25', '-1.75', '-2.25', '-2.75'].map((cyl) => (
+                                 <option key={cyl} value={cyl}>{cyl}</option>
+                              ))}
+                           </select>
+                           <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
+                              <ChevronRight className="w-4 h-4 rotate-90" />
+                           </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Axis</label>
+                         <div className="relative">
+                           <select 
+                              value={selectedAxis}
+                              onChange={(e) => setSelectedAxis(e.target.value)}
+                              className="w-full p-3 bg-white border border-gray-300 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 font-medium cursor-pointer"
+                           >
+                              <option value="" disabled>Select</option>
+                              {Array.from({length: 18}, (_, i) => (i + 1) * 10).map((axis) => (
+                                 <option key={axis} value={axis}>{axis}°</option>
+                              ))}
+                           </select>
+                           <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
+                              <ChevronRight className="w-4 h-4 rotate-90" />
+                           </div>
+                        </div>
+                    </div>
+                </div>
+             )}
           </div>
         )}
 
@@ -324,48 +396,37 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                  )}
               </div>
               <p className="text-sm text-gray-500 mb-4">
-                 {lensConfig ? `Type: ${lensConfig.type} (${lensConfig.coating || 'Standard'})` : "Customize your lenses with prescription, blue-light protection, and more."}
+                 {lensConfig 
+                    ? `${lensConfig.type} ${lensConfig.coating ? `+ ${lensConfig.coating}` : ""} (+₹${lensConfig.price})` 
+                    : "Customize your lenses with prescription, blue-light protection, and more."
+                 }
               </p>
               
-              {!showLensModal ? (
-                <button 
-                  onClick={() => setShowLensModal(true)}
-                  className="w-full py-2 bg-white border border-amber-300 text-amber-600 font-bold rounded-lg hover:bg-amber-50 transition-colors"
-                >
-                  {lensConfig ? "Edit Lenses" : "Select Lenses"}
-                </button>
-              ) : (
-                <div className="space-y-3 bg-white p-3 rounded-lg border border-amber-200 animate-in fade-in zoom-in-95 duration-200">
-                   <p className="text-xs font-bold text-gray-500 uppercase">Lens Type</p>
-                   <div className="grid grid-cols-1 gap-2">
-                      {['Zero Power', 'Single Vision', 'Bifocal'].map((type) => (
-                        <button
-                           key={type}
-                           onClick={() => {
-                              setLensConfig({ type, coating: 'Anti-Glare' }); // Simplified for demo
-                              setShowLensModal(false);
-                              toast.success(`Selected ${type} lenses`);
-                           }}
-                           className="text-left px-3 py-2 rounded-md hover:bg-amber-50 text-sm font-medium text-gray-700 hover:text-amber-700 transition-colors"
-                        >
-                           {type}
-                        </button>
-                      ))}
-                   </div>
+              <button 
+                onClick={() => setShowLensModal(true)}
+                className="w-full py-2 bg-white border border-amber-300 text-amber-600 font-bold rounded-lg hover:bg-amber-50 transition-colors"
+              >
+                {lensConfig ? "Edit Lenses" : "Select Lenses"}
+              </button>
+
+              {lensConfig && (
                    <button 
-                     onClick={() => {
-                        setLensConfig(null);
-                        setShowLensModal(false);
-                     }}
+                     onClick={() => setLensConfig(null)}
                      className="text-xs text-red-500 hover:underline w-full text-center mt-2"
                    >
                      Remove Lenses (Frame Only)
                    </button>
-                </div>
               )}
            </div>
         )}
       </div>
+
+      <LensSelectionModal
+        isOpen={showLensModal}
+        onClose={() => setShowLensModal(false)}
+        basePrice={product.discountPrice ?? product.price}
+        onConfirm={(config: LensConfig) => setLensConfig(config)}
+      />
 
       {/* Stock & Quantity */}
       <div className="flex flex-col sm:flex-row gap-6">

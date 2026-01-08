@@ -296,14 +296,21 @@ export const getProductById = async (req: Request, res: Response) => {
 
 export const getFeaturedProducts = async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 10, category } = req.query;
     const pageNum = Number(page) || 1;
     const take = Number(limit);
     const skip = (pageNum - 1) * take;
 
+    // Use shared logic for category filter, but force isFeatured=true
+    const whereBase = buildProductWhereClause({ category });
+    const where = {
+        ...whereBase,
+        isFeatured: true
+    };
+
     const [products, total] = await Promise.all([
       prisma.product.findMany({
-        where: { isFeatured: true },
+        where,
         skip,
         take,
         orderBy: { createdAt: "desc" },
@@ -327,7 +334,7 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
           },
         },
       }),
-      prisma.product.count({ where: { isFeatured: true } }),
+      prisma.product.count({ where }),
     ]);
 
     const productCards = products.map((product) => ({
@@ -413,12 +420,16 @@ export const getProductsByCategory = async (req: Request, res: Response) => {
 
 export const getTrendingProducts = async (req: Request, res: Response) => {
   try {
-    const { limit = 10 } = req.query;
+    const { limit = 10, category } = req.query;
     const take = Number(limit);
-    console.log("got request here");
+
+    // Filter by category if provided
+    const where = buildProductWhereClause({ category });
+
     // For simplicity, trending products are those with the most reviews but later it will be most purchased one
     const products = await prisma.product.findMany({
       take,
+      where,
       orderBy: { reviews: { _count: "desc" } },
       select: {
         id: true,

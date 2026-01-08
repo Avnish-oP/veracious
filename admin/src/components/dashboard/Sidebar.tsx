@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   PlusCircle,
+  Banknote,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import api from '@/lib/axios';
@@ -36,6 +37,11 @@ const navItems = [
     title: 'Customers',
     href: '/dashboard/customers',
     icon: Users,
+  },
+  {
+    title: 'Lens Pricing',
+    href: '/dashboard/lens-pricing',
+    icon: Banknote,
   },
   {
     title: 'Settings',

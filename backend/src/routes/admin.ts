@@ -24,4 +24,12 @@ router.get("/products", getAdminProducts);
 router.put("/products/:id", updateProduct);
 router.delete("/products/:id", deleteProduct);
 
+// -- Lens Pricing --
+import { getLensPrices, createLensPrice, updateLensPrice, deleteLensPrice } from "../controllers/admin/lensPriceManagement";
+
+router.get("/lens-prices", getLensPrices);
+router.post("/lens-prices", createLensPrice);
+router.put("/lens-prices/:id", updateLensPrice);
+router.delete("/lens-prices/:id", deleteLensPrice);
+
 export default router;

@@ -64,13 +64,16 @@ export const fetchProducts = async ({
 export const fetchFeaturedProducts = async ({
   page = 1,
   limit = 8,
+  category,
 }: {
   page?: number;
   limit?: number;
+  category?: string;
 } = {}): Promise<FeaturedProductsResponse> => {
   const params = new URLSearchParams();
   params.append("page", page.toString());
   params.append("limit", limit.toString());
+  if (category) params.append("category", category);
 
   return apiCall<FeaturedProductsResponse>(`/products/featured?${params}`);
 };
@@ -126,13 +129,16 @@ export const fetchProductsByCategory = async ({
 export const fetchTrendingProducts = async ({
   page = 1,
   limit = 8,
+  category,
 }: {
   page?: number;
   limit?: number;
+  category?: string;
 } = {}): Promise<ProductsResponse> => {
   const params = new URLSearchParams();
   params.append("page", page.toString());
   params.append("limit", limit.toString());
+  if (category) params.append("category", category);
 
   return apiCall<ProductsResponse>(`/products/trending?${params}`);
 };
@@ -226,13 +232,15 @@ export const useProducts = ({
 export const useFeaturedProducts = ({
   page = 1,
   limit = 8,
+  category,
 }: {
   page?: number;
   limit?: number;
+  category?: string;
 } = {}) => {
   return useQuery({
-    queryKey: ["products", "featured", page, limit],
-    queryFn: () => fetchFeaturedProducts({ page, limit }),
+    queryKey: ["products", "featured", page, limit, category],
+    queryFn: () => fetchFeaturedProducts({ page, limit, category }),
     staleTime: 1000 * 60 * 10, // 10 minutes for featured products
     retry: (failureCount, error: ExtendedApiError) => {
       if (error?.status && error.status >= 400 && error.status < 500) {
@@ -287,13 +295,15 @@ export const useProductsByCategory = ({
 export const useTrendingProducts = ({
   page = 1,
   limit = 8,
+  category,
 }: {
   page?: number;
   limit?: number;
+  category?: string;
 } = {}) => {
   return useQuery({
-    queryKey: ["products", "trending", page, limit],
-    queryFn: () => fetchTrendingProducts({ page, limit }),
+    queryKey: ["products", "trending", page, limit, category],
+    queryFn: () => fetchTrendingProducts({ page, limit, category }),
     staleTime: 1000 * 60 * 10, // 10 minutes for trending products
     retry: (failureCount, error: ExtendedApiError) => {
       if (error?.status && error.status >= 400 && error.status < 500) {

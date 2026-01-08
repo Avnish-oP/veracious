@@ -6,6 +6,7 @@ export interface Category {
   name: string;
   slug: string;
   type: string;
+  parentId: string | null;
 }
 
 interface CategoriesResponse {

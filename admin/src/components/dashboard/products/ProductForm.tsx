@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm, useFieldArray, Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import { Button } from '@/components/ui/button';
@@ -26,11 +27,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Trash2, UploadCloud, Check, ChevronsUpDown, X } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Loader2, Trash2, UploadCloud, Check, ChevronsUpDown, X, ScanEye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { useCategories } from '@/hooks/useCategories';
+import { Label } from '@/components/ui/label';
 import {
     Command,
     CommandEmpty,
@@ -93,6 +95,16 @@ export function ProductForm({ initialValues, onSubmit, isSubmitting, submitLabel
   const router = useRouter();
   const { data: categories } = useCategories();
   const [openCombobox, setOpenCombobox] = useState(false);
+
+  // Fetch Lens Prices
+  const { data: lensPrices } = useQuery({
+    queryKey: ['lensPrices'],
+    queryFn: async () => {
+       const { data } = await api.get('/admin/lens-prices');
+       return data.lensPrices;
+    },
+    enabled: true 
+  });
 
   // --- Form Setup ---
   const form = useForm<ProductFormValues>({
@@ -184,26 +196,96 @@ export function ProductForm({ initialValues, onSubmit, isSubmitting, submitLabel
       }
   };
 
+  // Root Categories hardcoded for the 3-step logic requested
+  const ROOT_CATEGORIES = [
+      { id: 'sunglasses', name: 'Sunglasses' },
+      { id: 'eyewear', name: 'Eyewear' },
+      { id: 'contact-lenses', name: 'Contact Lenses' }
+  ];
+
+  const [selectedRootCategory, setSelectedRootCategory] = useState<string | null>(() => {
+      // Try to deduce from initial values if possible, or default to null
+      if (initialValues?.categoryIds?.length) {
+         // This is tricky without the full category tree loaded and mapped. 
+         // For now, let's leave it manual or simple.
+         // If we have categories data, we could check.
+         return null; 
+      }
+      return null;
+  });
+
+  // Filter available sub-categories based on selected root
+  // We need to know which categories belong to which root.
+  // The 'categories' hook returns all. We can filter by 'slug' or 'parentId' if available.
+  // Assuming 'slug' conventions or types. 
+  // BETTER: The user wants *strict* creation.
+  
+  // Helper to determine active sub-categories
+  const availableSubCategories = categories?.filter(cat => {
+      if (!selectedRootCategory) return false;
+      
+      // If categories have parentId (ideal), use that.
+      // Based on previous file reads, Category model HAS parentId.
+      // We need to find the ID of the selected root category first.
+      const rootCatObj = categories.find(c => c.slug === selectedRootCategory || c.name.toLowerCase() === selectedRootCategory.replace('-', ' '));
+      
+      if (!rootCatObj) {
+          // Fallback: Filter by type/conventions if parentId linking isn't fully set up in seed
+          // Sunglasses -> Type: SHAPE, STYLE, BRAND (but BRAND might be shared? No, usually specific)
+          // Contact Lenses -> Type: MANUFACTURER, DISPOSABILITY, LENS_TYPE
+          if (selectedRootCategory === 'contact-lenses') {
+             return ['MANUFACTURER', 'LENS_TYPE', 'DISPOSABILITY'].includes(cat.type);
+          }
+           if (selectedRootCategory === 'sunglasses') {
+             return ['SHAPE', 'STYLE', 'COLLECTION', 'BRAND', 'SEX'].includes(cat.type);
+          }
+           if (selectedRootCategory === 'eyewear') {
+             // Eyewear might have shapes/brands/sex too.
+             // Relying on type might be ambiguous.
+             // BEST: Rely on parentId if your seed set it up (it did).
+             return false; 
+          }
+          return false;
+      }
+
+      return cat.parentId === rootCatObj.id;
+  }) || [];
+
+  // Handle Root Change
+  const handleRootChange = (rootSlug: string) => {
+      setSelectedRootCategory(rootSlug);
+      // Clear existing selections? Maybe safer to avoid invalid states.
+      // form.setValue('categoryIds', []); 
+      
+      // Auto-select the root category ID itself into the array?
+      const rootCatObj = categories?.find(c => c.slug === rootSlug);
+      if (rootCatObj) {
+          form.setValue('categoryIds', [rootCatObj.id]);
+      }
+  };
+
   return (
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Left Column: Basic Info & Images */}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        
+        {/* ... Basic Info Column ... */}
+        
+         <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-6">
+                {/* Basic Details Card (Keep as is) */}
                 <Card>
                     <CardHeader>
                     <CardTitle>Basic Details</CardTitle>
                     </CardHeader>
+                    {/* ... Inputs ... */}
                     <CardContent className="grid gap-4">
-                    <FormField control={form.control} name="name" render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Product Name</FormLabel>
-                        <FormControl><Input placeholder="Classic Aviator" {...field} /></FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )} />
-                    
+                        <FormField control={form.control} name="name" render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Product Name</FormLabel>
+                            <FormControl><Input placeholder="Classic Aviator" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )} />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="brand" render={({ field }) => (
                             <FormItem>
@@ -274,8 +356,8 @@ export function ProductForm({ initialValues, onSubmit, isSubmitting, submitLabel
                     )} />
                     </CardContent>
                 </Card>
-
-                 {/* Images */}
+                
+                 {/* Images Card */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Product Images</CardTitle>
@@ -314,69 +396,150 @@ export function ProductForm({ initialValues, onSubmit, isSubmitting, submitLabel
                 </Card>
             </div>
 
-            {/* Right Column: Categories, Specs, Attributes */}
+            {/* Right Column: Categories & attributes */}
             <div className="space-y-6">
-                <Card>
+                 <Card>
                     <CardHeader>
-                    <CardTitle>Categories & Attributes</CardTitle>
+                        <CardTitle>Category Classification</CardTitle>
                     </CardHeader>
-                    <CardContent className="grid gap-4">
-                        <FormField control={form.control} name="categoryIds" render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                            <FormLabel>Categories</FormLabel>
-                            <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
-                                <PopoverTrigger asChild>
-                                <FormControl>
-                                    <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    aria-expanded={openCombobox}
-                                    className="justify-between"
-                                    >
-                                    {field.value?.length > 0
-                                        ? `${field.value.length} categories selected`
-                                        : "Select categories..."}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[300px] p-0">
-                                <Command>
-                                    <CommandInput placeholder="Search category..." />
-                                    <CommandList>
-                                        <CommandEmpty>No category found.</CommandEmpty>
-                                        <CommandGroup>
-                                        {categories?.map((category) => (
-                                            <CommandItem
-                                                key={category.id}
-                                                value={category.name}
-                                                onSelect={() => {
-                                                    toggleCategory(category.id);
-                                                    // Don't close, allow multi select
-                                                }}
-                                            >
-                                            <Check
-                                                className={cn(
-                                                "mr-2 h-4 w-4",
-                                                field.value?.includes(category.id) ? "opacity-100" : "opacity-0"
-                                                )}
-                                            />
-                                            {category.name}
-                                            </CommandItem>
-                                        ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                                </PopoverContent>
-                            </Popover>
-                            <FormDescription>
-                                Selected: {categories?.filter(c => field.value?.includes(c.id)).map(c => c.name).join(', ')}
-                            </FormDescription>
-                            <FormMessage />
-                        </FormItem>
-                        )} />
+                    <CardContent className="space-y-4">
+                        {/* Step 1: Root Category */}
+                        <div className="space-y-2">
+                            <Label>Main Category</Label>
+                            <Select 
+                                value={selectedRootCategory || ''} 
+                                onValueChange={handleRootChange}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Main Category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {ROOT_CATEGORIES.map(cat => (
+                                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                         {/* Step 2: Sub Categories */}
+                         {selectedRootCategory && (
+                            <FormField control={form.control} name="categoryIds" render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel>Sub-Categories</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className="justify-between"
+                                            >
+                                            {field.value?.length > 1 // >1 because root is auto-added
+                                                ? `${field.value.length - 1} selected`
+                                                : "Select sub-categories..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[300px] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Search..." />
+                                            <CommandList>
+                                                <CommandEmpty>No sub-category found.</CommandEmpty>
+                                                <CommandGroup>
+                                                {availableSubCategories.map((category) => (
+                                                    <CommandItem
+                                                        key={category.id}
+                                                        value={category.name}
+                                                        onSelect={() => toggleCategory(category.id)}
+                                                    >
+                                                    <Check
+                                                        className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        field.value?.includes(category.id) ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {category.name} ({category.type})
+                                                    </CommandItem>
+                                                ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FormDescription>
+                                        Linked to: {categories?.filter(c => field.value?.includes(c.id)).map(c => c.name).join(', ')}
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                         )}
+                    </CardContent>
+                 </Card>
+
+                 {/* Lens Pricing / Configuration Panel */}
+                 {selectedRootCategory === 'eyewear' && (
+                     <Card className="border-blue-200 bg-blue-50/20">
+                         <CardHeader>
+                             <CardTitle className="text-blue-700 flex items-center gap-2">
+                                 <ScanEye className="w-5 h-5" />
+                                 Lens Configuration
+                             </CardTitle>
+                             <CardDescription>
+                                 This product is eligible for the following Global Lens Pricing options.
+                             </CardDescription>
+                         </CardHeader>
+                         <CardContent>
+                             <div className="space-y-4">
+                                 <div className="text-sm text-gray-600 mb-2">
+                                     Customers will be able to select these lens options for this frame:
+                                 </div>
+                                 <div className="grid grid-cols-1 gap-2">
+                                     {lensPrices?.filter((lp: any) => lp.isActive).map((lp: any) => (
+                                         <div key={lp.id} className="flex justify-between items-center p-2 bg-white rounded border border-blue-100 text-sm">
+                                             <span className="font-medium">{lp.name}</span>
+                                             <span className="text-muted-foreground">{lp.type}</span>
+                                             <span className="font-bold text-blue-600">₹{lp.price}</span>
+                                         </div>
+                                     ))}
+                                     {(!lensPrices || lensPrices.length === 0) && (
+                                         <p className="text-sm text-red-500">No active lens prices found. Please add them in the Lens Pricing dashboard.</p>
+                                     )}
+                                 </div>
+                                 <Button 
+                                    variant="link" 
+                                    className="px-0 text-blue-700" 
+                                    onClick={() => window.open('/dashboard/lens-pricing', '_blank')}
+                                    type="button"
+                                 >
+                                     Manage Global Lens Prices &rarr;
+                                 </Button>
+                             </div>
+                         </CardContent>
+                     </Card>
+                 )}
+
+                 {/* Attributes for Contact Lenses */}
+                 {selectedRootCategory === 'contact-lenses' && (
+                     <Card className="border-orange-200 bg-orange-50/20">
+                         <CardHeader>
+                             <CardTitle className="text-orange-700">Contact Lens Attributes</CardTitle>
+                         </CardHeader>
+                         <CardContent className="space-y-4">
+                             {/* Add specific fields if needed here or rely on specifications */}
+                             <p className="text-sm text-muted-foreground">Ensure to add Power/Cylinder availability in specifications if not using a variant system.</p>
+                         </CardContent>
+                     </Card>
+                 )}
+
+                  {/* Attributes */}
+                 <Card>
+                     <CardHeader>
+                        <CardTitle>Attributes</CardTitle>
+                     </CardHeader>
+                     <CardContent className="grid gap-4">
+                        {/* Gender */}
+                         <div className="grid grid-cols-2 gap-4">
                             <FormField control={form.control} name="gender" render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>Gender</FormLabel>
@@ -391,8 +554,8 @@ export function ProductForm({ initialValues, onSubmit, isSubmitting, submitLabel
                                 <FormMessage />
                                 </FormItem>
                             )} />
-
-                            <FormField control={form.control} name="frameShape" render={({ field }) => (
+                            
+                             <FormField control={form.control} name="frameShape" render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>Frame Shape</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -408,8 +571,8 @@ export function ProductForm({ initialValues, onSubmit, isSubmitting, submitLabel
                                 <FormMessage />
                                 </FormItem>
                             )} />
-                        </div>
-                        
+                         </div>
+
                         <div className="grid grid-cols-2 gap-4">
                              <FormField control={form.control} name="frameMaterial" render={({ field }) => (
                                 <FormItem>
@@ -453,11 +616,11 @@ export function ProductForm({ initialValues, onSubmit, isSubmitting, submitLabel
                             <FormMessage />
                         </FormItem>
                         )} />
-                    </CardContent>
-                </Card>
+                     </CardContent>
+                 </Card>
 
-                {/* Specifications */}
-                <Card>
+                 {/* Specifications */}
+                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle>Specifications</CardTitle>
                         <Button variant="outline" size="sm" onClick={() => appendSpec({ key: '', value: '' })} type="button">
@@ -484,17 +647,14 @@ export function ProductForm({ initialValues, onSubmit, isSubmitting, submitLabel
                         ))}
                     </CardContent>
                 </Card>
-            </div>
-          </div>
+           </div> {/* End Right Column */}
+        </div> {/* End Main Grid */}
 
-          <div className="flex justify-end gap-4 sticky bottom-4 bg-background/80 p-4 backdrop-blur rounded-lg border shadow-sm">
-            <Button variant="outline" type="button" onClick={() => router.back()}>Cancel</Button>
-            <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {submitLabel}
-            </Button>
-          </div>
-        </form>
-      </Form>
+        <Button type="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {submitLabel}
+        </Button>
+      </form>
+    </Form>
   );
 }

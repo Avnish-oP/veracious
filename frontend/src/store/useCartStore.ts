@@ -68,7 +68,8 @@ export const useCartStore = create<CartStore>((set, get) => {
       const price = Number(
         item.product?.discountPrice ?? item.product?.price ?? 0
       );
-      return sum + price * item.quantity;
+      const lensPrice = Number((item.configuration as any)?.lensPrice) || 0;
+      return sum + (price + lensPrice) * item.quantity;
     }, 0);
   };
 
@@ -370,7 +371,8 @@ export const useCartStore = create<CartStore>((set, get) => {
       // Calculate subtotal using original prices
       const subtotal = cart.items.reduce((sum, item) => {
         const price = Number(item.product?.price) || 0;
-        return sum + price * item.quantity;
+        const lensPrice = Number((item.configuration as any)?.lensPrice) || 0;
+        return sum + (price + lensPrice) * item.quantity;
       }, 0);
 
       // Calculate discount (difference between original price and discount price)
@@ -390,7 +392,8 @@ export const useCartStore = create<CartStore>((set, get) => {
           Number(item.product?.discountPrice) ||
           Number(item.product?.price) ||
           0;
-        return sum + price * item.quantity;
+        const lensPrice = Number((item.configuration as any)?.lensPrice) || 0;
+        return sum + (price + lensPrice) * item.quantity;
       }, 0);
 
       // Shipping: Free if subtotal is over the equivalent of $50 in INR, otherwise a flat shipping fee

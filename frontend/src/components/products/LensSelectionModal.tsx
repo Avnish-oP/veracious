@@ -28,6 +28,15 @@ export interface LensConfig {
   price: number;
   prescription?: PrescriptionData;
   coating?: string;
+  lensPriceId?: string; // ID for backend validation
+}
+
+export interface LensPriceOption {
+  id: string;
+  name: string;
+  price: number | string; // Handle potential string from API
+  description?: string;
+  title?: string;
 }
 
 interface LensSelectionModalProps {
@@ -35,31 +44,8 @@ interface LensSelectionModalProps {
   onClose: () => void;
   onConfirm: (config: LensConfig) => void;
   basePrice: number;
+  lensPrices?: LensPriceOption[];
 }
-
-const LENS_TYPES = [
-  {
-    id: "zero_power",
-    label: "Zero Power (Frame Only / Fashion)",
-    price: 0,
-    description: "No prescription. Best for style or if you wear contacts.",
-    requiresPrescription: false,
-  },
-  {
-    id: "single_vision",
-    label: "Single Vision",
-    price: 500,
-    description: "For distance OR reading. Corrects one field of vision.",
-    requiresPrescription: true,
-  },
-  {
-    id: "bifocal",
-    label: "Bifocal / Progressive",
-    price: 1500,
-    description: "Corrects near, intermediate, and far vision.",
-    requiresPrescription: true,
-  },
-];
 
 const COATINGS = [
   { id: "anti_glare", label: "Anti-Glare", price: 0 },
@@ -72,9 +58,42 @@ export const LensSelectionModal: React.FC<LensSelectionModalProps> = ({
   onClose,
   onConfirm,
   basePrice,
+  lensPrices = [], 
 }) => {
+  const displayLensTypes = lensPrices.length > 0 ? lensPrices.map((lp) => ({
+      id: lp.id,
+      label: lp.title || lp.name,
+      price: Number(lp.price),
+      description: lp.description,
+      requiresPrescription: Number(lp.price) > 0 
+  })) : [
+      {
+        id: "zero_power",
+        label: "Zero Power (Frame Only / Fashion)",
+        price: 0,
+        description: "No prescription. Best for style or if you wear contacts.",
+        requiresPrescription: false,
+      },
+      {
+        id: "single_vision",
+        label: "Single Vision",
+        price: 500,
+        description: "For distance OR reading. Corrects one field of vision.",
+        requiresPrescription: true,
+      },
+       {
+        id: "bifocal",
+        label: "Bifocal / Progressive",
+        price: 1500,
+        description: "Corrects near, intermediate, and far vision.",
+        requiresPrescription: true,
+      },
+  ];
+
+
+
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [selectedType, setSelectedType] = useState<typeof LENS_TYPES[0] | null>(null);
+  const [selectedType, setSelectedType] = useState<typeof displayLensTypes[0] | null>(null);
   const [prescription, setPrescription] = useState<PrescriptionData>({
     left: { sphere: "0.00", cylinder: "0.00", axis: "0" },
     right: { sphere: "0.00", cylinder: "0.00", axis: "0" },
@@ -95,7 +114,12 @@ export const LensSelectionModal: React.FC<LensSelectionModalProps> = ({
   const handleNext = () => {
     if (step === 1 && selectedType) {
       if (!selectedType.requiresPrescription) {
-        onConfirm({ type: selectedType.label, price: selectedType.price });
+        // Pass lensPriceId if available
+        onConfirm({ 
+            type: selectedType.label, 
+            price: selectedType.price,
+            lensPriceId: selectedType.id.includes('-') ? selectedType.id : undefined // Assuming UUID has dashes, or just check if it's from API
+        });
         onClose();
       } else {
         setStep(2);
@@ -103,13 +127,14 @@ export const LensSelectionModal: React.FC<LensSelectionModalProps> = ({
     } else if (step === 2) {
       setStep(3);
     } else if (step === 3) {
-      if (selectedType) { // Should check coating? Coating is optional, default usually anti-glare
+      if (selectedType) { 
          const finalPrice = selectedType.price + (selectedCoating?.price || 0);
          onConfirm({
              type: selectedType.label,
              price: finalPrice,
              prescription,
              coating: selectedCoating?.label,
+             lensPriceId: selectedType.id.includes('-') ? selectedType.id : undefined
          });
          onClose();
       }
@@ -166,7 +191,7 @@ export const LensSelectionModal: React.FC<LensSelectionModalProps> = ({
                {step === 1 && (
                   <div className="space-y-4">
                      <h3 className="text-lg font-bold text-gray-800 mb-4">Select Lens Type</h3>
-                     {LENS_TYPES.map(type => (
+                     {displayLensTypes.map((type) => (
                         <div 
                            key={type.id}
                            onClick={() => setSelectedType(type)}

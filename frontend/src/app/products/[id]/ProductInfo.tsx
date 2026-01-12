@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import {
   Star,
   Minus,
@@ -41,6 +43,16 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { addToCart, isUserLoading } = useCart();
   const { addToRecentlyViewed } = useRecentlyViewed();
+
+  // Fetch lens prices
+  const { data: lensPrices } = useQuery({
+    queryKey: ["lensPrices"],
+    queryFn: async () => {
+      const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/products/lens-prices`);
+      return data.success ? data.lensPrices : [];
+    },
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
 
   // Track view
   React.useEffect(() => {
@@ -338,10 +350,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
                 </div>
              </div>
 
-             {/* Cylinder & Axis (Conditional or always show optional if unsure) - Showing always for now based on user request for "configuration according to type" */}
-             {/* Ideally we check if product type is Toric, but since we want to be safe, let's show them if potentially relevant or just add them. 
-                 User mentioned "should be configuration according to type". 
-                 Let's check if name contains 'Toric' or 'Astigmatism'. */}
+             {/* Cylinder & Axis */}
              {(product.name.toLowerCase().includes('toric') || product.name.toLowerCase().includes('astigmatism')) && (
                 <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -426,6 +435,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
         onClose={() => setShowLensModal(false)}
         basePrice={product.discountPrice ?? product.price}
         onConfirm={(config: LensConfig) => setLensConfig(config)}
+        lensPrices={lensPrices || []}
       />
 
       {/* Stock & Quantity */}

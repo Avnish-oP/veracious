@@ -470,3 +470,16 @@ export const getTrendingProducts = async (req: Request, res: Response) => {
       .json({ success: false, error: "Failed to fetch trending products" });
   }
 };
+
+export const getLensPrices = async (req: Request, res: Response) => {
+  try {
+    const lensPrices = await prisma.lensPrice.findMany({
+      where: { isActive: true },
+      orderBy: { price: "asc" },
+    });
+    res.json({ success: true, lensPrices });
+  } catch (error) {
+    console.error("Error fetching lens prices:", error);
+    res.status(500).json({ message: "Error fetching lens prices" });
+  }
+};

@@ -74,7 +74,7 @@ export default function CheckoutPage() {
   );
   const SHIPPING_COST = itemsTotal > 1000 ? 0 : 50; // Free shipping above ₹1000
   const GST_RATE = 18; // 18% GST
-  const gstAmount = (itemsTotal * GST_RATE) / 100;
+  const gstAmount = ((itemsTotal + SHIPPING_COST) * GST_RATE) / 100;
   const finalTotal = itemsTotal + SHIPPING_COST + gstAmount;
 
   useEffect(() => {
@@ -205,6 +205,7 @@ export default function CheckoutPage() {
           discountPrice: Number(item.product?.discountPrice || 0),
           name: item.product?.name || "",
           image: imageUrl,
+          configuration: item.configuration, // Pass configuration to backend for lens price calculation
         };
       });
 

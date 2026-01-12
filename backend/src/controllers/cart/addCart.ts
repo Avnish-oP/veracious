@@ -41,6 +41,28 @@ export const addToCart = async (
       }
       cart.items.push({ productId, quantity, configuration });
     }
+    
+    // Enrich configuration with current lens price if ID exists
+    // This ensures that even if frontend sends an old price or no price, we source of truth it here.
+    // However, if we do this, we should modify the item inside the cart array we just touched.
+    const latestItemIndex = existingItemIndex !== -1 ? existingItemIndex : cart.items.length - 1;
+    const item = cart.items[latestItemIndex];
+
+    if (item.configuration && item.configuration.lensPriceId) {
+        const lensPrice = await prisma.lensPrice.findUnique({
+            where: { id: item.configuration.lensPriceId }
+        });
+        if (lensPrice) {
+            item.configuration = {
+                ...item.configuration,
+                lensPrice: Number(lensPrice.price),
+                // Ensure other details are consistent or just trust frontend for non-price fields?
+                // Ideally we'd overwrite name/type too but let's stick to price for now. 
+            };
+        }
+    }
+    cart.items[latestItemIndex] = item;
+
     console.log(cart);
     await redisClient.set(key, JSON.stringify(cart));
     //now db
@@ -96,6 +118,7 @@ export const addToCart = async (
         id: item.id,
         productId: item.productId,
         quantity: item.quantity,
+        configuration: item.configuration,
         product: {
           id: item.product.id,
           name: item.product.name,
@@ -155,23 +178,37 @@ export const getCart = async (req: express.Request, res: express.Response) => {
         return res.status(200).json({ success: true, cart: { items: [] } });
       }
 
-      // Format the response to match frontend expectations
+      // Format the response and refresh lens prices
+      const formattedCartItems = await Promise.all(dbCart.items.map(async (item: any) => {
+          let config = item.configuration;
+          if (config && typeof config === 'object' && config.lensPriceId) {
+             const lensPrice = await prisma.lensPrice.findUnique({
+                 where: { id: config.lensPriceId }
+             });
+             if (lensPrice) {
+                 config = { ...config, lensPrice: Number(lensPrice.price) };
+             }
+          }
+          return {
+            id: item.id,
+            productId: item.productId,
+            quantity: item.quantity,
+            configuration: config,
+            product: {
+                id: item.product.id,
+                name: item.product.name,
+                brand: item.product.brand,
+                price: item.product.price,
+                discountPrice: item.product.discountPrice,
+                images: item.product.images.map((img: any) => img.url),
+            },
+          };
+      }));
+
       const formattedCart = {
         id: dbCart.id,
         userId: dbCart.userId,
-        items: dbCart.items.map((item: any) => ({
-          id: item.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          product: {
-            id: item.product.id,
-            name: item.product.name,
-            brand: item.product.brand,
-            price: item.product.price,
-            discountPrice: item.product.discountPrice,
-            images: item.product.images.map((img: any) => img.url),
-          },
-        })),
+        items: formattedCartItems,
         updatedAt: dbCart.updatedAt,
       };
 
@@ -220,13 +257,28 @@ export const getCart = async (req: express.Request, res: express.Response) => {
       };
     });
 
-    // Attach product details to cart items
+    // Attach product details to cart items AND refresh lens prices if needed
+    // Note: We should ideally update DB/Redis if price changed, but for now just returning fresh price is enough for display
+    const enrichedItems = await Promise.all(cart.items.map(async (item: any) => {
+        let config = item.configuration;
+        if (config && config.lensPriceId) {
+            const lensPrice = await prisma.lensPrice.findUnique({
+                 where: { id: config.lensPriceId }
+            });
+            if (lensPrice) {
+                 config = { ...config, lensPrice: Number(lensPrice.price) };
+            }
+        }
+        return {
+            productId: item.productId,
+            quantity: item.quantity,
+            configuration: config,
+            product: productMap[item.productId] || null,
+        };
+    }));
+
     const enrichedCart = {
-      items: cart.items.map((item: any) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        product: productMap[item.productId] || null,
-      })),
+      items: enrichedItems
     };
 
     return res.status(200).json({ success: true, cart: enrichedCart });
@@ -333,6 +385,7 @@ export const updateCartItem = async (
         id: item.id,
         productId: item.productId,
         quantity: item.quantity,
+        configuration: item.configuration,
         product: {
           id: item.product.id,
           name: item.product.name,
@@ -408,6 +461,7 @@ export const removeCartItem = async (
         id: item.id,
         productId: item.productId,
         quantity: item.quantity,
+        configuration: item.configuration,
         product: {
           id: item.product.id,
           name: item.product.name,

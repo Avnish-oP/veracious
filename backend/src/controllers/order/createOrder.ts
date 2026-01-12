@@ -28,6 +28,7 @@ export const createOrder = async (req: Request, res: Response) => {
       products.map((product) => [product.id, product])
     );
 
+    const enrichedItems = [];
     for (const item of items) {
       const product = productMap.get(item.productId);
       if (!product) {
@@ -42,9 +43,34 @@ export const createOrder = async (req: Request, res: Response) => {
             message: `Insufficient stock for product ${item.productId}`,
           });
       }
-      const price = Number(product.discountPrice ?? product.price);
+      // Fetch LensPrice if configuration exists
+      let lensPriceAmount = 0;
+      let enrichedConfig = item.configuration;
+
+      if (item.configuration && item.configuration.lensPriceId) {
+          const lensPrice = await prisma.lensPrice.findUnique({
+              where: { id: item.configuration.lensPriceId, isActive: true }
+          });
+          if (lensPrice) {
+              lensPriceAmount = Number(lensPrice.price);
+              enrichedConfig = {
+                  ...item.configuration,
+                  lensPrice: lensPriceAmount,
+                  lensType: lensPrice.name, // Ensure name is captured
+              };
+          }
+      }
+
+      const price = Number(product.discountPrice ?? product.price) + lensPriceAmount;
       const quantity = Number(item.quantity) || 1;
       totalAmount += price * quantity;
+      
+      enrichedItems.push({
+          ...item,
+          quantity,
+          configuration: enrichedConfig,
+          priceAtPurchase: price, // Verify if this is useful for history
+      });
     }
     let discountAmount = 0;
     let appliedCouponId: string | null = null;
@@ -94,7 +120,7 @@ export const createOrder = async (req: Request, res: Response) => {
     const order = await prisma.order.create({
       data: {
         userId,
-        items: items as any,
+        items: enrichedItems as any,
         totalAmount: Number(totalAmount),
         discount: Number(discountAmount),
         finalAmount: Number(totalAmount),

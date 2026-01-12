@@ -272,23 +272,39 @@ export default function CartPage() {
                             )}
 
                             {/* Price */}
-                            <div className="mt-2 flex items-baseline gap-2">
-                              {item.product?.discountPrice ? (
-                                <>
+                            <div className="mt-2 flex flex-col gap-1">
+                              <div className="flex items-baseline gap-2">
+                                {item.product?.discountPrice ? (
+                                  <>
+                                    <span className="text-xl font-bold text-gray-900">
+                                      ₹
+                                      {Number(item.product.discountPrice).toFixed(
+                                        2
+                                      )}
+                                    </span>
+                                    <span className="text-sm text-gray-500 line-through">
+                                      ₹{Number(item.product.price).toFixed(2)}
+                                    </span>
+                                  </>
+                                ) : (
                                   <span className="text-xl font-bold text-gray-900">
-                                    ₹
-                                    {Number(item.product.discountPrice).toFixed(
-                                      2
-                                    )}
+                                    ₹{Number(item.product?.price || 0).toFixed(2)}
                                   </span>
-                                  <span className="text-sm text-gray-500 line-through">
-                                    ₹{Number(item.product.price).toFixed(2)}
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="text-xl font-bold text-gray-900">
-                                  ₹{Number(item.product?.price || 0).toFixed(2)}
-                                </span>
+                                )}
+                              </div>
+                              {/* Lens Price Breakdown */}
+                              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                              {(item.configuration as any)?.lensPrice > 0 && (
+                                <div className="text-sm text-blue-600 font-medium">
+                                  + ₹{Number((item.configuration as any)?.lensPrice).toFixed(2)} for {(item.configuration as any)?.lensType || 'Lens'}
+                                </div>
+                              )}
+                              {/* Lens Details */}
+                              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                              {(item.configuration as any)?.prescriptionType && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                    {(item.configuration as any)?.prescriptionType} • {(item.configuration as any)?.lensType}
+                                </div>
                               )}
                             </div>
                           </div>
@@ -348,7 +364,7 @@ export default function CartPage() {
                               {(
                                 (Number(item.product?.discountPrice) ||
                                   Number(item.product?.price) ||
-                                  0) * item.quantity
+                                  0 + Number((item.configuration as any)?.lensPrice || 0)) * item.quantity
                               ).toFixed(2)}
                             </p>
                           </div>

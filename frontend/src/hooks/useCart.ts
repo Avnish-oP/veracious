@@ -236,10 +236,11 @@ export function useCart() {
 
     const totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
-    // Calculate subtotal using original prices
+    // Calculate subtotal using original prices + lens prices
     const subtotal = cart.items.reduce((sum, item) => {
       const price = Number(item.product?.price) || 0;
-      return sum + price * item.quantity;
+      const lensPrice = Number((item.configuration as any)?.lensPrice) || 0;
+      return sum + (price + lensPrice) * item.quantity;
     }, 0);
 
     // Calculate discount (difference between original price and discount price)
@@ -257,7 +258,8 @@ export function useCart() {
     const subtotalAfterDiscount = cart.items.reduce((sum, item) => {
       const price =
         Number(item.product?.discountPrice) || Number(item.product?.price) || 0;
-      return sum + price * item.quantity;
+      const lensPrice = Number((item.configuration as any)?.lensPrice) || 0;
+      return sum + (price + lensPrice) * item.quantity;
     }, 0);
 
     const normalizedCouponDiscount = Math.min(
@@ -306,7 +308,8 @@ export function useCart() {
               Number(item.product?.discountPrice) ||
               Number(item.product?.price) ||
               0;
-            return sum + price * item.quantity;
+            const lensPrice = Number((item.configuration as any)?.lensPrice) || 0;
+            return sum + (price + lensPrice) * item.quantity;
           }, 0);
 
         const productIds = cartToUse.items.map((item) => item.productId);

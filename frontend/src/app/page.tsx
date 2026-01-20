@@ -66,7 +66,7 @@ export default function Home() {
         trendingProducts={trendingProductsData?.products || []}
         loading={isLoading}
         onViewAll={(filter: string) => {
-          const query = filter === "all" ? "" : `?filter=${filter}`;
+          const query = filter === "all" ? "?category=sunglasses" : `?filter=${filter}`;
           router.push(`/products${query}`);
         }}
       />

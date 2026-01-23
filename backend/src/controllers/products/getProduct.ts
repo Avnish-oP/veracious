@@ -286,7 +286,31 @@ export const getProductById = async (req: Request, res: Response) => {
         .json({ success: false, error: "Product not found" });
     }
 
-    return res.status(200).json({ success: true, product });
+    // Calculate average rating
+    const averageRating =
+      product.reviews.length > 0
+        ? product.reviews.reduce((sum, r) => sum + r.rating, 0) /
+          product.reviews.length
+        : 0;
+
+    // Calculate rating distribution
+    const distribution: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    product.reviews.forEach((review) => {
+      const roundedRating = Math.round(review.rating);
+      if (roundedRating >= 1 && roundedRating <= 5) {
+        distribution[roundedRating]++;
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      product: {
+        ...product,
+        averageRating: parseFloat(averageRating.toFixed(1)),
+        reviewCount: product.reviews.length,
+        ratingDistribution: distribution,
+      },
+    });
   } catch (error) {
     return res
       .status(500)

@@ -27,6 +27,9 @@ export interface Product {
   categories?: Category[];
   tags?: string[];
   specifications?: Record<string, unknown>;
+  averageRating?: number; // Decimal average (e.g., 4.5)
+  reviewCount?: number;
+  ratingDistribution?: Record<number, number>; // { 5: 10, 4: 5, 3: 2, 2: 1, 1: 0 }
   createdAt: string;
   updatedAt: string;
 }

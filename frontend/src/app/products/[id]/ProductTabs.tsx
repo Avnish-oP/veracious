@@ -1,20 +1,55 @@
-import React, { useState } from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star } from "lucide-react";
+import { Star, LogIn, ShoppingBag } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { Product } from "@/types/productTypes";
+import { ReviewSummary } from "@/components/products/ReviewSummary";
+import { ReviewForm } from "@/components/products/ReviewForm";
+import { checkCanReview, createReview, CanReviewResponse } from "@/utils/reviewsApi";
+import { useUser } from "@/hooks/useUser";
+import Link from "next/link";
 
 interface ProductTabsProps {
   product: Product;
+  onReviewSubmitted?: () => void;
 }
 
-export const ProductTabs: React.FC<ProductTabsProps> = ({ product }) => {
+export const ProductTabs: React.FC<ProductTabsProps> = ({ product, onReviewSubmitted }) => {
   const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">("description");
+  const [canReviewData, setCanReviewData] = useState<CanReviewResponse | null>(null);
+  const [isCheckingReview, setIsCheckingReview] = useState(false);
+  const { user, isLoading: isAuthLoading } = useUser();
+
+  const reviewCount = product.reviewCount ?? product.reviews?.length ?? 0;
+  const averageRating = product.averageRating ?? 0;
+  const distribution = product.ratingDistribution ?? { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+
+  // Check if user can review when they switch to reviews tab
+  useEffect(() => {
+    if (activeTab === "reviews" && user && !canReviewData && !isCheckingReview) {
+      setIsCheckingReview(true);
+      checkCanReview(product.id)
+        .then(setCanReviewData)
+        .catch((err) => {
+          console.error("Failed to check review eligibility:", err);
+        })
+        .finally(() => setIsCheckingReview(false));
+    }
+  }, [activeTab, user, product.id, canReviewData, isCheckingReview]);
+
+  const handleSubmitReview = async (rating: number, body: string) => {
+    await createReview(product.id, rating, body);
+    // Refresh the can review status
+    setCanReviewData(null);
+    onReviewSubmitted?.();
+  };
 
   const tabs = [
     { id: "description", label: "Description" },
     { id: "specs", label: "Specifications" },
-    { id: "reviews", label: `Reviews (${product.reviews?.length || 0})` },
+    { id: "reviews", label: `Reviews (${reviewCount})` },
   ] as const;
 
   return (
@@ -137,63 +172,148 @@ export const ProductTabs: React.FC<ProductTabsProps> = ({ product }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="space-y-6"
+              className="space-y-8"
             >
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-bold text-gray-900">Customer Feedback</h3>
-                {/* Could add a 'Write a review' button here */}
+              {/* Review Summary - Show if there are reviews */}
+              {reviewCount > 0 && (
+                <ReviewSummary
+                  averageRating={averageRating}
+                  reviewCount={reviewCount}
+                  distribution={distribution}
+                />
+              )}
+
+              {/* Review Form Section */}
+              <div className="pt-2">
+                {isAuthLoading || isCheckingReview ? (
+                  <div className="bg-gray-50 rounded-2xl p-6 animate-pulse">
+                    <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+                    <div className="h-32 bg-gray-200 rounded"></div>
+                  </div>
+                ) : !user ? (
+                  // Not logged in
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100 text-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="p-3 bg-blue-100 rounded-full">
+                        <LogIn className="w-6 h-6 text-blue-600" />
+                      </div>
+                    </div>
+                    <h4 className="text-lg font-bold text-gray-900 mb-2">Want to leave a review?</h4>
+                    <p className="text-gray-600 mb-4">Sign in to share your experience with this product.</p>
+                    <Link
+                      href="/auth/login"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-indigo-600 transition-all"
+                    >
+                      <LogIn className="w-4 h-4" />
+                      Sign In
+                    </Link>
+                  </div>
+                ) : canReviewData?.canReview ? (
+                  // User can review
+                  <ReviewForm
+                    productId={product.id}
+                    onSubmit={handleSubmitReview}
+                    onSuccess={() => {
+                      // Optionally reload page or refetch product
+                      window.location.reload();
+                    }}
+                  />
+                ) : canReviewData?.reason === "already_reviewed" ? (
+                  // Already reviewed
+                  <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-100">
+                    <h4 className="text-lg font-bold text-gray-900 mb-2">Your Review</h4>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={cn(
+                              "w-5 h-5",
+                              i < (canReviewData.existingReview?.rating || 0)
+                                ? "text-amber-400 fill-amber-400"
+                                : "text-gray-200"
+                            )}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        {canReviewData.existingReview?.createdAt &&
+                          new Date(canReviewData.existingReview.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-gray-700">{canReviewData.existingReview?.body}</p>
+                  </div>
+                ) : canReviewData?.reason === "not_purchased" ? (
+                  // Hasn't purchased
+                  <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-100 text-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="p-3 bg-amber-100 rounded-full">
+                        <ShoppingBag className="w-6 h-6 text-amber-600" />
+                      </div>
+                    </div>
+                    <h4 className="text-lg font-bold text-gray-900 mb-2">Purchase to Review</h4>
+                    <p className="text-gray-600">
+                      Only customers who have purchased and received this product can leave a review.
+                    </p>
+                  </div>
+                ) : null}
               </div>
 
-              {product.reviews && product.reviews.length > 0 ? (
-                <div className="grid gap-6">
-                  {product.reviews.map((review) => (
-                    <div
-                      key={review.id}
-                      className="bg-gray-50 p-6 rounded-2xl space-y-3 hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
-                              {(review.user?.name || "U").charAt(0).toUpperCase()}
-                           </div>
-                           <div>
-                              <p className="font-bold text-gray-900">
-                                {review.user?.name || "Verified Customer"}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {new Date(review.createdAt).toLocaleDateString(undefined, {
-                                   year: 'numeric', month: 'long', day: 'numeric'
-                                })}
-                              </p>
-                           </div>
+              {/* Reviews List */}
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Customer Feedback</h3>
+                
+                {product.reviews && product.reviews.length > 0 ? (
+                  <div className="grid gap-6">
+                    {product.reviews.map((review) => (
+                      <div
+                        key={review.id}
+                        className="bg-gray-50 p-6 rounded-2xl space-y-3 hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg">
+                                {(review.user?.name || "U").charAt(0).toUpperCase()}
+                             </div>
+                             <div>
+                                <p className="font-bold text-gray-900">
+                                  {review.user?.name || "Verified Customer"}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {new Date(review.createdAt).toLocaleDateString(undefined, {
+                                     year: 'numeric', month: 'long', day: 'numeric'
+                                  })}
+                                </p>
+                             </div>
+                          </div>
+                          <div className="flex bg-white px-2 py-1 rounded-lg border border-gray-100 shadow-sm">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={cn(
+                                  "w-4 h-4",
+                                  i < Math.round(review.rating)
+                                    ? "text-amber-400 fill-amber-400"
+                                    : "text-gray-200"
+                                )}
+                              />
+                            ))}
+                          </div>
                         </div>
-                        <div className="flex bg-white px-2 py-1 rounded-lg border border-gray-100 shadow-sm">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={cn(
-                                "w-4 h-4",
-                                i < review.rating
-                                  ? "text-amber-400 fill-amber-400"
-                                  : "text-gray-200"
-                              )}
-                            />
-                          ))}
-                        </div>
+                        <p className="text-gray-700 leading-relaxed pl-13">{review.body}</p>
                       </div>
-                      <p className="text-gray-700 leading-relaxed pl-13">{review.body}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-16 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-                  <div className="mb-4 bg-white p-4 rounded-full w-fit mx-auto shadow-sm">
-                     <Star className="w-8 h-8 text-gray-300" />
+                    ))}
                   </div>
-                  <h4 className="text-lg font-bold text-gray-900 mb-2">No Reviews Yet</h4>
-                  <p className="text-gray-500">Be the first to share your thoughts on this product!</p>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-16 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
+                    <div className="mb-4 bg-white p-4 rounded-full w-fit mx-auto shadow-sm">
+                       <Star className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <h4 className="text-lg font-bold text-gray-900 mb-2">No Reviews Yet</h4>
+                    <p className="text-gray-500">Be the first to share your thoughts on this product!</p>
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

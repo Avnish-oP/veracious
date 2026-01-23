@@ -14,6 +14,7 @@ import addressRoutes from "./routes/address";
 import orderListingRoutes from "./routes/orders";
 import adminRoutes from "./routes/admin";
 import searchRoutes from "./routes/search";
+import reviewRoutes from "./routes/reviews";
 
 import helmet from "helmet";
 import compression from "compression";
@@ -82,6 +83,7 @@ app.use("/api/v1/address", addressRoutes);
 app.use("/api/v1/orders", orderListingRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/search", searchRoutes);
+app.use("/api/v1/reviews", reviewRoutes);
 app.get("/health", (req, res) => {
   res.status(200).json({ message: "ok" });
 });

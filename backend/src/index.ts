@@ -15,9 +15,28 @@ import orderListingRoutes from "./routes/orders";
 import adminRoutes from "./routes/admin";
 import searchRoutes from "./routes/search";
 
+import helmet from "helmet";
+import compression from "compression";
+import rateLimit from "express-rate-limit";
+import morgan from "morgan";
+
 dotenv.config();
 
 const app = express();
+
+// Security & Production Middleware
+app.use(helmet());
+app.use(compression());
+app.use(morgan("dev"));
+
+// Rate limiting for API routes
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use("/api", limiter);
 
 // CORS configuration
 const allowedOrigins = process.env.CORS_ORIGIN
@@ -66,14 +85,23 @@ app.use("/api/v1/search", searchRoutes);
 app.get("/health", (req, res) => {
   res.status(200).json({ message: "ok" });
 });
+app.get("/api/v1/health", (req, res) => {
+  res.status(200).json({ message: "ok" });
+});
 
 app.set("trust proxy", 1);
 
+// Global Error Handler
+import { errorHandler } from "./middlewares/errorHandler";
+app.use(errorHandler);
+
 // Start server
-app.listen(PORT, () => {
-  console.log(
-    `Ganpati Bappa Morya!, hey bhagwan dukh haro na haro ye bugs jarur har lena🥹🙏 Server is running on port ${PORT}`
-  );
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(
+      `Ganpati Bappa Morya!, hey bhagwan dukh haro na haro ye bugs jarur har lena🥹🙏 Server is running on port ${PORT}`
+    );
+  });
+}
 
 export default app;

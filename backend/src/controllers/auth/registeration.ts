@@ -90,7 +90,7 @@ const registerUser = async (req: express.Request, res: express.Response) => {
         message: "Failed to create user",
       });
     }
-    console.log("Verification code for testing:", verificationCode);
+    // console.log("Verification code for testing:", verificationCode);
     const { accessToken, refreshToken } = generateTokens(user.id);
     await storeRefreshToken(user.id, refreshToken);
 

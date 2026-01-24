@@ -94,12 +94,25 @@ export const verifyOrder = async (req: Request, res: Response) => {
         });
       }
 
-      // 1. Decrement Stock
+      // 1. Re-verify and Decrement Stock (prevents race condition)
       const items = orderRecord.items as any[];
       if (Array.isArray(items)) {
         for (const item of items) {
           if (item.productId && item.quantity) {
-             await tx.product.update({
+            // First check if stock is still available
+            const product = await tx.product.findUnique({
+              where: { id: item.productId },
+              select: { stock: true, name: true },
+            });
+            
+            if (!product || product.stock < Number(item.quantity)) {
+              throw new Error(
+                `Insufficient stock for product ${product?.name || item.productId}. ` +
+                `Required: ${item.quantity}, Available: ${product?.stock || 0}`
+              );
+            }
+            
+            await tx.product.update({
               where: { id: item.productId },
               data: {
                 stock: {

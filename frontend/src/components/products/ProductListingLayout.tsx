@@ -60,16 +60,6 @@ export const ProductListingLayout: React.FC<ProductListingLayoutProps> = ({
     onFilterChange({ ...activeFilters, sort: nextSort as ProductFilters['sort'], page: 1 });
   };
 
-  const getSortLabel = (sortValue?: string) => {
-      switch(sortValue) {
-          case "price_asc": return "Price: Low to High";
-          case "price_desc": return "Price: High to Low";
-          case "newest": return "Newest";
-          case "popularity": return "Popularity";
-          default: return "Newest"; // Default
-      }
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Mobile Filter Bar (Sticky) */}

@@ -3,11 +3,24 @@
 import { Product } from "./productTypes";
 import { ApplyCouponResponse, Coupons } from "./couponsTypes";
 
+// Item configuration for lens or contact lens customization
+export interface ItemConfiguration {
+  lensPrice?: number;
+  lensType?: string;
+  prescriptionType?: string;
+  power?: string;
+  cylinder?: string;
+  axis?: string;
+  type?: string;
+  coating?: string;
+  lensPriceId?: string;
+}
+
 export interface CartItem {
   id?: string; // DB cart item ID (only for logged-in users)
   productId: string;
   quantity: number;
-  configuration?: any;
+  configuration?: ItemConfiguration;
   product?: Product; // Populated product details
 }
 
@@ -29,7 +42,7 @@ export interface CartResponse {
 export interface AddToCartRequest {
   productId: string;
   quantity: number;
-  configuration?: any;
+  configuration?: ItemConfiguration;
 }
 
 export interface UpdateCartItemRequest {
@@ -46,7 +59,7 @@ export interface MergeCartsRequest {
     items: Array<{
       productId: string;
       quantity: number;
-      configuration?: any;
+      configuration?: ItemConfiguration;
     }>;
   };
 }
@@ -56,7 +69,7 @@ export interface LocalStorageCart {
   items: Array<{
     productId: string;
     quantity: number;
-    configuration?: any;
+    configuration?: ItemConfiguration;
   }>;
 }
 

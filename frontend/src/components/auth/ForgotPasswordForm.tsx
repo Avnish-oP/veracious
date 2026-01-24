@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Mail, ArrowLeft, Send, Glasses } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { Mail, ArrowLeft, Send } from "lucide-react";
 import {
   ForgotPasswordFormData,
   forgotPasswordSchema,
@@ -38,7 +37,7 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
     try {
       await forgotPasswordMutation.mutateAsync(data);
       reset();
-    } catch (error) {
+    } catch (_error) {
       // Error handling is done in the mutation
     }
   };

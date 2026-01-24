@@ -63,7 +63,6 @@ export const addToCart = async (
     }
     cart.items[latestItemIndex] = item;
 
-    console.log(cart);
     await redisClient.set(key, JSON.stringify(cart));
     //now db
 
@@ -145,7 +144,10 @@ export const addToCart = async (
 };
 
 export const getCart = async (req: express.Request, res: express.Response) => {
-  const userId = req.user.id;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  }
   const key = `cart:${userId}`;
   try {
     const cartData = await redisClient.get(key);
@@ -294,7 +296,10 @@ export const updateCartItem = async (
   req: express.Request,
   res: express.Response
 ) => {
-  const userId = req.user.id;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  }
 
   const { productId, quantity } = req.body;
   if (!productId || quantity == null || quantity < 0) {
@@ -413,7 +418,10 @@ export const removeCartItem = async (
   req: express.Request,
   res: express.Response
 ) => {
-  const userId = req.user.id;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  }
   const { productId } = req.body;
   if (!productId) {
     return res.status(400).json({ success: false, message: "Invalid input" });
@@ -491,7 +499,10 @@ export const mergeCarts = async (
   req: express.Request,
   res: express.Response
 ) => {
-  const userId = req.user.id;
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  }
 
   const { guestCart } = req.body; // Expecting { items: [ { productId, quantity }, ... ] }
   if (!guestCart || !Array.isArray(guestCart.items)) {
@@ -500,9 +511,8 @@ export const mergeCarts = async (
   try {
     const key = `cart:${userId}`;
     const cartData = await redisClient.get(key);
-    console.log("merging carts", { cartData, guestCart });
     let cart = cartData ? JSON.parse(cartData) : { items: [] };
-    console.log("existing cart", cart);
+    
     // Merge guest cart into user cart
     guestCart.items.forEach((guestItem: any) => {
       const existingItemIndex = cart.items.findIndex(
@@ -516,10 +526,78 @@ export const mergeCarts = async (
         cart.items.push(guestItem);
       }
     });
+    
+    // Sync to Redis
     await redisClient.set(key, JSON.stringify(cart));
+    
+    // Sync to Database (upsert cart with merged items)
+    const dbCart = await prisma.cart.upsert({
+      where: { userId },
+      create: {
+        userId,
+        items: {
+          create: cart.items.map((item: any) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            configuration: item.configuration,
+          })),
+        },
+      },
+      update: {
+        items: {
+          deleteMany: {},
+          create: cart.items.map((item: any) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            configuration: item.configuration,
+          })),
+        },
+      },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                id: true,
+                name: true,
+                brand: true,
+                price: true,
+                discountPrice: true,
+                images: {
+                  where: { isMain: true },
+                  select: { url: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Format the response
+    const formattedCart = {
+      id: dbCart.id,
+      userId: dbCart.userId,
+      items: dbCart.items.map((item: any) => ({
+        id: item.id,
+        productId: item.productId,
+        quantity: item.quantity,
+        configuration: item.configuration,
+        product: {
+          id: item.product.id,
+          name: item.product.name,
+          brand: item.product.brand,
+          price: item.product.price,
+          discountPrice: item.product.discountPrice,
+          images: item.product.images.map((img: any) => img.url),
+        },
+      })),
+      updatedAt: dbCart.updatedAt,
+    };
+
     return res
       .status(200)
-      .json({ success: true, message: "Carts merged", cart });
+      .json({ success: true, message: "Carts merged", cart: formattedCart });
   } catch (error) {
     console.error("error merging carts", error);
     return res

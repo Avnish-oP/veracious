@@ -4,11 +4,16 @@ import {
   UpdateCartItemRequest,
   RemoveCartItemRequest,
   MergeCartsRequest,
+  ItemConfiguration,
 } from "@/types/cartTypes";
 
 import api from "../lib/axios";
 import { ApiCallConfig } from "./api";
 import { AxiosError } from "axios";
+
+interface ApiErrorResponse {
+  message?: string;
+}
 
 /**
  * Generic API call function with proper error handling
@@ -26,16 +31,15 @@ async function cartApiCall<T>(
     });
     return response.data;
   } catch (error) {
-    const err = error as AxiosError;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    throw new Error((err.response?.data as any)?.message || "An error occurred");
+    const err = error as AxiosError<ApiErrorResponse>;
+    throw new Error(err.response?.data?.message || "An error occurred");
   }
 }
 
 export const addToCartAPI = async (
   productId: string,
   quantity: number,
-  configuration?: any
+  configuration?: ItemConfiguration
 ): Promise<CartResponse> => {
   return cartApiCall<CartResponse>("/cart/add", {
     method: "POST",

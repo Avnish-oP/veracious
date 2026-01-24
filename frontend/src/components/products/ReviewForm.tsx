@@ -12,7 +12,7 @@ interface ReviewFormProps {
 }
 
 export const ReviewForm: React.FC<ReviewFormProps> = ({
-  productId,
+  productId: _productId,
   onSubmit,
   onSuccess,
 }) => {
@@ -45,8 +45,8 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
       setRating(0);
       setBody("");
       onSuccess?.();
-    } catch (err: any) {
-      setError(err.message || "Failed to submit review");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit review");
     } finally {
       setIsSubmitting(false);
     }

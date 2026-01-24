@@ -42,7 +42,7 @@ const registerUser = async (req: express.Request, res: express.Response) => {
           },
         });
 
-        console.log("Verification code for resend:", verificationCode);
+        // Verification code sent via email - never log in production
         
         // Use updatedUser for token generation
         const { accessToken, refreshToken } = generateTokens(updatedUser.id);
@@ -53,14 +53,13 @@ const registerUser = async (req: express.Request, res: express.Response) => {
         
         return res.status(200).json({
           success: true,
-          message: "User registered successfully",
+          message: "User registered successfully. Please check your email for verification code.",
           user: {
             id: updatedUser.id,
             name: updatedUser.name,
             email: updatedUser.email,
             phoneNumber: updatedUser.phoneNumber,
             isVerified: updatedUser.isVerified,
-            verificationCode: updatedUser.verificationToken,
           },
         });
       }
@@ -100,14 +99,13 @@ const registerUser = async (req: express.Request, res: express.Response) => {
     await sendVerificationEmail(user.email, verificationCode);
     return res.status(201).json({
       success: true,
-      message: "User registered successfully",
+      message: "User registered successfully. Please check your email for verification code.",
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         phoneNumber: user.phoneNumber,
         isVerified: user.isVerified,
-        verificationCode: user.verificationToken,
       },
     });
   } catch (error) {

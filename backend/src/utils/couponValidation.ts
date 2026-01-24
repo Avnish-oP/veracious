@@ -114,6 +114,12 @@ export const validateCouponAndCalculateDiscount = async (
 
   if (coupon.discountType === "PERCENTAGE") {
     discountAmount = (orderValue * discountValue) / 100;
+    
+    // Apply maximum discount cap if defined (prevents huge percentage discounts on large orders)
+    const maxDiscount = toNumber((coupon as any).maxDiscount);
+    if (maxDiscount > 0 && discountAmount > maxDiscount) {
+      discountAmount = maxDiscount;
+    }
   } else {
     discountAmount = discountValue;
   }

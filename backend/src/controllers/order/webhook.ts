@@ -35,9 +35,10 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
         });
 
         if (!orderRecord) {
-           // If order not found, we can't do anything. Return 200 to acknowledge webhook.
-           console.error(`Order not found for Razorpay Order ID: ${rpOrderId}`);
-           return;
+          // Log orphan payment for manual investigation
+          console.error(`[ORPHAN PAYMENT] Order not found for Razorpay Order ID: ${rpOrderId}, Payment ID: ${rpPaymentId}`);
+          // TODO: Consider storing in a separate orphan_payments table for reconciliation
+          return;
         }
 
         if (orderRecord.paymentStatus === "PAID") {
@@ -102,6 +103,8 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
         if (orderRecord.userId) {
           await tx.cart.delete({
             where: { userId: orderRecord.userId },
+          }).catch(() => {
+            // Ignore if cart doesn't exist
           });
           
           // Remove from Redis

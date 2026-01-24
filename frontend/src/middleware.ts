@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const accessToken = request.cookies.get("accessToken")?.value;
+  const _accessToken = request.cookies.get("accessToken")?.value;
   const refreshToken = request.cookies.get("refreshToken")?.value;
 
   // Consider user potentially authenticated if they have refresh token
@@ -31,7 +31,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith(route)
   );
 
-  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+  const _isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
   // Redirect unauthenticated users from protected routes
   // Only redirect if NO tokens exist at all

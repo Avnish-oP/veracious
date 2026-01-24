@@ -1,14 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchWishlist, toggleWishlistItem } from "@/utils/wishlistApi";
 import { WishlistItem } from "@/types/wishlistTypes";
+import { useUser } from "./useUser";
 import toast from "react-hot-toast";
 
 export const WISHLIST_QUERY_KEY = ["wishlist"];
 
 export function useWishlist() {
   const queryClient = useQueryClient();
+  const { user } = useUser();
 
-  // Fetch Wishlist Query
+  // Fetch Wishlist Query - only when user is logged in
   const {
     data: items = [],
     isLoading,
@@ -20,6 +22,7 @@ export function useWishlist() {
       const data = await fetchWishlist();
       return data.items;
     },
+    enabled: !!user, // Only fetch if user is logged in
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -27,51 +30,61 @@ export function useWishlist() {
   const toggleMutation = useMutation({
     mutationFn: (productId: string) => toggleWishlistItem(productId),
     onMutate: async (productId) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: WISHLIST_QUERY_KEY });
 
       // Snapshot the previous value
       const previousWishlist = queryClient.getQueryData<WishlistItem[]>(WISHLIST_QUERY_KEY) || [];
 
-      // Optimistically update to the new value
+      // Optimistically update
       const isCurrentlyInWishlist = previousWishlist.some(item => item.productId === productId);
       
       queryClient.setQueryData<WishlistItem[]>(WISHLIST_QUERY_KEY, (old) => {
         if (!old) return [];
         if (isCurrentlyInWishlist) {
-            // Remove
-            return old.filter(item => item.productId !== productId);
+          // Remove from wishlist
+          return old.filter(item => item.productId !== productId);
         } else {
-             // Add (Mocking the item structure temporarily)
-             // In a real app, we might need more product data here for the UI to be perfect instantly
-             // but for simpler UIs (like just a heart icon), this is enough.
-             // If we need full product data, we'd need to pass it to the mutation.
-             // For now, we'll just keep the filtered list if removing, 
-             // or wait for refetch if adding (or we could pass product object to optimistic update if needed)
-             return old; 
+          // Add to wishlist (optimistic placeholder)
+          // Create a minimal placeholder that will be replaced on refetch
+          const placeholderItem: WishlistItem = {
+            id: `temp-${productId}`,
+            userId: "pending",
+            productId,
+            createdAt: new Date().toISOString(),
+            product: null, // Will be filled on refetch
+          };
+          return [...old, placeholderItem];
         }
       });
 
-      return { previousWishlist };
+      return { previousWishlist, wasInWishlist: isCurrentlyInWishlist };
     },
-    onError: (err, newTodo, context) => {
+    onError: (err, productId, context) => {
       // Rollback on error
       if (context?.previousWishlist) {
         queryClient.setQueryData(WISHLIST_QUERY_KEY, context.previousWishlist);
       }
       toast.error("Failed to update wishlist");
     },
-    onSuccess: (_data, _productId) => {
-        // Invalidate to refetch the true state (especially to get full product details after adding)
-        queryClient.invalidateQueries({ queryKey: WISHLIST_QUERY_KEY });
-        
-        // We can check if it was added or removed based on the response or previous state, 
-        // effectively handled by the UI reacting to the new data.
-        // Or we could show a toast here.
+    onSuccess: (_data, _productId, context) => {
+      // Invalidate to refetch the true state with full product details
+      queryClient.invalidateQueries({ queryKey: WISHLIST_QUERY_KEY });
+      
+      // Show appropriate toast
+      if (context?.wasInWishlist) {
+        toast.success("Removed from wishlist");
+      } else {
+        toast.success("Added to wishlist");
+      }
     },
   });
 
   const toggleWishlist = (productId: string) => {
+    if (!user) {
+      toast.error("Please login to add to wishlist");
+      return;
+    }
     toggleMutation.mutate(productId);
   };
 
@@ -80,8 +93,8 @@ export function useWishlist() {
   };
 
   const clearWishlist = () => {
-      queryClient.setQueryData(WISHLIST_QUERY_KEY, []);
-  }
+    queryClient.setQueryData(WISHLIST_QUERY_KEY, []);
+  };
 
   return {
     items,
@@ -92,6 +105,6 @@ export function useWishlist() {
     isToggling: toggleMutation.isPending,
     isInWishlist,
     count: items.length,
-    clearWishlist
+    clearWishlist,
   };
 }

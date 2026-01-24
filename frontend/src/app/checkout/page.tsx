@@ -10,24 +10,19 @@ import { useUser } from "@/hooks/useUser";
 import {
   ShoppingBag,
   MapPin,
-  CreditCard,
   Tag,
   ArrowRight,
   Loader2,
-  AlertCircle,
-  Trash2,
   Package,
   Truck,
-  Shield,
   Locate,
-  Save,
   Plus,
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "react-hot-toast";
 import { Address } from "@/types/orderTypes";
 import { createOrder } from "@/utils/checkoutApi";
-import { getAddresses, addAddress, deleteAddress } from "@/utils/addressApi";
+import { getAddresses, addAddress } from "@/utils/addressApi";
 import { useGeolocation } from "@/hooks/useGeolocation";
 
 export default function CheckoutPage() {
@@ -35,7 +30,6 @@ export default function CheckoutPage() {
   const {
     cart,
     getCartSummary,
-    clearCart,
     applyCoupon,
     removeCoupon,
     appliedCoupon,
@@ -179,16 +173,25 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
-      // 1. Save address if requested and it's a new address (no ID)
+      // 1. Ensure we have an addressId BEFORE creating order
       let finalAddressId = selectedAddressId;
-      if (shouldSaveAddress && !selectedAddressId) {
+      
+      // If no address selected, we must create one (even if user didn't check "save")
+      if (!finalAddressId) {
         try {
-          const newAddr = await addAddress(address);
+          const newAddr = await addAddress({
+            ...address, 
+            label: shouldSaveAddress ? (address.label || "Home") : "Order Address"
+          });
           finalAddressId = newAddr.id || null;
-          toast.success("Address saved successfully");
+          if (shouldSaveAddress) {
+            toast.success("Address saved successfully");
+          }
         } catch (err) {
           console.error("Failed to save address:", err);
-          toast.error("Failed to save address, proceeding with order anyway");
+          toast.error("Failed to save address. Please try again.");
+          setLoading(false);
+          return; // Don't proceed without address
         }
       }
 
@@ -205,47 +208,20 @@ export default function CheckoutPage() {
           discountPrice: Number(item.product?.discountPrice || 0),
           name: item.product?.name || "",
           image: imageUrl,
-          configuration: item.configuration, // Pass configuration to backend for lens price calculation
+          configuration: item.configuration,
         };
       });
 
-      // Create order
+      // 2. Create order (only once, with valid addressId)
       const orderResponse = await createOrder({
         items,
-        addressId: finalAddressId || undefined, // If not saved, might fail backend validation if backend *requires* ID.
-        // NOTE: If backend requires addressId, we MUST save it first. 
-        // Based on previous createOrder analysis, it checks `if (addressId) ...`. 
-        // If we don't send addressId, we might need to send address details in body if backend supports it (it doesn't currently).
-        // So we SHOULD save it implicitly if not selected.
+        addressId: finalAddressId || undefined,
         couponCode: appliedCoupon?.code || undefined,
         shipping: SHIPPING_COST,
         gst: GST_RATE,
       });
 
-      // Ideally, if createOrder requires addressId, we must have one. 
-      // If the user didn't save, we should probably save it as a "temporary" address or force save.
-      // For now, let's assume valid flow is: Select ID OR Save & Get ID.
-      // If user unchecks "Save", we currently don't have an ID.
-      // Modification: Backend createOrder expects addressId. We must ensure we have one.
-      // If valid ID not present, create it silently?
-      if (!finalAddressId) {
-         // Force create address if not exists
-         const newAddr = await addAddress({...address, label: "Temporary"});
-         finalAddressId = newAddr.id || null;
-         // Proceed with new Order call if needed or just use this ID
-         // Re-calling createOrder with new ID:
-         const retryOrderResponse = await createOrder({
-            items,
-            addressId: finalAddressId || undefined,
-            couponCode: appliedCoupon?.code || undefined,
-            shipping: SHIPPING_COST,
-            gst: GST_RATE,
-         });
-         sessionStorage.setItem("pendingOrder", JSON.stringify(retryOrderResponse));
-      } else {
-         sessionStorage.setItem("pendingOrder", JSON.stringify(orderResponse));
-      }
-
+      sessionStorage.setItem("pendingOrder", JSON.stringify(orderResponse));
       sessionStorage.setItem("orderAddress", JSON.stringify(address));
 
       router.push("/payment");

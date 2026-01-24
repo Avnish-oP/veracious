@@ -10,6 +10,10 @@ import {
 
 export const createOrder = async (req: Request, res: Response) => {
   const userId = req.user?.id;
+  
+  if (!userId) {
+    return res.status(401).json({ success: false, message: "Unauthorized" });
+  }
 
   try {
     const { items, addressId, couponCode, shipping, gst } = req.body;

@@ -61,18 +61,22 @@ api.interceptors.response.use(
     // Skip auth routes to prevent loops
     const isAuthRoute = originalRequest.url?.includes("/auth/");
 
+    // Special routes that should always attempt refresh on 401
+    // /auth/me is critical as it determines if user is logged in
+    const shouldAlwaysRefresh = originalRequest.url?.endsWith("/auth/me");
+
     // Only attempt refresh if:
     // 1. Got 401 error
     // 2. Haven't already retried
     // 3. Not a public route
-    // 4. Not an auth route
-    // 5. User was previously authenticated (has logged in before)
+    // 4. Not an auth route (except /auth/me which is special)
+    // 5. Either: user was previously authenticated, OR this is /auth/me route
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
       !isPublicRoute &&
-      !isAuthRoute &&
-      wasAuthenticated
+      (!isAuthRoute || shouldAlwaysRefresh) &&
+      (wasAuthenticated || shouldAlwaysRefresh)
     ) {
       if (isRefreshing) {
         // Wait for the refresh to complete
@@ -89,6 +93,8 @@ api.interceptors.response.use(
       try {
         await api.post("/auth/refresh-token");
         isRefreshing = false;
+        // Mark as authenticated since refresh succeeded
+        setAuthenticated(true);
         onRefreshed();
         return api(originalRequest);
       } catch (refreshError) {

@@ -31,6 +31,7 @@ interface NavItem {
   label: string;
   href: string;
   children?: NavItem[];
+  type?: string;
 }
 
 const navigationBase: NavItem[] = [
@@ -82,8 +83,7 @@ export const Navbar: React.FC = () => {
     (async () => {
       try {
         const res = await fetchCategories();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const cats = (res as any).categories || [];
+        const cats = (res as { categories?: Category[] }).categories || [];
         
         if (mounted) {
           setCategoriesRaw(cats);
@@ -229,8 +229,7 @@ export const Navbar: React.FC = () => {
                                 { title: "Type", type: "LENS_TYPE" },
                                 { title: "Disposability", type: "DISPOSABILITY" }
                               ].map((group) => {
-                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                 const groupItems = item.children?.filter((child: any) => child.type === group.type);
+                                 const groupItems = item.children?.filter((child) => child.type === group.type);
                                  
                                  if (!groupItems || groupItems.length === 0) return null;
 
@@ -256,14 +255,10 @@ export const Navbar: React.FC = () => {
                             <div className="flex gap-8 p-4 w-full min-w-[600px]">
                                {/* Group 1: Gender/Sex - Manually split for better UI if type is SEX */}
                                {(() => {
-                                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                   const sexItems = item.children?.filter((child: any) => child.type === "SEX") || [];
-                                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                   const shapeItems = item.children?.filter((child: any) => child.type === "SHAPE") || [];
-                                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                   const brandItems = item.children?.filter((child: any) => child.type === "BRAND") || [];
-                                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                   const otherItems = item.children?.filter((child: any) => !["SEX", "SHAPE", "BRAND", "COLLECTION"].includes(child.type)) || [];
+                                   const sexItems = item.children?.filter((child) => child.type === "SEX") || [];
+                                   const shapeItems = item.children?.filter((child) => child.type === "SHAPE") || [];
+                                   const brandItems = item.children?.filter((child) => child.type === "BRAND") || [];
+                                   const otherItems = item.children?.filter((child) => !["SEX", "SHAPE", "BRAND", "COLLECTION"].includes(child.type || "")) || [];
 
                                    return (
                                       <>
@@ -292,13 +287,12 @@ export const Navbar: React.FC = () => {
                                             </div>
                                         )}
                                         {(() => { 
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            const collectionItems = item.children?.filter((child: any) => child.type === "COLLECTION") || [];
+                                            const collectionItems = item.children?.filter((child) => child.type === "COLLECTION") || [];
                                             return collectionItems.length > 0 ? (
                                                 <div className="flex-1 min-w-[120px]">
                                                     <h4 className="text-sm font-bold text-gray-900 mb-3 border-b pb-2">Collections</h4>
                                                     <div className="space-y-2">
-                                                        {collectionItems.map((child: any) => (
+                                                        {collectionItems.map((child) => (
                                                             <Link key={child.href} href={child.href} className="block text-sm text-gray-600 hover:text-amber-600 hover:underline">
                                                                 {child.label}
                                                             </Link>
@@ -576,9 +570,8 @@ export const Navbar: React.FC = () => {
                                     MATERIAL: "Material",
                                     OTHER: "Other",
                                   };
-                                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                  const grouped: Record<string, any[]> = {};
-                                  categoriesRaw.forEach((c) => {
+                                  const grouped: Record<string, Category[]> = {};
+                                 categoriesRaw.forEach((c) => {
                                     const t = c.type || "OTHER";
                                     if (!grouped[t]) grouped[t] = [];
                                     grouped[t].push(c);

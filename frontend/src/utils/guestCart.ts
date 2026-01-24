@@ -1,6 +1,6 @@
 // Local storage utilities for guest cart management
 
-import { LocalStorageCart } from "@/types/cartTypes";
+import { LocalStorageCart, ItemConfiguration } from "@/types/cartTypes";
 
 const CART_STORAGE_KEY = "guestCart";
 
@@ -45,7 +45,7 @@ export const saveGuestCart = (cart: LocalStorageCart): void => {
 export const addToGuestCart = (
   productId: string,
   quantity: number,
-  configuration?: any
+  configuration?: ItemConfiguration
 ): LocalStorageCart => {
   const cart = getGuestCart();
 

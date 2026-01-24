@@ -3,7 +3,7 @@
 import React from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, User, Mail, Phone, Lock, Sparkles } from "lucide-react";
+import { Eye, EyeOff, User, Mail, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Step1FormData, step1Schema } from "@/types/registrationTypes";
 import { useRegisterMutation } from "@/hooks/useRegistration";
@@ -42,7 +42,7 @@ export const Step1Form: React.FC<Step1Props> = ({ onSuccess }) => {
 
   const onSubmit = async (data: Step1FormData) => {
     try {
-      const { confirmPassword, ...registrationData } = data;
+      const { confirmPassword: _confirmPassword, ...registrationData } = data;
       const response = await registerMutation.mutateAsync(registrationData);
 
       if (response.success) {

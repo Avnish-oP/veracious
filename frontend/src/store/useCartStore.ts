@@ -1,7 +1,7 @@
 // Zustand store for cart management (both guest and logged-in users)
 
 import { create } from "zustand";
-import { Cart, CartItem, CartSummary } from "@/types/cartTypes";
+import { Cart, CartSummary, ItemConfiguration } from "@/types/cartTypes";
 import { ApplyCouponResponse, Coupons } from "@/types/couponsTypes";
 import { applyCouponCodeApi } from "@/utils/couponsApi";
 import {
@@ -12,6 +12,7 @@ import {
   clearGuestCart,
 } from "@/utils/guestCart";
 import { fetchMultipleProductDetails } from "@/utils/productDetailsApi";
+import { calculateCartSummary, calculateDiscountedSubtotal } from "@/utils/cartUtils";
 // Removed useUserStore and API imports as this store will now strictly handle Guest State
 // API State for logged-in users is handled by useCart (TanStack Query)
 
@@ -24,7 +25,7 @@ interface CartStore {
   couponApplying: boolean;
 
   // Actions
-  addToCart: (productId: string, quantity: number, configuration?: any) => Promise<void>;
+  addToCart: (productId: string, quantity: number, configuration?: ItemConfiguration) => Promise<void>;
   removeFromCart: (productId: string) => Promise<void>;
   updateCartItem: (productId: string, quantity: number) => Promise<void>;
   fetchCart: () => Promise<void>; // actually initializeGuestCart
@@ -58,19 +59,10 @@ export const useCartStore = create<CartStore>((set, get) => {
     }
   };
 
-  const calculateDiscountedSubtotal = () => {
+  // Use shared utility for discounted subtotal calculation
+  const getDiscountedSubtotal = () => {
     const { cart } = get();
-    if (!cart || !cart.items) {
-      return 0;
-    }
-
-    return cart.items.reduce((sum, item) => {
-      const price = Number(
-        item.product?.discountPrice ?? item.product?.price ?? 0
-      );
-      const lensPrice = Number((item.configuration as any)?.lensPrice) || 0;
-      return sum + (price + lensPrice) * item.quantity;
-    }, 0);
+    return calculateDiscountedSubtotal(cart);
   };
 
   return {
@@ -125,7 +117,7 @@ export const useCartStore = create<CartStore>((set, get) => {
     /**
      * Add item to cart
      */
-    addToCart: async (productId: string, quantity: number, configuration?: any) => {
+    addToCart: async (productId: string, quantity: number, configuration?: ItemConfiguration) => {
       set({ loading: true, error: null });
 
       try {
@@ -270,10 +262,8 @@ export const useCartStore = create<CartStore>((set, get) => {
     },
 
     /**
-     * Fetch cart from backend (logged-in users only)
+     * Fetch cart (alias for initialize, kept for compatibility)
      */
-    // MERGE logic removed - handled in useCart hook
-    mergeGuestCart: async () => {},
 
     // Fetch Cart is also redundant but kept for interface compatibility (will just init)
     fetchCart: async () => {
@@ -297,7 +287,6 @@ export const useCartStore = create<CartStore>((set, get) => {
       options?: { silent?: boolean }
     ): Promise<ApplyCouponResponse> => {
       const { cart } = get();
-      console.log("cart", cart);
       const silent = Boolean(options?.silent);
 
       if (!cart || !cart.items || cart.items.length === 0) {
@@ -309,7 +298,7 @@ export const useCartStore = create<CartStore>((set, get) => {
         throw new Error("Coupon code is required");
       }
 
-      const orderValue = calculateDiscountedSubtotal();
+      const orderValue = getDiscountedSubtotal();
 
       const productIds = cart.items.map((item) => item.productId);
 
@@ -351,84 +340,7 @@ export const useCartStore = create<CartStore>((set, get) => {
      */
     getCartSummary: (): CartSummary => {
       const { cart, couponDiscount } = get();
-
-      if (!cart || !cart.items) {
-        return {
-          totalItems: 0,
-          subtotal: 0,
-          subtotalAfterDiscount: 0,
-          discount: 0,
-          couponDiscount: 0,
-          total: 0,
-        };
-      }
-
-      const totalItems = cart.items.reduce(
-        (sum, item) => sum + item.quantity,
-        0
-      );
-
-      // Calculate subtotal using original prices
-      const subtotal = cart.items.reduce((sum, item) => {
-        const price = Number(item.product?.price) || 0;
-        const lensPrice = Number((item.configuration as any)?.lensPrice) || 0;
-        return sum + (price + lensPrice) * item.quantity;
-      }, 0);
-
-      // Calculate discount (difference between original price and discount price)
-      const discount = cart.items.reduce((sum, item) => {
-        if (item.product?.discountPrice && item.product?.price) {
-          const savings =
-            (Number(item.product.price) - Number(item.product.discountPrice)) *
-            item.quantity;
-          return sum + savings;
-        }
-        return sum;
-      }, 0);
-
-      // Calculate actual amount after discount
-      const subtotalAfterDiscount = cart.items.reduce((sum, item) => {
-        const price =
-          Number(item.product?.discountPrice) ||
-          Number(item.product?.price) ||
-          0;
-        const lensPrice = Number((item.configuration as any)?.lensPrice) || 0;
-        return sum + (price + lensPrice) * item.quantity;
-      }, 0);
-
-      // Shipping: Free if subtotal is over the equivalent of $50 in INR, otherwise a flat shipping fee
-      // Assumption: 1 USD = 83.5 INR (same conversion used for seeding)
-      // const USD_TO_INR = 83.5;
-      // const FREE_SHIPPING_MIN = 50 * USD_TO_INR; // ~₹4175
-      // const SHIPPING_FEE = 5 * USD_TO_INR; // ~₹417.5
-      // const shipping =
-      //   subtotalAfterDiscount >= FREE_SHIPPING_MIN
-      //     ? 0
-      //     : subtotalAfterDiscount > 0
-      //     ? SHIPPING_FEE
-      //     : 0;
-
-      // // Tax: 8% of subtotal after discount
-      // const tax = subtotalAfterDiscount * 0.08;
-
-      const normalizedCouponDiscount = Math.min(
-        couponDiscount || 0,
-        subtotalAfterDiscount
-      );
-
-      const total = Math.max(
-        0,
-        subtotalAfterDiscount - normalizedCouponDiscount
-      );
-
-      return {
-        totalItems,
-        subtotal,
-        discount,
-        subtotalAfterDiscount,
-        couponDiscount: normalizedCouponDiscount,
-        total,
-      };
+      return calculateCartSummary(cart, couponDiscount);
     },
 
     /**

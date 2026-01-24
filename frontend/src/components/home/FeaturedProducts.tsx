@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Filter,
@@ -73,7 +73,7 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
     try {
       await addToCart(product.id, 1);
       toast.success(`${product.name} added to cart!`);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to add item to cart");
     }
   };

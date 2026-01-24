@@ -2,7 +2,7 @@
 
 import React, { useRef } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Sparkles, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { Product } from "@/types/productTypes";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { useCart } from "@/hooks/useCart";
@@ -28,7 +28,7 @@ export const NewArrivals: React.FC<NewArrivalsProps> = ({
     try {
       await addToCart(product.id, 1);
       toast.success(`${product.name} added to cart!`);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to add item to cart");
     }
   };

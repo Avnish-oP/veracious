@@ -3,7 +3,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Check, ArrowRight, ArrowLeft, Info } from "lucide-react";
+import { X, ArrowRight, ArrowLeft, Info } from "lucide-react";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
 
@@ -57,7 +57,7 @@ export const LensSelectionModal: React.FC<LensSelectionModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  basePrice,
+  basePrice: _basePrice,
   lensPrices = [], 
 }) => {
   const displayLensTypes = lensPrices.length > 0 ? lensPrices.map((lp) => ({

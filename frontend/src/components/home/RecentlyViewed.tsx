@@ -24,7 +24,7 @@ export const RecentlyViewed: React.FC<RecentlyViewedProps> = ({ products }) => {
     try {
       await addToCart(product.id, 1);
       toast.success(`${product.name} added to cart!`);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to add item to cart");
     }
   };

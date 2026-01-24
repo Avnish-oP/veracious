@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/form-components";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
 import { useCouponsByOrderValue } from "@/hooks/useCoupons";
+import { ItemConfiguration } from "@/types/cartTypes";
 import {
   ShoppingBag,
   Plus,
@@ -293,19 +294,23 @@ export default function CartPage() {
                                 )}
                               </div>
                               {/* Lens Price Breakdown */}
-                              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                              {(item.configuration as any)?.lensPrice > 0 && (
-                                <div className="text-sm text-blue-600 font-medium">
-                                  + ₹{Number((item.configuration as any)?.lensPrice).toFixed(2)} for {(item.configuration as any)?.lensType || 'Lens'}
-                                </div>
-                              )}
+                              {(() => {
+                                const config = item.configuration as ItemConfiguration | undefined;
+                                return config?.lensPrice && config.lensPrice > 0 ? (
+                                  <div className="text-sm text-blue-600 font-medium">
+                                    + ₹{Number(config.lensPrice).toFixed(2)} for {config.lensType || 'Lens'}
+                                  </div>
+                                ) : null;
+                              })()}
                               {/* Lens Details */}
-                              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                              {(item.configuration as any)?.prescriptionType && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                    {(item.configuration as any)?.prescriptionType} • {(item.configuration as any)?.lensType}
-                                </div>
-                              )}
+                              {(() => {
+                                const config = item.configuration as ItemConfiguration | undefined;
+                                return config?.prescriptionType ? (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                      {config.prescriptionType} • {config.lensType}
+                                  </div>
+                                ) : null;
+                              })()}
                             </div>
                           </div>
 
@@ -361,11 +366,14 @@ export default function CartPage() {
                             <p className="text-sm text-gray-500">Subtotal</p>
                             <p className="text-lg font-bold text-gray-900">
                               ₹
-                              {(
-                                (Number(item.product?.discountPrice) ||
-                                  Number(item.product?.price) ||
-                                  0 + Number((item.configuration as any)?.lensPrice || 0)) * item.quantity
-                              ).toFixed(2)}
+                              {(() => {
+                                const config = item.configuration as ItemConfiguration | undefined;
+                                return (
+                                  ((Number(item.product?.discountPrice) ||
+                                    Number(item.product?.price) ||
+                                    0) + Number(config?.lensPrice || 0)) * item.quantity
+                                ).toFixed(2);
+                              })()}
                             </p>
                           </div>
                         </div>

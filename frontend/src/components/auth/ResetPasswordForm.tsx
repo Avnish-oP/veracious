@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Eye, EyeOff, Shield, ArrowLeft, Check } from "lucide-react";
-import { toast } from "react-hot-toast";
 import { ResetPasswordFormData, resetPasswordSchema } from "@/types/authTypes";
 import { useResetPasswordMutation } from "@/hooks/useRegistration";
 import { Button, Card, Input } from "@/components/ui/form-components";
@@ -56,7 +55,7 @@ export const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       setTimeout(() => {
         router.push("/auth/login");
       }, 2000);
-    } catch (error) {
+    } catch (_error) {
       // Error handling is done in the mutation
     }
   };

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Package, MapPin, LogOut, Settings } from "lucide-react";
+import { User, Package, MapPin, LogOut } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 import { ProfileInfo } from "@/components/profile/ProfileInfo";
 import { OrderHistory } from "@/components/profile/OrderHistory";

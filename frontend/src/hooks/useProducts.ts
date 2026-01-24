@@ -5,35 +5,13 @@ import {
   ProductsResponse,
   FeaturedProductsResponse,
 } from "@/types/productTypes";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
-
+import api from "@/lib/axios";
 import { ExtendedApiError } from "@/utils/api";
 
-// Generic API call function
-async function apiCall<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-
-  const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-    credentials: "include",
-    ...options,
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data.message || data.error || "An error occurred");
-  }
-
-  return data;
+// Generic API call function using shared Axios instance
+async function apiCall<T>(endpoint: string): Promise<T> {
+  const response = await api.get(endpoint);
+  return response.data;
 }
 
 // Fetch all products with pagination and filtering

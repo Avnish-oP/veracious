@@ -2,7 +2,6 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { HeroCarousel } from "@/components/home/HeroCarousel";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import {

@@ -2,7 +2,7 @@
 
 import React, { useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { useProducts } from "@/hooks/useProducts";
@@ -57,7 +57,7 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
     try {
       await addToCart(product.id, 1);
       toast.success(`${product.name} added to cart!`);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to add to cart");
     }
   };

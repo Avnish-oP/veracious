@@ -5,7 +5,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import producRoutes from "./routes/products";
 import cartRoutes from "./routes/cart";
-import wishlistRoutes from "./routes/whishlist";
+import wishlistRoutes from "./routes/wishlist";
 import categoriesRoutes from "./routes/categories";
 import couponsRoutes from "./routes/coupons";
 import orderRoutes from "./routes/checkout";

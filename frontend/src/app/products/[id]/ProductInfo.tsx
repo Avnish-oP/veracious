@@ -36,7 +36,6 @@ interface ProductInfoProps {
 
 export const ProductInfo: React.FC<ProductInfoProps> = ({
   product,
-  discountPercentage,
   avgRating,
 }) => {
   const router = useRouter();
@@ -65,7 +64,6 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
   const {
     data: couponsData,
     isLoading: couponsLoading,
-    isError: couponsError,
   } = useProductCoupons(product.id);
 
   const [quantity, setQuantity] = useState(1);
@@ -124,8 +122,8 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     try {
       const config = isContactLens 
         ? { power: selectedPower, cylinder: selectedCylinder || undefined, axis: selectedAxis || undefined } 
-        : (isEyewear ? lensConfig : null);
-      await addToCart(product.id, quantity, config);
+        : (isEyewear ? lensConfig : undefined);
+      await addToCart(product.id, quantity, config ?? undefined);
       toast.success(`${product.name} added to cart!`);
     } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to add to cart");
@@ -152,8 +150,8 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
     try {
       const config = isContactLens 
         ? { power: selectedPower, cylinder: selectedCylinder || undefined, axis: selectedAxis || undefined } 
-        : (isEyewear ? lensConfig : null);
-      await addToCart(product.id, quantity, config);
+        : (isEyewear ? lensConfig : undefined);
+      await addToCart(product.id, quantity, config ?? undefined);
       router.push("/cart");
     } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to add to cart");

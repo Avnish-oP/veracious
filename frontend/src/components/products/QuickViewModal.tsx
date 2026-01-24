@@ -15,7 +15,6 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Image from "next/image";
-import { Product } from "@/types/productTypes";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
 import { useProductDetail } from "@/hooks/useProducts";
@@ -35,7 +34,7 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
   productId,
 }) => {
   const { data, isLoading, error } = useProductDetail(productId);
-  const { addToCart, isUserLoading } = useCart();
+  const { addToCart } = useCart();
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -51,7 +50,7 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
       await addToCart(product.id, quantity);
       toast.success(`${product.name} added to cart!`);
       setQuantity(1);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to add to cart");
     } finally {
       setIsAddingToCart(false);

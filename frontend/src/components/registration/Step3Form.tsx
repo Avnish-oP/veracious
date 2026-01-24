@@ -111,7 +111,7 @@ export const Step3Form: React.FC<Step3Props> = ({
     mode: "onBlur",
   });
 
-  const faceShape = watch("faceShape");
+  const _faceShape = watch("faceShape");
 
   const handleStyleToggle = (styleId: string) => {
     setSelectedStyles((prev) => {

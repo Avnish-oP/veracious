@@ -64,21 +64,6 @@ export const createReview = async (req: Request, res: Response) => {
       });
     }
 
-    // Check if user has purchased this product (DELIVERED orders only)
-    const hasPurchased = await prisma.order.findFirst({
-      where: {
-        userId,
-        status: "DELIVERED",
-      },
-    });
-
-    if (!hasPurchased) {
-      return res.status(403).json({
-        success: false,
-        message: "You can only review products you have purchased and received",
-      });
-    }
-
     // Check if the specific product is in any of their delivered orders
     // Order items are stored as JSON, so we need to check within
     const deliveredOrders = await prisma.order.findMany({
@@ -90,6 +75,14 @@ export const createReview = async (req: Request, res: Response) => {
         items: true,
       },
     });
+
+    // No delivered orders at all
+    if (deliveredOrders.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only review products you have purchased and received",
+      });
+    }
 
     const hasProductInOrders = deliveredOrders.some((order) => {
       const items = order.items as Array<{ productId: string }>;

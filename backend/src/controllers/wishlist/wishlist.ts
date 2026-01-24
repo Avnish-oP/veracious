@@ -4,9 +4,9 @@ import { Request, Response } from "express";
 
 export const getwishlist = async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id;
     if (!userId) {
-      return res.status(400).json({ message: "User ID is required" });
+      return res.status(401).json({ message: "Unauthorized" });
     }
     const items = await prisma.wishlist.findMany({
       where: { userId },
@@ -20,11 +20,11 @@ export const getwishlist = async (req: Request, res: Response) => {
   }
 };
 export const toggleWishlistItem = async (req: Request, res: Response) => {
-  const userId = req.user.id;
+  const userId = req.user?.id;
   const { productId } = req.params;
 
   if (!userId) {
-    return res.status(400).json({ message: "User ID is required" });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
   if (!productId) {

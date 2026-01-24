@@ -110,7 +110,7 @@ export const Step2Form: React.FC<Step2Props> = ({
       if (response.success) {
         onSuccess();
       }
-    } catch (error) {
+    } catch (_error) {
       // Reset the code on error
       setCode(["", "", "", "", "", ""]);
       setValue("verificationCode", "");
@@ -125,7 +125,7 @@ export const Step2Form: React.FC<Step2Props> = ({
       setCode(["", "", "", "", "", ""]);
       setValue("verificationCode", "");
       inputRefs.current[0]?.focus();
-    } catch (error) {
+    } catch (_error) {
       // Error handling is done in the mutation hook
     }
   };

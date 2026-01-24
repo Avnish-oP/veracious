@@ -4,7 +4,7 @@ export interface WishlistItem {
   id: string;
   userId: string;
   productId: string;
-  product: Product;
+  product?: Product | null;
   createdAt: string;
 }
 

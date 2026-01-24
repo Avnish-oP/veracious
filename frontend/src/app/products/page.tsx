@@ -1,27 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation"; // Added useRouter
-import { motion } from "framer-motion";
-import {
-  Loader2,
-  Grid3X3,
-  List,
-} from "lucide-react";
-import {
-  useProducts,
-  useFeaturedProducts,
-  useTrendingProducts,
-} from "@/hooks/useProducts";
-import { ProductCard } from "@/components/ui/ProductCard";
-import { Pagination } from "@/components/ui/Pagination";
+import { Loader2 } from "lucide-react";
+import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "react-hot-toast";
 import { Product, ProductFilters } from "@/types/productTypes";
-import { cn } from "@/utils/cn";
 import { QuickViewModal } from "@/components/products/QuickViewModal";
-import { FilterBar } from "@/components/products/FilterBar";
-import { FilterModal } from "@/components/products/FilterModal";
 import { ProductListingLayout } from "@/components/products/ProductListingLayout";
 
 

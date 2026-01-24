@@ -116,7 +116,7 @@ export default function WishlistPage() {
         ) : (
           /* Wishlist Items Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {items.map((item, index) => (
+            {(items.filter(item => item.product) as (typeof items[number] & { product: NonNullable<typeof items[number]['product']> })[]).map((item, index) => (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 20 }}

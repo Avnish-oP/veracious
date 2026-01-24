@@ -9,7 +9,6 @@ import { RegistrationState, Step1FormData } from "@/types/registrationTypes";
 import { useLoginMutation } from "@/hooks/useRegistration";
 import { useUserStore } from "@/store/useUserStore";
 import { useCart } from "@/hooks/useCart";
-import { User } from "@/types/userTypes";
 import { useQueryClient } from "@tanstack/react-query";
 import { USER_QUERY_KEY } from "@/hooks/useUser";
 import { Progress } from "@/components/ui/form-components";
@@ -110,7 +109,7 @@ export const RegistrationFlow: React.FC = () => {
 
         toast.success("Registration completed! Welcome to Veracious!");
         router.push("/");
-      } catch (error) {
+      } catch (_error) {
         // If auto-login fails, redirect to login page
         toast.success("Registration completed! Please log in to continue.");
         router.push("/auth/login");
@@ -144,7 +143,7 @@ export const RegistrationFlow: React.FC = () => {
 
         toast.success("Registration completed! Welcome to Veracious!");
         router.push("/");
-      } catch (error) {
+      } catch (_error) {
         toast.success("Registration completed! Please log in to continue.");
         router.push("/auth/login");
       }

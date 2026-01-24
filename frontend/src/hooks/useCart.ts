@@ -13,10 +13,10 @@ import {
   getGuestCart,
   clearGuestCart as clearGuestCartStorage,
 } from "@/utils/guestCart";
-import { Cart } from "@/types/cartTypes";
+import { Cart, CartSummary, ItemConfiguration } from "@/types/cartTypes";
 import { toast } from "react-hot-toast";
-import { CartSummary } from "@/types/cartTypes";
 import { User } from "@/types/userTypes";
+import { calculateCartSummary } from "@/utils/cartUtils";
 
 export const CART_QUERY_KEY = ["cart"];
 
@@ -84,7 +84,7 @@ export function useCart() {
     }: {
       productId: string;
       quantity: number;
-      configuration?: any;
+      configuration?: ItemConfiguration;
     }) => {
       // Get fresh user from query cache at mutation time
       const currentUser = getCurrentUser(queryClient);
@@ -223,64 +223,11 @@ export function useCart() {
   };
 
   const getCartSummary = (): CartSummary => {
-    if (!cart || !cart.items) {
-      return {
-        totalItems: 0,
-        subtotal: 0,
-        subtotalAfterDiscount: 0,
-        discount: 0,
-        couponDiscount: 0,
-        total: 0,
-      };
-    }
-
-    const totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-
-    // Calculate subtotal using original prices + lens prices
-    const subtotal = cart.items.reduce((sum, item) => {
-      const price = Number(item.product?.price) || 0;
-      const lensPrice = Number((item.configuration as any)?.lensPrice) || 0;
-      return sum + (price + lensPrice) * item.quantity;
-    }, 0);
-
-    // Calculate discount (difference between original price and discount price)
-    const discount = cart.items.reduce((sum, item) => {
-      if (item.product?.discountPrice && item.product?.price) {
-        const savings =
-          (Number(item.product.price) - Number(item.product.discountPrice)) *
-          item.quantity;
-        return sum + savings;
-      }
-      return sum;
-    }, 0);
-
-    // Calculate actual amount after discount
-    const subtotalAfterDiscount = cart.items.reduce((sum, item) => {
-      const price =
-        Number(item.product?.discountPrice) || Number(item.product?.price) || 0;
-      const lensPrice = Number((item.configuration as any)?.lensPrice) || 0;
-      return sum + (price + lensPrice) * item.quantity;
-    }, 0);
-
-    const normalizedCouponDiscount = Math.min(
-      couponDiscount || 0,
-      subtotalAfterDiscount
-    );
-
-    const total = Math.max(0, subtotalAfterDiscount - normalizedCouponDiscount);
-
-    return {
-      totalItems,
-      subtotal,
-      discount,
-      subtotalAfterDiscount,
-      couponDiscount: normalizedCouponDiscount,
-      total,
-    };
+    return calculateCartSummary(cart, couponDiscount);
   };
 
   // Safe Actions (wrappers)
-  const addToCart = (productId: string, quantity: number, configuration?: any) =>
+  const addToCart = (productId: string, quantity: number, configuration?: ItemConfiguration) =>
     addToCartMutation.mutateAsync({ productId, quantity, configuration });
 
   const removeFromCart = (productId: string) =>
@@ -308,7 +255,8 @@ export function useCart() {
               Number(item.product?.discountPrice) ||
               Number(item.product?.price) ||
               0;
-            const lensPrice = Number((item.configuration as any)?.lensPrice) || 0;
+            const config = item.configuration as ItemConfiguration | undefined;
+            const lensPrice = Number(config?.lensPrice) || 0;
             return sum + (price + lensPrice) * item.quantity;
           }, 0);
 

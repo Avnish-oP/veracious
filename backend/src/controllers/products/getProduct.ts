@@ -12,14 +12,17 @@ const buildProductWhereClause = (query: any) => {
   } = query;
 
   const where: any = {};
+  const andConditions: any[] = [];
 
   // Search
   if (search) {
-    where.OR = [
-      { name: { contains: String(search), mode: "insensitive" as const } },
-      { brand: { contains: String(search), mode: "insensitive" as const } },
-      { tags: { has: String(search) } },
-    ];
+    andConditions.push({
+      OR: [
+        { name: { contains: String(search), mode: "insensitive" as const } },
+        { brand: { contains: String(search), mode: "insensitive" as const } },
+        { tags: { has: String(search) } },
+      ],
+    });
   }
 
   // Categories (comma separated or single) - Support ID or Slug
@@ -57,23 +60,30 @@ const buildProductWhereClause = (query: any) => {
     }
   }
 
-  // Price Range
+  // Price Range - use AND to avoid overwriting search
   if (minPrice || maxPrice) {
-    where.OR = [
-      {
-        discountPrice: {
-          gte: minPrice ? Number(minPrice) : undefined,
-          lte: maxPrice ? Number(maxPrice) : undefined,
+    andConditions.push({
+      OR: [
+        {
+          discountPrice: {
+            gte: minPrice ? Number(minPrice) : undefined,
+            lte: maxPrice ? Number(maxPrice) : undefined,
+          },
         },
-      },
-      {
-        discountPrice: null,
-        price: {
-          gte: minPrice ? Number(minPrice) : undefined,
-          lte: maxPrice ? Number(maxPrice) : undefined,
+        {
+          discountPrice: null,
+          price: {
+            gte: minPrice ? Number(minPrice) : undefined,
+            lte: maxPrice ? Number(maxPrice) : undefined,
+          },
         },
-      },
-    ];
+      ],
+    });
+  }
+
+  // Combine all AND conditions
+  if (andConditions.length > 0) {
+    where.AND = andConditions;
   }
 
   return where;

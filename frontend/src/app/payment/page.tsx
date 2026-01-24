@@ -16,7 +16,6 @@ import {
   ArrowLeft,
   Lock,
 } from "lucide-react";
-import Image from "next/image";
 import { toast } from "react-hot-toast";
 import { loadRazorpayScript, verifyPayment } from "@/utils/checkoutApi";
 import { CreateOrderResponse, RazorpayOptions } from "@/types/orderTypes";

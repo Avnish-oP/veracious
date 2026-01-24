@@ -1,11 +1,13 @@
-import prisma from "..//utils/prisma";
+import prisma from "../utils/prisma";
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { User } from "@prisma/client";
 
+// Extend Express Request to include typed user
 declare global {
   namespace Express {
     interface Request {
-      user?: any;
+      user?: User;
     }
   }
 }
@@ -20,9 +22,9 @@ export const authMiddleware = async (
     return res.status(401).json({ success: false, message: "No access token" });
   }
   try {
-    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!);
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as { id: string };
     const user = await prisma.user.findUnique({
-      where: { id: (decoded as any).id },
+      where: { id: decoded.id },
     });
     if (!user) {
       return res

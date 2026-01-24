@@ -33,6 +33,9 @@ export const verifyOrder = async (req: Request, res: Response) => {
         .json({ success: false, message: "Invalid signature" });
 
     // Use transaction to ensure data integrity
+    // Store userId for Redis cleanup after transaction
+    let userIdForCacheCleanup: string | null = null;
+    
     await prisma.$transaction(async (tx) => {
       const orderRecord = await tx.order.findUnique({
         where: { id: orderId },
@@ -52,6 +55,9 @@ export const verifyOrder = async (req: Request, res: Response) => {
       if (orderRecord.paymentStatus === "PAID") {
         return; // Already paid, idempotent approach
       }
+
+      // Store for cache cleanup after transaction
+      userIdForCacheCleanup = orderRecord.userId;
 
       // update order + payment record
       await tx.payment.create({
@@ -124,21 +130,26 @@ export const verifyOrder = async (req: Request, res: Response) => {
         }
       }
 
-      // 2. Clear Cart
+      // 2. Clear Cart (database part only)
       if (orderRecord.userId) {
         await tx.cart.delete({
           where: { userId: orderRecord.userId },
         }).catch(() => {
            // Ignore if cart doesn't exist
         });
-        
-        // Remove from Redis
-        const redisKey = `cart:${orderRecord.userId}`;
-        await redisClient.del(redisKey);
-        // Alternatively, if delete cascades or if we just want to clear items:
-        // await tx.cartItem.deleteMany({ where: { cart: { userId: orderRecord.userId } } });
       }
+    }, {
+      maxWait: 10000, // 10 seconds max wait to acquire connection
+      timeout: 30000, // 30 seconds transaction timeout for large orders
     });
+
+    // 3. Clear cart from Redis AFTER transaction completes (outside transaction)
+    if (userIdForCacheCleanup) {
+      const redisKey = `cart:${userIdForCacheCleanup}`;
+      await redisClient.del(redisKey).catch((err) => {
+        console.warn("Failed to clear cart cache:", err);
+      });
+    }
 
     return res.json({ success: true });
   } catch (err: any) {

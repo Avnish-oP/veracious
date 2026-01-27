@@ -1,10 +1,12 @@
 "use client";
 
-import React from "react";
-import { Package, Calendar, ArrowRight, Loader2 } from "lucide-react";
+import React, { useState } from "react";
+import { Package, Calendar, ArrowRight, Loader2, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useOrdersQuery } from "@/hooks/useProfile";
+import { downloadInvoice } from "@/utils/api";
+import { toast } from "react-hot-toast";
 
 interface Order {
   id: string;
@@ -18,6 +20,20 @@ interface Order {
 export const OrderHistory: React.FC = () => {
   const router = useRouter();
   const { data: orders = [], isLoading: loading } = useOrdersQuery();
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownloadInvoice = async (e: React.MouseEvent, orderId: string) => {
+    e.stopPropagation(); // Prevent navigation to details
+    setDownloadingId(orderId);
+    try {
+      await downloadInvoice(orderId);
+      toast.success("Invoice downloaded");
+    } catch {
+      toast.error("Failed to download invoice");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -76,11 +92,31 @@ export const OrderHistory: React.FC = () => {
               </div>
 
               <div className="flex items-center justify-between md:justify-end gap-6">
-                <div className="text-right">
-                  <p className="text-sm text-gray-500">Total Amount</p>
-                  <p className="text-lg font-bold text-gray-900">₹{order.totalAmount}</p>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500">Total Amount</p>
+                    <p className="text-lg font-bold text-gray-900">₹{order.totalAmount}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    {order.status !== 'PENDING' && order.status !== 'CANCELLED' && order.status !== 'PAYMENT_FAILED' && (
+                      <button
+                        onClick={(e) => handleDownloadInvoice(e, order.id)}
+                        disabled={downloadingId === order.id}
+                        className="p-2 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded-full transition-colors"
+                        title="Download Invoice"
+                      >
+                         {downloadingId === order.id ? (
+                           <Loader2 className="w-5 h-5 animate-spin" />
+                         ) : (
+                           <Download className="w-5 h-5" />
+                         )}
+                      </button>
+                    )}
+                    <button className="p-2">
+                      <ArrowRight className="w-5 h-5 text-gray-400" />
+                    </button>
+                  </div>
                 </div>
-                <ArrowRight className="w-5 h-5 text-gray-400" />
               </div>
             </div>
           </div>

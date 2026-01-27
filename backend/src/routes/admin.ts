@@ -32,9 +32,20 @@ router.delete("/lens-prices/:id", deleteLensPrice);
 
 // -- Orders --
 import { getAdminOrders, getOrderDetails, updateOrderStatus } from "../controllers/admin/orderManagement";
+import { downloadAdminInvoice } from "../controllers/order/invoice";
 
 router.get("/orders", getAdminOrders);
 router.get("/orders/:id", getOrderDetails);
+router.get("/orders/:id/invoice", downloadAdminInvoice);
 router.put("/orders/:id", updateOrderStatus);
+
+// -- Coupons --
+import { getAdminCoupons, getCouponById, createCoupon, updateCoupon, deleteCoupon } from "../controllers/admin/couponManagement";
+
+router.get("/coupons", getAdminCoupons);
+router.get("/coupons/:id", getCouponById);
+router.post("/coupons", createCoupon);
+router.put("/coupons/:id", updateCoupon);
+router.delete("/coupons/:id", deleteCoupon);
 
 export default router;

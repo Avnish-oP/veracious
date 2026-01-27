@@ -16,7 +16,7 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 
   try {
-    const { items, addressId, couponCode, shipping, gst } = req.body;
+    const { items, addressId, couponCode, shipping } = req.body;
     if (!items || items.length === 0) {
       return res.status(400).json({ message: "No items in the order" });
     }
@@ -110,12 +110,11 @@ export const createOrder = async (req: Request, res: Response) => {
       }
     }
 
-    // Apply shipping and GST charges
+    // Apply shipping charges only
+    // NOTE: GST is already included in MRP (as per Indian law)
+    // The invoice will show the GST breakdown extracted from the inclusive price
     if (shipping) {
       totalAmount += Number(shipping);
-    }
-    if (gst) {
-      totalAmount += (totalAmount * Number(gst)) / 100;
     }
 
     // Round to 2 decimal places to avoid floating point issues

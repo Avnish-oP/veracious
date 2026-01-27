@@ -14,9 +14,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Loader2, Package, User, MapPin, CreditCard, Tag } from 'lucide-react';
+import { ArrowLeft, Loader2, Package, User, MapPin, CreditCard, Tag, Download } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import api from '@/lib/axios';
 
 // Format currency
 const formatCurrency = (amount: number) => {
@@ -100,6 +101,28 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ orderId
     }
   };
 
+  const [downloading, setDownloading] = useState(false);
+  const handleDownloadInvoice = async () => {
+    try {
+      setDownloading(true);
+      const response = await api.get(`/admin/orders/${order.id}/invoice`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Invoice_${order.id.slice(-8).toUpperCase()}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Failed to download invoice:', error);
+      alert('Failed to download invoice');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -115,9 +138,17 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ orderId
             <p className="text-muted-foreground font-mono text-sm">{order.id}</p>
           </div>
         </div>
-        <Badge variant={statusColors[order.status] || 'secondary'} className="text-sm px-3 py-1">
-          {order.status}
-        </Badge>
+        <div className="flex items-center gap-3">
+            {order.paymentStatus === 'PAID' && (
+              <Button variant="outline" size="sm" onClick={handleDownloadInvoice} disabled={downloading}>
+                {downloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                Invoice
+              </Button>
+            )}
+            <Badge variant={statusColors[order.status] || 'secondary'} className="text-sm px-3 py-1">
+              {order.status}
+            </Badge>
+        </div>
       </div>
 
       {/* Main Content */}

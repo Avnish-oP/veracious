@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import crypto from "crypto";
 import prisma from "../../utils/prisma";
 import redisClient from "../../lib/redis";
+import { sendOrderConfirmationEmail } from "../../email/sendmail";
 
 export const razorpayWebhook = async (req: Request, res: Response) => {
   try {
@@ -24,8 +25,9 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
       const rpOrderId = event.payload.payment.entity.order_id;
       const rpPaymentId = event.payload.payment.entity.id;
 
-      // Store userId for Redis cleanup after transaction
+      // Store data for post-transaction operations
       let userIdForCacheCleanup: string | null = null;
+      let orderDataForEmail: any = null;
 
       await prisma.$transaction(async (tx) => {
         const orderRecord = await tx.order.findFirst({
@@ -36,6 +38,25 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
              userId: true,
              couponId: true,
              items: true,
+             totalAmount: true,
+             discount: true,
+             finalAmount: true,
+             address: {
+               select: {
+                 line1: true,
+                 line2: true,
+                 city: true,
+                 state: true,
+                 postal: true,
+                 country: true,
+               }
+             },
+             user: {
+               select: {
+                 name: true,
+                 email: true,
+               }
+             }
           }
         });
 
@@ -49,8 +70,9 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
           return; // Already processed
         }
 
-        // Store userId for Redis cleanup after transaction
+        // Store data for post-transaction operations
         userIdForCacheCleanup = orderRecord.userId;
+        orderDataForEmail = orderRecord;
 
         // mark order paid
         await tx.order.update({
@@ -123,6 +145,43 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
       if (userIdForCacheCleanup) {
         const redisKey = `cart:${userIdForCacheCleanup}`;
         await redisClient.del(redisKey);
+      }
+
+      // Send order confirmation email (non-blocking)
+      if (orderDataForEmail?.user?.email) {
+        const items = orderDataForEmail.items as any[];
+        // Get product details for email
+        const productIds = items.map((item: any) => item.productId).filter(Boolean);
+        const products = await prisma.product.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true,
+            name: true,
+            images: { take: 1, select: { url: true } },
+          },
+        });
+        const productMap = new Map(products.map((p) => [p.id, p]));
+
+        const emailData = {
+          id: orderDataForEmail.id,
+          items: items.map((item: any) => {
+            const product = productMap.get(item.productId);
+            return {
+              productName: product?.name || item.productName || 'Product',
+              productImage: product?.images[0]?.url || null,
+              quantity: item.quantity,
+              price: Number(item.price),
+              configuration: item.configuration,
+            };
+          }),
+          totalAmount: Number(orderDataForEmail.totalAmount),
+          discount: Number(orderDataForEmail.discount),
+          finalAmount: Number(orderDataForEmail.finalAmount),
+          address: orderDataForEmail.address,
+          userName: orderDataForEmail.user.name,
+        };
+
+        sendOrderConfirmationEmail(orderDataForEmail.user.email, emailData);
       }
     }
 

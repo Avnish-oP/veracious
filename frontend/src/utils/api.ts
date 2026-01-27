@@ -150,3 +150,24 @@ export const deleteAddress = async (id: string): Promise<unknown> => {
     method: "DELETE",
   });
 };
+
+// Download Invoice
+export const downloadInvoice = async (orderId: string): Promise<void> => {
+  try {
+    const response = await api.get(`/orders/${orderId}/invoice`, {
+      responseType: 'blob',
+    });
+    
+    // Create blob link to download
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Invoice_${orderId.slice(-8).toUpperCase()}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } catch (error) {
+    console.error("Failed to download invoice:", error);
+    throw error;
+  }
+};

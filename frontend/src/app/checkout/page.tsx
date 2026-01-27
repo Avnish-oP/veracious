@@ -67,9 +67,11 @@ export default function CheckoutPage() {
     cartSummary.subtotalAfterDiscount - cartSummary.couponDiscount
   );
   const SHIPPING_COST = itemsTotal > 1000 ? 0 : 50; // Free shipping above ₹1000
-  const GST_RATE = 18; // 18% GST
-  const gstAmount = ((itemsTotal + SHIPPING_COST) * GST_RATE) / 100;
-  const finalTotal = itemsTotal + SHIPPING_COST + gstAmount;
+  // GST is INCLUDED in MRP (as per Indian law) - we show it for transparency
+  // Using 12% as average rate (sunglasses). Invoice will show exact per-product GST.
+  const AVG_GST_RATE = 12;
+  const gstIncluded = (itemsTotal * AVG_GST_RATE) / (100 + AVG_GST_RATE);
+  const finalTotal = itemsTotal + SHIPPING_COST; // No GST addition - already in price
 
   useEffect(() => {
     // Wait for hydration
@@ -218,7 +220,7 @@ export default function CheckoutPage() {
         addressId: finalAddressId || undefined,
         couponCode: appliedCoupon?.code || undefined,
         shipping: SHIPPING_COST,
-        gst: GST_RATE,
+        // No GST parameter - it's already included in product prices
       });
 
       sessionStorage.setItem("pendingOrder", JSON.stringify(orderResponse));
@@ -642,8 +644,8 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="flex justify-between text-gray-600">
-                  <span>GST ({GST_RATE}%)</span>
-                  <span>₹{gstAmount.toFixed(2)}</span>
+                  <span className="text-sm">GST (incl. in prices)</span>
+                  <span className="text-sm text-gray-500">≈ ₹{gstIncluded.toFixed(2)}</span>
                 </div>
 
                 <div className="pt-4 border-t border-gray-200">

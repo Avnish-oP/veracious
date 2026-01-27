@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../../utils/prisma";
+import { sendOrderStatusEmail } from "../../email/sendmail";
 
 // Get all orders with pagination and filters
 export const getAdminOrders = async (req: Request, res: Response) => {
@@ -204,10 +205,19 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Invalid status" });
     }
 
-    // Check if order exists
+    // Check if order exists and get user info for email
     const existingOrder = await prisma.order.findUnique({
       where: { id },
-      select: { id: true, status: true },
+      select: { 
+        id: true, 
+        status: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+          }
+        }
+      },
     });
 
     if (!existingOrder) {
@@ -227,6 +237,15 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
         updatedAt: true,
       },
     });
+
+    // Send status update email (non-blocking)
+    if (existingOrder.user?.email && existingOrder.status !== status) {
+      sendOrderStatusEmail(
+        existingOrder.user.email,
+        { id: existingOrder.id, userName: existingOrder.user.name || undefined },
+        status
+      );
+    }
 
     return res.json({
       success: true,

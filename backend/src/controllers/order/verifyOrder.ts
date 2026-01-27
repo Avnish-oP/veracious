@@ -27,10 +27,22 @@ export const verifyOrder = async (req: Request, res: Response) => {
       razorpay_payment_id,
       razorpay_signature
     );
-    if (!verified)
+    
+    if (!verified) {
+      // Mark order as payment failed when signature verification fails
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          paymentStatus: "FAILED",
+          status: "PAYMENT_FAILED" as any,
+          updatedAt: new Date(),
+        },
+      });
+      
       return res
         .status(400)
-        .json({ success: false, message: "Invalid signature" });
+        .json({ success: false, message: "Payment verification failed" });
+    }
 
     // Use transaction to ensure data integrity
     // Store userId for Redis cleanup after transaction

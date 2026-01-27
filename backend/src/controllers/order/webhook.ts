@@ -18,9 +18,14 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
     }
 
     const event = req.body;
+    
+    // Handle payment.captured event
     if (event.event === "payment.captured") {
       const rpOrderId = event.payload.payment.entity.order_id;
       const rpPaymentId = event.payload.payment.entity.id;
+
+      // Store userId for Redis cleanup after transaction
+      let userIdForCacheCleanup: string | null = null;
 
       await prisma.$transaction(async (tx) => {
         const orderRecord = await tx.order.findFirst({
@@ -37,13 +42,15 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
         if (!orderRecord) {
           // Log orphan payment for manual investigation
           console.error(`[ORPHAN PAYMENT] Order not found for Razorpay Order ID: ${rpOrderId}, Payment ID: ${rpPaymentId}`);
-          // TODO: Consider storing in a separate orphan_payments table for reconciliation
           return;
         }
 
         if (orderRecord.paymentStatus === "PAID") {
           return; // Already processed
         }
+
+        // Store userId for Redis cleanup after transaction
+        userIdForCacheCleanup = orderRecord.userId;
 
         // mark order paid
         await tx.order.update({
@@ -82,7 +89,7 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
           });
         }
 
-        // 1. Decrement Stock
+        // Decrement Stock
         const items = orderRecord.items as any[];
         if (Array.isArray(items)) {
           for (const item of items) {
@@ -99,18 +106,73 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
           }
         }
 
-        // 2. Clear Cart
+        // Clear Cart (within transaction)
         if (orderRecord.userId) {
           await tx.cart.delete({
             where: { userId: orderRecord.userId },
           }).catch(() => {
             // Ignore if cart doesn't exist
           });
-          
-          // Remove from Redis
-          const redisKey = `cart:${orderRecord.userId}`;
-          await redisClient.del(redisKey);
         }
+      }, {
+        maxWait: 10000,
+        timeout: 30000,
+      });
+
+      // Clear Redis cache outside transaction to prevent timeout
+      if (userIdForCacheCleanup) {
+        const redisKey = `cart:${userIdForCacheCleanup}`;
+        await redisClient.del(redisKey);
+      }
+    }
+
+    // Handle payment.failed event
+    if (event.event === "payment.failed") {
+      const rpOrderId = event.payload.payment.entity.order_id;
+      const rpPaymentId = event.payload.payment.entity.id;
+      const failureReason = event.payload.payment.entity.error_description || "Payment failed";
+
+      console.log(`[PAYMENT FAILED] Order: ${rpOrderId}, Payment: ${rpPaymentId}, Reason: ${failureReason}`);
+
+      await prisma.$transaction(async (tx) => {
+        const orderRecord = await tx.order.findFirst({
+          where: { razorpayOrderId: rpOrderId } as any,
+          select: { id: true, paymentStatus: true }
+        });
+
+        if (!orderRecord) {
+          console.error(`[ORPHAN FAILED PAYMENT] Order not found for Razorpay Order ID: ${rpOrderId}`);
+          return;
+        }
+
+        // Only update if not already paid (payment might have succeeded on retry)
+        if (orderRecord.paymentStatus === "PAID") {
+          return;
+        }
+
+        // Mark order as payment failed
+        await tx.order.update({
+          where: { id: orderRecord.id },
+          data: { 
+            paymentStatus: "FAILED", 
+            status: "PAYMENT_FAILED" as any, 
+            updatedAt: new Date() 
+          },
+        });
+
+        // Store failed payment record for debugging
+        await tx.payment.create({
+          data: {
+            orderId: orderRecord.id,
+            paymentId: rpPaymentId,
+            razorpayOrderId: rpOrderId,
+            amount: Number(event.payload.payment.entity.amount) / 100,
+            currency: event.payload.payment.entity.currency,
+            paymentMethod: event.payload.payment.entity.method || "RAZORPAY",
+            paymentStatus: "FAILED",
+            rawResponse: event,
+          } as any,
+        });
       });
     }
 

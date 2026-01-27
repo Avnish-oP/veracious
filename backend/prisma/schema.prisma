@@ -218,6 +218,7 @@ model Payment {
 
 enum OrderStatus {
   PENDING
+  PAYMENT_FAILED
   PROCESSING
   SHIPPED
   DELIVERED

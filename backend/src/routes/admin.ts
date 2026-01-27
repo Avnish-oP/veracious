@@ -2,6 +2,7 @@ import express from "express";
 import { adminMiddleware, authMiddleware } from "../middlewares/authmiddleware";
 import { getUploadUrl } from "../controllers/admin/storageUpload";
 import { createProduct, getAdminProducts, updateProduct, deleteProduct } from "../controllers/admin/productManagement";
+import { getDashboardStats } from "../controllers/admin/dashboard";
 
 const router = express.Router();
 
@@ -10,10 +11,7 @@ router.use(authMiddleware);
 router.use(adminMiddleware);
 
 // -- Dashboard --
-router.get("/dashboard", (req, res) => {
-    // Placeholder for dashboard stats
-    res.json({ success: true, message: "Admin Dashboard Data", stats: { orders: 0, revenue: 0 } });
-});
+router.get("/dashboard", getDashboardStats);
 
 // -- Storage (Supabase) --
 router.post("/upload-url", getUploadUrl);
@@ -31,5 +29,12 @@ router.get("/lens-prices", getLensPrices);
 router.post("/lens-prices", createLensPrice);
 router.put("/lens-prices/:id", updateLensPrice);
 router.delete("/lens-prices/:id", deleteLensPrice);
+
+// -- Orders --
+import { getAdminOrders, getOrderDetails, updateOrderStatus } from "../controllers/admin/orderManagement";
+
+router.get("/orders", getAdminOrders);
+router.get("/orders/:id", getOrderDetails);
+router.put("/orders/:id", updateOrderStatus);
 
 export default router;

@@ -95,13 +95,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          <motion.div
-            className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 rounded-2xl shadow-lg"
-            whileHover={{ scale: 1.05, rotate: 5 }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            <Glasses className="w-8 h-8 text-white" />
-          </motion.div>
+          
 
           <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">
             Welcome Back

@@ -16,7 +16,6 @@ export function middleware(request: NextRequest) {
     "/profile",
     "/orders",
     "/wishlist",
-    "/cart",
   ];
 
   // Define auth routes
@@ -42,9 +41,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // DON'T redirect authenticated users from auth routes in middleware
-  // Let the client-side handle this after verifying tokens are valid
-  // This prevents redirect loops when tokens exist but are invalid/expired
+  // Explicitly allow homepage and other public routes
+  if (pathname === "/") {
+     return NextResponse.next();
+  }
 
   return NextResponse.next();
 }

@@ -2,7 +2,8 @@
 
 import React, { useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Sun, Glasses } from "lucide-react";
+import { Sparkles, Sun } from "lucide-react";
+import Image from "next/image";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { useUser } from "@/hooks/useUser";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -22,53 +23,34 @@ function LoginPageContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 relative overflow-hidden">
-      {/* Background Decorative Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-amber-200/30 to-orange-300/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-red-200/30 to-pink-300/20 rounded-full blur-3xl" />
-        <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-60 h-60 bg-gradient-to-r from-yellow-200/20 to-amber-300/20 rounded-full blur-2xl" />
-      </div>
 
       {/* Creative Header Title Area */}
-      <div className="relative z-10 pt-16 pb-8">
+      <div className=" z-10 pt- pb-">
         <motion.div
-          className="text-center"
+          className="text-center -mt-16 flex flex-col items-center justify-center"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
           {/* Brand Logo/Icon */}
           <motion.div
-            className="inline-flex items-center justify-center mb-6"
+            className=" mb-50"
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
           >
-            <div className="relative">
-              <div className="w-20 h-20 bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 rounded-3xl flex items-center justify-center shadow-2xl">
-                <Glasses className="w-10 h-10 text-white" />
-              </div>
-              <motion.div
-                className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              >
-                <Sun className="w-4 h-4 text-white" />
-              </motion.div>
+            <div className="relative h-1">
+      
+                <Image
+                  src="/otticamart1.png"
+                  alt="Ottichamart Logo"
+                  width={280}
+                  height={180}
+                  className=" object-cover"
+                />
+              
             </div>
           </motion.div>
-
-          {/* Brand Name */}
-          <motion.h1
-            className="text-5xl md:text-6xl font-bold mb-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-          >
-            <span className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 bg-clip-text text-transparent">
-              Veracious
-            </span>
-          </motion.h1>
 
           {/* Tagline */}
           <motion.div
@@ -85,7 +67,7 @@ function LoginPageContent() {
           </motion.div>
 
           <motion.p
-            className="text-slate-500 max-w-md mx-auto"
+            className="text-slate-500 max-w-md mx-auto mb-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.6 }}
@@ -141,7 +123,7 @@ function LoginPageContent() {
         </div>
 
         <p className="text-xs text-slate-400">
-          © 2025 Veracious. Crafting premium vision experiences worldwide.
+          © 2026 Ottichamart. Crafting premium vision experiences worldwide.
         </p>
       </motion.div>
 

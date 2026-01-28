@@ -107,7 +107,7 @@ export const RegistrationFlow: React.FC = () => {
         // Merge guest cart with user cart
         await mergeGuestCart();
 
-        toast.success("Registration completed! Welcome to Veracious!");
+        toast.success("Registration completed! Welcome to Ottichamart!");
         router.push("/");
       } catch (_error) {
         // If auto-login fails, redirect to login page
@@ -141,7 +141,7 @@ export const RegistrationFlow: React.FC = () => {
         // Merge guest cart with user cart
         await mergeGuestCart();
 
-        toast.success("Registration completed! Welcome to Veracious!");
+        toast.success("Registration completed! Welcome to Ottichamart!");
         router.push("/");
       } catch (_error) {
         toast.success("Registration completed! Please log in to continue.");
@@ -275,7 +275,7 @@ export const RegistrationFlow: React.FC = () => {
             transition={{ delay: 0.3, duration: 0.8 }}
           >
             <span className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 bg-clip-text text-transparent">
-              Welcome to Veracious
+              Welcome to Otticamart
             </span>
           </motion.h1>
         </motion.div>

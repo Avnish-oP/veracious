@@ -92,9 +92,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   };
 
   const cardSizes = {
-    sm: layout === "horizontal" ? "w-full" : "w-full max-w-64",
-    md: layout === "horizontal" ? "w-full" : "w-full max-w-80",
-    lg: layout === "horizontal" ? "w-full" : "w-full max-w-96",
+    sm: layout === "horizontal" ? "w-full" : "w-full sm:max-w-64",
+    md: layout === "horizontal" ? "w-full" : "w-full sm:max-w-80",
+    lg: layout === "horizontal" ? "w-full" : "w-full sm:max-w-96",
   }; // Horizontal Layout
   if (layout === "horizontal") {
     return (

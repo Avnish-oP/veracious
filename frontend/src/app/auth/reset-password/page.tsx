@@ -2,7 +2,8 @@
 
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Sun, Glasses } from "lucide-react";
+import { Sparkles, Sun } from "lucide-react";
+import Image from "next/image";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { useUserStore } from "@/store/useUserStore";
 import { useRouter } from "next/navigation";
@@ -42,8 +43,14 @@ export default function ResetPasswordPage() {
             transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
           >
             <div className="relative">
-              <div className="w-20 h-20 bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 rounded-3xl flex items-center justify-center shadow-2xl">
-                <Glasses className="w-10 h-10 text-white" />
+              <div className="w-20 h-20 bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 rounded-3xl flex items-center justify-center shadow-2xl overflow-hidden p-3">
+                <Image
+                  src="/otticamart1.png"
+                  alt="Ottichamart Logo"
+                  width={80}
+                  height={80}
+                  className="object-contain"
+                />
               </div>
               <motion.div
                 className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full flex items-center justify-center"
@@ -63,7 +70,7 @@ export default function ResetPasswordPage() {
             transition={{ delay: 0.3, duration: 0.8 }}
           >
             <span className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 bg-clip-text text-transparent">
-              Veracious
+              Ottichamart
             </span>
           </motion.h1>
 

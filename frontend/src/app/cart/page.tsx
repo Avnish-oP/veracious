@@ -57,7 +57,8 @@ export default function CartPage() {
   ) => {
     try {
       await updateCartItem(productId, currentQuantity + 1);
-    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to update quantity");
     }
   };
@@ -73,7 +74,8 @@ export default function CartPage() {
       } else {
         await updateCartItem(productId, currentQuantity - 1);
       }
-    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to update quantity");
     }
   };
@@ -82,7 +84,8 @@ export default function CartPage() {
     try {
       await removeFromCart(productId);
       toast.success("Item removed from cart");
-    } catch (error) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      // eslint-disable-line @typescript-eslint/no-unused-vars
       toast.error("Failed to remove item");
     }
   };
@@ -96,7 +99,7 @@ export default function CartPage() {
     try {
       await applyCoupon(couponInput.trim().toUpperCase());
       toast.success("Coupon applied successfully");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message || "Failed to apply coupon");
     }
@@ -107,7 +110,7 @@ export default function CartPage() {
     try {
       await applyCoupon(code);
       toast.success(`${code} applied`);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message || "Failed to apply coupon");
     }
@@ -127,7 +130,7 @@ export default function CartPage() {
     // Check if user is logged in
     if (!user) {
       toast.error("Please login to proceed with checkout");
-      router.push("/auth/login");
+      router.push("/auth/login?redirect=/checkout");
       return;
     }
 
@@ -279,9 +282,9 @@ export default function CartPage() {
                                   <>
                                     <span className="text-xl font-bold text-gray-900">
                                       ₹
-                                      {Number(item.product.discountPrice).toFixed(
-                                        2
-                                      )}
+                                      {Number(
+                                        item.product.discountPrice
+                                      ).toFixed(2)}
                                     </span>
                                     <span className="text-sm text-gray-500 line-through">
                                       ₹{Number(item.product.price).toFixed(2)}
@@ -289,25 +292,35 @@ export default function CartPage() {
                                   </>
                                 ) : (
                                   <span className="text-xl font-bold text-gray-900">
-                                    ₹{Number(item.product?.price || 0).toFixed(2)}
+                                    ₹
+                                    {Number(item.product?.price || 0).toFixed(
+                                      2
+                                    )}
                                   </span>
                                 )}
                               </div>
                               {/* Lens Price Breakdown */}
                               {(() => {
-                                const config = item.configuration as ItemConfiguration | undefined;
-                                return config?.lensPrice && config.lensPrice > 0 ? (
+                                const config = item.configuration as
+                                  | ItemConfiguration
+                                  | undefined;
+                                return config?.lensPrice &&
+                                  config.lensPrice > 0 ? (
                                   <div className="text-sm text-blue-600 font-medium">
-                                    + ₹{Number(config.lensPrice).toFixed(2)} for {config.lensType || 'Lens'}
+                                    + ₹{Number(config.lensPrice).toFixed(2)} for{" "}
+                                    {config.lensType || "Lens"}
                                   </div>
                                 ) : null;
                               })()}
                               {/* Lens Details */}
                               {(() => {
-                                const config = item.configuration as ItemConfiguration | undefined;
+                                const config = item.configuration as
+                                  | ItemConfiguration
+                                  | undefined;
                                 return config?.prescriptionType ? (
                                   <div className="text-xs text-gray-500 mt-1">
-                                      {config.prescriptionType} • {config.lensType}
+                                    {config.prescriptionType} •{" "}
+                                    {config.lensType}
                                   </div>
                                 ) : null;
                               })()}
@@ -367,11 +380,15 @@ export default function CartPage() {
                             <p className="text-lg font-bold text-gray-900">
                               ₹
                               {(() => {
-                                const config = item.configuration as ItemConfiguration | undefined;
+                                const config = item.configuration as
+                                  | ItemConfiguration
+                                  | undefined;
                                 return (
                                   ((Number(item.product?.discountPrice) ||
                                     Number(item.product?.price) ||
-                                    0) + Number(config?.lensPrice || 0)) * item.quantity
+                                    0) +
+                                    Number(config?.lensPrice || 0)) *
+                                  item.quantity
                                 ).toFixed(2);
                               })()}
                             </p>

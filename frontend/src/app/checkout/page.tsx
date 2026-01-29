@@ -46,7 +46,9 @@ export default function CheckoutPage() {
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [shouldSaveAddress, setShouldSaveAddress] = useState(false);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null
+  );
 
   // Address form state
   const [address, setAddress] = useState<Address>({
@@ -80,7 +82,7 @@ export default function CheckoutPage() {
     // Redirect if not logged in
     if (!user) {
       toast.error("Please login to continue");
-      router.push("/auth/login");
+      router.push("/auth/login?redirect=/checkout");
       return;
     }
 
@@ -142,7 +144,7 @@ export default function CheckoutPage() {
     try {
       await applyCoupon(couponInput.trim().toUpperCase());
       toast.success("Coupon applied successfully!");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message || "Failed to apply coupon");
     }
@@ -177,13 +179,15 @@ export default function CheckoutPage() {
     try {
       // 1. Ensure we have an addressId BEFORE creating order
       let finalAddressId = selectedAddressId;
-      
+
       // If no address selected, we must create one (even if user didn't check "save")
       if (!finalAddressId) {
         try {
           const newAddr = await addAddress({
-            ...address, 
-            label: shouldSaveAddress ? (address.label || "Home") : "Order Address"
+            ...address,
+            label: shouldSaveAddress
+              ? address.label || "Home"
+              : "Order Address",
           });
           finalAddressId = newAddr.id || null;
           if (shouldSaveAddress) {
@@ -227,7 +231,7 @@ export default function CheckoutPage() {
       sessionStorage.setItem("orderAddress", JSON.stringify(address));
 
       router.push("/payment");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Error creating order:", error);
       toast.error(error.message || "Failed to create order");
@@ -240,8 +244,8 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-4">
-           <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
-           <p className="text-gray-500 font-medium">Loading checkout...</p>
+          <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
+          <p className="text-gray-500 font-medium">Loading checkout...</p>
         </div>
       </div>
     );
@@ -291,7 +295,10 @@ export default function CheckoutPage() {
               {loadingAddresses ? (
                 <div className="mb-6 grid gap-4 grid-cols-1 md:grid-cols-2 animate-pulse">
                   {[...Array(2)].map((_, i) => (
-                    <div key={i} className="p-4 border-2 border-gray-100 rounded-xl h-32 bg-gray-50/50">
+                    <div
+                      key={i}
+                      className="p-4 border-2 border-gray-100 rounded-xl h-32 bg-gray-50/50"
+                    >
                       <div className="h-4 w-16 bg-gray-200 rounded-full mb-3" />
                       <div className="h-4 w-3/4 bg-gray-200 rounded mb-2" />
                       <div className="h-4 w-1/2 bg-gray-200 rounded" />
@@ -311,13 +318,17 @@ export default function CheckoutPage() {
                       }`}
                     >
                       <div className="flex justify-between items-start">
-                         <span className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full font-medium mb-2 inline-block">
-                           {addr.label || "Address"}
-                         </span>
-                         {selectedAddressId === addr.id && <div className="h-3 w-3 bg-amber-500 rounded-full"/>}
+                        <span className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full font-medium mb-2 inline-block">
+                          {addr.label || "Address"}
+                        </span>
+                        {selectedAddressId === addr.id && (
+                          <div className="h-3 w-3 bg-amber-500 rounded-full" />
+                        )}
                       </div>
                       <p className="font-medium text-gray-900">{addr.line1}</p>
-                      {addr.line2 && <p className="text-gray-600 text-sm">{addr.line2}</p>}
+                      {addr.line2 && (
+                        <p className="text-gray-600 text-sm">{addr.line2}</p>
+                      )}
                       <p className="text-gray-600 text-sm">
                         {addr.city}, {addr.state} {addr.postal}
                       </p>
@@ -327,7 +338,15 @@ export default function CheckoutPage() {
                     onClick={() => {
                       setShowAddressForm(true);
                       setSelectedAddressId(null);
-                      setAddress({ line1: "", line2: "", city: "", state: "", postal: "", country: "India", label: "Home" });
+                      setAddress({
+                        line1: "",
+                        line2: "",
+                        city: "",
+                        state: "",
+                        postal: "",
+                        country: "India",
+                        label: "Home",
+                      });
                     }}
                     className="p-4 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-500 hover:border-amber-500 hover:text-amber-600 transition-colors h-full min-h-[120px]"
                   >
@@ -338,145 +357,155 @@ export default function CheckoutPage() {
               ) : null}
 
               {/* Address Form */}
-              {!loadingAddresses && (showAddressForm || savedAddresses.length === 0) && (
-                <div className="space-y-4">
-                  <div className="flex justify-end gap-3 mb-4">
-                     {savedAddresses.length > 0 && (
-                        <button 
-                           onClick={() => setShowAddressForm(false)}
-                           className="text-sm text-gray-500 hover:text-gray-700 underline"
+              {!loadingAddresses &&
+                (showAddressForm || savedAddresses.length === 0) && (
+                  <div className="space-y-4">
+                    <div className="flex justify-end gap-3 mb-4">
+                      {savedAddresses.length > 0 && (
+                        <button
+                          onClick={() => setShowAddressForm(false)}
+                          className="text-sm text-gray-500 hover:text-gray-700 underline"
                         >
-                           Cancel & Select Saved
+                          Cancel & Select Saved
                         </button>
-                     )}
-                     <button
+                      )}
+                      <button
                         onClick={handleUseCurrentLocation}
                         disabled={locationLoading}
                         className="flex items-center gap-2 text-sm text-amber-600 font-medium hover:text-amber-700 disabled:opacity-50"
-                     >
-                        {locationLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Locate className="w-4 h-4"/>}
+                      >
+                        {locationLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Locate className="w-4 h-4" />
+                        )}
                         Use Current Location
-                     </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Label (e.g., Home, Office)
-                      </label>
-                      <input
-                        type="text"
-                        value={address.label}
-                        onChange={(e) =>
-                          setAddress({ ...address, label: e.target.value })
-                        }
-                        placeholder="Home"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black transition-all"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Address Line 1 <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={address.line1}
-                        onChange={(e) =>
-                          setAddress({ ...address, line1: e.target.value })
-                        }
-                        placeholder="Street address, P.O. box"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black transition-all"
-                      />
+                      </button>
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Address Line 2
-                      </label>
-                      <input
-                        type="text"
-                        value={address.line2}
-                        onChange={(e) =>
-                          setAddress({ ...address, line2: e.target.value })
-                        }
-                        placeholder="Apartment, suite, unit, building, floor, etc."
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Label (e.g., Home, Office)
+                        </label>
+                        <input
+                          type="text"
+                          value={address.label}
+                          onChange={(e) =>
+                            setAddress({ ...address, label: e.target.value })
+                          }
+                          placeholder="Home"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black transition-all"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Address Line 1 <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={address.line1}
+                          onChange={(e) =>
+                            setAddress({ ...address, line1: e.target.value })
+                          }
+                          placeholder="Street address, P.O. box"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg text-black transition-all"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Address Line 2
+                        </label>
+                        <input
+                          type="text"
+                          value={address.line2}
+                          onChange={(e) =>
+                            setAddress({ ...address, line2: e.target.value })
+                          }
+                          placeholder="Apartment, suite, unit, building, floor, etc."
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          City <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={address.city}
+                          onChange={(e) =>
+                            setAddress({ ...address, city: e.target.value })
+                          }
+                          placeholder="City"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          State <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={address.state}
+                          onChange={(e) =>
+                            setAddress({ ...address, state: e.target.value })
+                          }
+                          placeholder="State"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Postal Code <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={address.postal}
+                          onChange={(e) =>
+                            setAddress({ ...address, postal: e.target.value })
+                          }
+                          placeholder="Postal code"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Country <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={address.country}
+                          onChange={(e) =>
+                            setAddress({ ...address, country: e.target.value })
+                          }
+                          placeholder="Country"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
+                        />
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        City <span className="text-red-500">*</span>
-                      </label>
+                    <div className="flex items-center gap-2 mt-4">
                       <input
-                        type="text"
-                        value={address.city}
-                        onChange={(e) =>
-                          setAddress({ ...address, city: e.target.value })
-                        }
-                        placeholder="City"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        State <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={address.state}
-                        onChange={(e) =>
-                          setAddress({ ...address, state: e.target.value })
-                        }
-                        placeholder="State"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Postal Code <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={address.postal}
-                        onChange={(e) =>
-                          setAddress({ ...address, postal: e.target.value })
-                        }
-                        placeholder="Postal code"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Country <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={address.country}
-                        onChange={(e) =>
-                          setAddress({ ...address, country: e.target.value })
-                        }
-                        placeholder="Country"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 text-black focus:ring-amber-500 focus:border-transparent transition-all"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 mt-4">
-                     <input 
-                        type="checkbox" 
+                        type="checkbox"
                         id="saveAddress"
                         checked={shouldSaveAddress}
                         onChange={(e) => setShouldSaveAddress(e.target.checked)}
                         className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
-                     />
-                     <label htmlFor="saveAddress" className="text-sm text-gray-700">Save this address for future orders</label>
+                      />
+                      <label
+                        htmlFor="saveAddress"
+                        className="text-sm text-gray-700"
+                      >
+                        Save this address for future orders
+                      </label>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </motion.div>
 
             {/* Order Items */}
@@ -522,8 +551,20 @@ export default function CheckoutPage() {
                         </h3>
                         {item.configuration && (
                           <div className="text-xs text-gray-500 mt-1 space-y-0.5">
-                              {item.configuration.power && <p><span className="font-medium">Power:</span> {item.configuration.power}</p>}
-                              {item.configuration.type && <p><span className="font-medium">Lens:</span> {item.configuration.type} {item.configuration.coating && `(${item.configuration.coating})`}</p>}
+                            {item.configuration.power && (
+                              <p>
+                                <span className="font-medium">Power:</span>{" "}
+                                {item.configuration.power}
+                              </p>
+                            )}
+                            {item.configuration.type && (
+                              <p>
+                                <span className="font-medium">Lens:</span>{" "}
+                                {item.configuration.type}{" "}
+                                {item.configuration.coating &&
+                                  `(${item.configuration.coating})`}
+                              </p>
+                            )}
                           </div>
                         )}
                         <p className="text-sm text-gray-600 mt-1">
@@ -645,7 +686,9 @@ export default function CheckoutPage() {
 
                 <div className="flex justify-between text-gray-600">
                   <span className="text-sm">GST (incl. in prices)</span>
-                  <span className="text-sm text-gray-500">≈ ₹{gstIncluded.toFixed(2)}</span>
+                  <span className="text-sm text-gray-500">
+                    ≈ ₹{gstIncluded.toFixed(2)}
+                  </span>
                 </div>
 
                 <div className="pt-4 border-t border-gray-200">

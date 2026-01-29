@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
@@ -11,7 +11,7 @@ import { LoginFormData, loginSchema } from "@/types/authTypes";
 import { useLoginMutation } from "@/hooks/useRegistration";
 import { Button, Card, Input } from "@/components/ui/form-components";
 import { useUserStore } from "@/store/useUserStore";
-import { useCart } from "@/hooks/useCart";
+import { useCart, CART_QUERY_KEY } from "@/hooks/useCart";
 import { useQueryClient } from "@tanstack/react-query";
 import { USER_QUERY_KEY } from "@/hooks/useUser";
 
@@ -21,6 +21,7 @@ interface LoginFormProps {
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const loginMutation = useLoginMutation();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -41,29 +42,40 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       await loginMutation.mutateAsync(data);
-      // await fetchUser(); // Fetch user data after successful login
+
+      // Refetch user data and wait for it
       await queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
-      
+      await queryClient.refetchQueries({ queryKey: USER_QUERY_KEY });
+
       // Manually sync store to ensure mergeGuestCart has access to the user
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const user = queryClient.getQueryData<any>(USER_QUERY_KEY);
       if (user) {
-          useUserStore.getState().setUser(user);
+        useUserStore.getState().setUser(user);
       }
 
-      // Merge guest cart with user cart
+      // Merge guest cart with user cart and wait for it
       await mergeGuestCart();
 
+      // Refetch the server cart to ensure it's up to date after merge
+      await queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
+      await queryClient.refetchQueries({ queryKey: CART_QUERY_KEY });
+
       toast.success("Welcome back!");
-      router.push("/");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+      // Redirect to the page user was trying to access, or homepage
+      const redirectTo = searchParams.get("redirect") || "/";
+      router.push(redirectTo);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.status === 403 && error.data?.userId) {
-        toast.error("Account not verified. Redirecting to verification...", { duration: 4000 });
+        toast.error("Account not verified. Redirecting to verification...", {
+          duration: 4000,
+        });
         const params = new URLSearchParams({
           step: "2",
           userId: error.data.userId,
-          email: data.email
+          email: data.email,
         });
         router.push(`/auth/register?${params.toString()}`);
         return;
@@ -95,8 +107,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          
-
           <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">
             Welcome Back
           </h1>

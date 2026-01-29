@@ -104,13 +104,8 @@ api.interceptors.response.use(
         // Clear authenticated state since refresh failed
         setAuthenticated(false);
 
-        // Only redirect if in browser and not already on login page
-        if (
-          typeof window !== "undefined" &&
-          !window.location.pathname.includes("/auth/login")
-        ) {
-          window.location.href = "/auth/login";
-        }
+        // ❌ DO NOT redirect globally - let middleware/pages handle it
+        // This prevents homepage and public pages from redirecting
 
         return Promise.reject(refreshError);
       }

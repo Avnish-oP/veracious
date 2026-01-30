@@ -3,15 +3,24 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Heart, ShoppingBag, Trash2, ArrowLeft, PackageX } from "lucide-react";
+import {
+  Heart,
+  ShoppingBag,
+  Trash2,
+  ArrowLeft,
+  PackageX,
+  LogIn,
+} from "lucide-react";
 import Image from "next/image";
 import { useCart } from "@/hooks/useCart";
+import { useUser } from "@/hooks/useUser";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
 import { useWishlist } from "@/hooks/useWishlist";
 
 export default function WishlistPage() {
   const router = useRouter();
+  const { user, isLoading: userLoading } = useUser();
   const { items, isLoading, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
 
@@ -41,12 +50,36 @@ export default function WishlistPage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || userLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading your wishlist...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Sign in to view your wishlist
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Save your favorite items and access them anytime
+          </p>
+          <Button
+            onClick={() => router.push("/auth/login?redirect=/wishlist")}
+            className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 mx-auto"
+          >
+            <LogIn className="w-5 h-5" />
+            Sign In
+          </Button>
         </div>
       </div>
     );
@@ -116,7 +149,13 @@ export default function WishlistPage() {
         ) : (
           /* Wishlist Items Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(items.filter(item => item.product) as (typeof items[number] & { product: NonNullable<typeof items[number]['product']> })[]).map((item, index) => (
+            {(
+              items.filter(
+                (item) => item.product,
+              ) as ((typeof items)[number] & {
+                product: NonNullable<(typeof items)[number]["product"]>;
+              })[]
+            ).map((item, index) => (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -151,7 +190,7 @@ export default function WishlistPage() {
                       {Math.round(
                         ((item.product.price - item.product.discountPrice) /
                           item.product.price) *
-                          100
+                          100,
                       )}
                       %
                     </div>
@@ -206,7 +245,7 @@ export default function WishlistPage() {
                         "font-medium",
                         item.product.stock > 0
                           ? "text-green-600"
-                          : "text-red-600"
+                          : "text-red-600",
                       )}
                     >
                       {item.product.stock > 0
@@ -224,7 +263,7 @@ export default function WishlistPage() {
                         "flex-1 text-sm",
                         item.product.stock > 0
                           ? "bg-amber-500 hover:bg-amber-600 text-white"
-                          : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                          : "bg-gray-300 text-gray-500 cursor-not-allowed",
                       )}
                     >
                       <ShoppingBag className="w-4 h-4 mr-1" />

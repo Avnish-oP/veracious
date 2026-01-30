@@ -1,22 +1,20 @@
 import express from "express";
-import jwt from "jsonwebtoken";
 import prisma from "../../utils/prisma";
 
 const getCurrentUser = async (req: express.Request, res: express.Response) => {
   try {
-    const accessToken = req.cookies.accessToken;
+    // User is already authenticated and attached by authMiddleware
+    // authMiddleware handles token refresh automatically
+    const userId = req.user?.id;
 
-
-    if (!accessToken) {
+    if (!userId) {
       return res.status(401).json({
         success: false,
-        message: "No access token provided",
+        message: "Not authenticated",
       });
     }
 
-    const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET!);
-    const userId = (decoded as any).id;
-
+    // Fetch fresh user data (authMiddleware only attaches basic user)
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -43,9 +41,9 @@ const getCurrentUser = async (req: express.Request, res: express.Response) => {
     });
   } catch (error) {
     console.error("Get current user error:", error);
-    return res.status(401).json({
+    return res.status(500).json({
       success: false,
-      message: "Invalid or expired token",
+      message: "Failed to get user",
     });
   }
 };

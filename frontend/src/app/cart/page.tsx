@@ -28,7 +28,7 @@ import {
 
 export default function CartPage() {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isLoading: userLoading } = useUser();
   const {
     cart,
     isLoading: loading,
@@ -53,7 +53,7 @@ export default function CartPage() {
 
   const handleIncreaseQuantity = async (
     productId: string,
-    currentQuantity: number
+    currentQuantity: number,
   ) => {
     try {
       await updateCartItem(productId, currentQuantity + 1);
@@ -65,7 +65,7 @@ export default function CartPage() {
 
   const handleDecreaseQuantity = async (
     productId: string,
-    currentQuantity: number
+    currentQuantity: number,
   ) => {
     try {
       if (currentQuantity <= 1) {
@@ -127,6 +127,12 @@ export default function CartPage() {
   };
 
   const handleCheckout = () => {
+    // Wait for user loading to complete before checking auth
+    if (userLoading) {
+      toast.loading("Checking authentication...");
+      return;
+    }
+
     // Check if user is logged in
     if (!user) {
       toast.error("Please login to proceed with checkout");
@@ -283,7 +289,7 @@ export default function CartPage() {
                                     <span className="text-xl font-bold text-gray-900">
                                       ₹
                                       {Number(
-                                        item.product.discountPrice
+                                        item.product.discountPrice,
                                       ).toFixed(2)}
                                     </span>
                                     <span className="text-sm text-gray-500 line-through">
@@ -294,7 +300,7 @@ export default function CartPage() {
                                   <span className="text-xl font-bold text-gray-900">
                                     ₹
                                     {Number(item.product?.price || 0).toFixed(
-                                      2
+                                      2,
                                     )}
                                   </span>
                                 )}
@@ -348,7 +354,7 @@ export default function CartPage() {
                                 onClick={() =>
                                   handleDecreaseQuantity(
                                     item.productId,
-                                    item.quantity
+                                    item.quantity,
                                   )
                                 }
                                 className="p-2 hover:bg-gray-200 rounded-l-lg transition-colors"
@@ -363,7 +369,7 @@ export default function CartPage() {
                                 onClick={() =>
                                   handleIncreaseQuantity(
                                     item.productId,
-                                    item.quantity
+                                    item.quantity,
                                   )
                                 }
                                 className="p-2 hover:bg-gray-200 rounded-r-lg transition-colors"

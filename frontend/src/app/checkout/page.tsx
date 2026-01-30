@@ -47,7 +47,7 @@ export default function CheckoutPage() {
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [shouldSaveAddress, setShouldSaveAddress] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    null
+    null,
   );
 
   // Address form state
@@ -66,7 +66,7 @@ export default function CheckoutPage() {
   // Shipping and tax calculations
   const itemsTotal = Math.max(
     0,
-    cartSummary.subtotalAfterDiscount - cartSummary.couponDiscount
+    cartSummary.subtotalAfterDiscount - cartSummary.couponDiscount,
   );
   const SHIPPING_COST = itemsTotal > 1000 ? 0 : 50; // Free shipping above ₹1000
   // GST is INCLUDED in MRP (as per Indian law) - we show it for transparency
@@ -246,6 +246,18 @@ export default function CheckoutPage() {
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
           <p className="text-gray-500 font-medium">Loading checkout...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while redirecting to login (prevents content flash)
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-amber-500" />
+          <p className="text-gray-500 font-medium">Redirecting to login...</p>
         </div>
       </div>
     );
@@ -576,7 +588,8 @@ export default function CheckoutPage() {
                           ₹
                           {(
                             Number(
-                              item.product?.discountPrice || item.product?.price
+                              item.product?.discountPrice ||
+                                item.product?.price,
                             ) * item.quantity
                           ).toFixed(2)}
                         </p>

@@ -10,15 +10,13 @@ export const USER_QUERY_KEY = ["user"];
 const fetchUser = async (): Promise<User | null> => {
   try {
     const response = await api.get("/auth/me");
-    console.log("User fetched:", response.data.user);
     return response.data.user;
   } catch (error) {
-    if ((error as AxiosError).response?.status === 401) {
+    const axiosError = error as AxiosError;
+    if (axiosError.response?.status === 401) {
       return null;
     }
-    // For other errors, we might want to throw or return null depending on strategy
-    // Returning null for now to avoid error boundary splashes on network glitches,
-    // but React Query retries will handle glitches.
+    // For other errors, return null to avoid breaking the app
     return null;
   }
 };

@@ -5,18 +5,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-const PUBLIC_ROUTES = [
-  "/auth/login",
-  "/auth/register",
-  "/auth/verify",
-  "/categories",
-  "/products",
-];
-
-// Track if we're currently refreshing to prevent multiple refresh attempts
-let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
-// Track if user was authenticated (set when login succeeds, cleared on logout)
+// Track if user was authenticated (for UI state management)
 let wasAuthenticated = false;
 
 export const setAuthenticated = (value: boolean) => {
@@ -35,84 +24,19 @@ if (typeof window !== "undefined") {
   wasAuthenticated = localStorage.getItem("wasAuthenticated") === "true";
 }
 
-const subscribeTokenRefresh = (cb: (token: string) => void) => {
-  refreshSubscribers.push(cb);
-};
-
-const onRefreshed = () => {
-  refreshSubscribers.forEach((cb) => cb(""));
-  refreshSubscribers = [];
-};
-
+// Simple interceptor - backend handles token refresh automatically
+// This just tracks authentication state for UI purposes
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-
-    // Skip if no config (shouldn't happen, but safety check)
-    if (!originalRequest) {
-      return Promise.reject(error);
+  (error) => {
+    // If we get a 401, clear the authenticated state
+    // The backend already tried to refresh, so if we still got 401,
+    // both tokens are invalid
+    if (error.response?.status === 401) {
+      setAuthenticated(false);
     }
-
-    const isPublicRoute = PUBLIC_ROUTES.some((route) =>
-      originalRequest.url?.includes(route)
-    );
-
-    // Skip auth routes to prevent loops
-    const isAuthRoute = originalRequest.url?.includes("/auth/");
-
-    // Special routes that should always attempt refresh on 401
-    // /auth/me is critical as it determines if user is logged in
-    const shouldAlwaysRefresh = originalRequest.url?.endsWith("/auth/me");
-
-    // Only attempt refresh if:
-    // 1. Got 401 error
-    // 2. Haven't already retried
-    // 3. Not a public route
-    // 4. Not an auth route (except /auth/me which is special)
-    // 5. Either: user was previously authenticated, OR this is /auth/me route
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !isPublicRoute &&
-      (!isAuthRoute || shouldAlwaysRefresh) &&
-      (wasAuthenticated || shouldAlwaysRefresh)
-    ) {
-      if (isRefreshing) {
-        // Wait for the refresh to complete
-        return new Promise((resolve) => {
-          subscribeTokenRefresh(() => {
-            resolve(api(originalRequest));
-          });
-        });
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
-        await api.post("/auth/refresh-token");
-        isRefreshing = false;
-        // Mark as authenticated since refresh succeeded
-        setAuthenticated(true);
-        onRefreshed();
-        return api(originalRequest);
-      } catch (refreshError) {
-        isRefreshing = false;
-        refreshSubscribers = [];
-
-        // Clear authenticated state since refresh failed
-        setAuthenticated(false);
-
-        // ❌ DO NOT redirect globally - let middleware/pages handle it
-        // This prevents homepage and public pages from redirecting
-
-        return Promise.reject(refreshError);
-      }
-    }
-
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

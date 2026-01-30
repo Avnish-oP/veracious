@@ -9,16 +9,12 @@ export function middleware(request: NextRequest) {
   const hasAuthTokens = Boolean(refreshToken);
 
   // Define protected routes
-  const protectedRoutes = [
-    "/dashboard",
-    "/profile",
-    "/orders",
-    "/wishlist",
-    "/checkout",
-  ];
+  // NOTE: /checkout, /wishlist, /cart removed - handled client-side
+  // because cross-origin cookies may not be visible to edge middleware
+  const protectedRoutes = ["/dashboard", "/profile", "/orders"];
 
   const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
+    pathname.startsWith(route),
   );
 
   // Allow all non-protected routes (homepage, products, etc.)
@@ -38,11 +34,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/profile/:path*",
-    "/orders/:path*",
-    "/wishlist/:path*",
-    "/checkout/:path*",
-  ],
+  matcher: ["/dashboard/:path*", "/profile/:path*", "/orders/:path*"],
 };

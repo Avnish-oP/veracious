@@ -177,9 +177,14 @@ export const Navbar: React.FC = () => {
             whileTap={{ scale: 0.95 }}
           >
             <Link href="/" className="flex items-center space-x-2">
-              <div className="relative flex items-center">
-                {/* <ShoppingCart className="w-6 h-6 text-white" /> */}
-                <Image src="/otticamart1.png" alt="Logo" width={130} height={120} />
+              <div className="relative flex items-center justify-center h-14 w-32 overflow-hidden">
+                <Image 
+                  src="/otticamart1.png" 
+                  alt="Logo" 
+                  width={130} 
+                  height={120} 
+                  className="h-24 w-auto object-contain max-w-none"
+                />
               </div>
             </Link>
           </motion.div>

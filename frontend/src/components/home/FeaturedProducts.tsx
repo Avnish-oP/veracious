@@ -68,7 +68,6 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 
   const displayedProducts = getFilteredProducts();
 
-  // Handle add to cart
   const handleAddToCart = async (product: Product) => {
     try {
       await addToCart(product.id, 1);
@@ -78,7 +77,6 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
     }
   };
 
-  // Handle quick view
   const handleQuickView = (product: Product) => {
     setQuickViewProductId(product.id);
   };
@@ -86,7 +84,7 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({
-        left: -400,
+        left: -320,
         behavior: "smooth",
       });
     }
@@ -95,7 +93,7 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   const scrollRight = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({
-        left: 400,
+        left: 320,
         behavior: "smooth",
       });
     }
@@ -120,7 +118,7 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
   return (
     <section
       id="featured-products"
-      className="py-2 bg-gradient-to-b from-white to-gray-50"
+      className="py-16 md:py-24 bg-gradient-to-b from-white to-gray-50"
     >
       {/* Quick View Modal */}
       {quickViewProductId && (
@@ -134,61 +132,61 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          className="text-center mb-12"
+          className="text-center mb-10 md:mb-16"
           initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
             Discover Our{" "}
             <span className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 bg-clip-text text-transparent">
               Premium Selection
             </span>
           </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+            Curated styles that define elegance and performance.
+          </p>
         </motion.div>
 
-        {/* Filters and Controls */}
-        <motion.div
-          className="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          {/* Filter Tabs */}
-          <div className="flex flex-wrap gap-2">
-            {filterOptions.slice(0, 3).map((option) => {
-              const Icon = option.icon;
-              return (
-                <motion.button
-                  key={option.id}
-                  onClick={() => setActiveFilter(option.id)}
-                  className={cn(
-                    "flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                    activeFilter === option.id
-                      ? "bg-amber-500 text-white shadow-lg"
-                      : "bg-white text-gray-600 hover:bg-amber-50 hover:text-amber-600 border border-gray-200"
-                  )}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Icon className="w-4 h-4 mr-2" />
-                  {option.label}
-                </motion.button>
-              );
-            })}
+        {/* Controls Container */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
+          {/* Scrollable Filter Tabs */}
+          <div className="w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+            <div className="flex gap-2 min-w-max">
+              {filterOptions.slice(0, 3).map((option) => {
+                const Icon = option.icon;
+                const isActive = activeFilter === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    onClick={() => setActiveFilter(option.id)}
+                    className={cn(
+                      "flex items-center px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300",
+                      isActive
+                        ? "bg-gray-900 text-white shadow-lg scale-105"
+                        : "bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-gray-200"
+                    )}
+                  >
+                    <Icon className={cn("w-4 h-4 mr-2", isActive ? "text-amber-400" : "text-gray-400")} />
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Layout Toggle and View All */}
-          <div className="flex items-center gap-3">
-            {/* Layout Switcher */}
-            <div className="flex items-center bg-white border border-gray-200 rounded-lg p-1">
+          {/* Right Controls */}
+          <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+            {/* Layout Toggle (Hidden on mobile usually, but kept for preference) */}
+            <div className="hidden sm:flex bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
               <button
                 onClick={() => setLayout("grid")}
                 className={cn(
                   "p-2 rounded transition-all duration-200",
                   layout === "grid"
-                    ? "bg-amber-500 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-gray-100 text-gray-900"
+                    : "text-gray-400 hover:text-gray-600"
                 )}
                 aria-label="Grid view"
               >
@@ -199,8 +197,8 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                 className={cn(
                   "p-2 rounded transition-all duration-200",
                   layout === "list"
-                    ? "bg-amber-500 text-white"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-gray-100 text-gray-900"
+                    : "text-gray-400 hover:text-gray-600"
                 )}
                 aria-label="List view"
               >
@@ -208,18 +206,17 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
               </button>
             </div>
 
-            {/* View All Button */}
             <Button
               variant="outline"
               size="sm"
               onClick={() => onViewAll?.(activeFilter)}
-              className="hidden sm:flex"
+              className="hidden md:flex group"
             >
-              View All
-              <ArrowRight className="w-4 h-4 ml-2" />
+              View More
+              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Loading State */}
         {loading && (
@@ -230,7 +227,6 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                 <div className="space-y-2">
                   <div className="h-4 bg-gray-200 rounded w-3/4" />
                   <div className="h-3 bg-gray-200 rounded w-1/2" />
-                  <div className="h-4 bg-gray-200 rounded w-1/4" />
                 </div>
               </div>
             ))}
@@ -239,23 +235,28 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 
         {/* Products Display */}
         {!loading && displayedProducts.length > 0 && (
-          <div className="relative">
+          <div className="relative group/feature-slider">
             {layout === "grid" ? (
               <>
-                {/* Left Arrow for Grid Horizontal Scroll */}
-                <motion.button
+                 {/* Desktop Carousel Arrows */}
+                <button
                   onClick={scrollLeft}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-3 hover:bg-amber-50 transition-colors duration-200 hidden md:block"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-10 bg-white shadow-xl border border-gray-100 rounded-full p-3 text-gray-700 opacity-0 group-hover/feature-slider:opacity-100 transition-all duration-300 hover:scale-110 disabled:opacity-0"
                 >
-                  <ChevronLeft className="w-6 h-6 text-gray-700" />
-                </motion.button>
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
 
-                {/* Products Container - Horizontal Scroll */}
+                 <button
+                  onClick={scrollRight}
+                  className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-10 bg-white shadow-xl border border-gray-100 rounded-full p-3 text-gray-700 opacity-0 group-hover/feature-slider:opacity-100 transition-all duration-300 hover:scale-110 disabled:opacity-0"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+                
+                {/* Horizontal Scroll Container */}
                 <div
                   ref={scrollContainerRef}
-                  className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+                   className="flex gap-4 md:gap-8 overflow-x-auto scrollbar-hide scroll-smooth pb-8 -mx-4 px-4 md:mx-0 md:px-0"
                   style={{
                     scrollbarWidth: "none",
                     msOverflowStyle: "none",
@@ -264,10 +265,11 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                   {displayedProducts.map((product, index) => (
                     <motion.div
                       key={product.id}
-                      initial={{ opacity: 0, x: 50 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className="flex-shrink-0 w-72"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.4, delay: index * 0.05 }}
+                      className="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[280px]"
                     >
                       <ProductCard
                         product={product}
@@ -280,16 +282,6 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                     </motion.div>
                   ))}
                 </div>
-
-                {/* Right Arrow for Grid Horizontal Scroll */}
-                <motion.button
-                  onClick={scrollRight}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-3 hover:bg-amber-50 transition-colors duration-200 hidden md:block"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <ChevronRight className="w-6 h-6 text-gray-700" />
-                </motion.button>
               </>
             ) : (
               /* List Layout - Vertical Stack */
@@ -298,7 +290,8 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
                   <motion.div
                     key={product.id}
                     initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                   >
                     <ProductCard
@@ -318,28 +311,27 @@ export const FeaturedProducts: React.FC<FeaturedProductsProps> = ({
 
         {/* No Products Message */}
         {!loading && displayedProducts.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-600">
-              No products found for this category.
+          <div className="text-center py-20 bg-gray-50 rounded-2xl">
+            <p className="text-gray-500 text-lg">
+              No products found for this selection.
             </p>
           </div>
         )}
 
         {/* Mobile View All Button */}
-        <div className="mt-8 text-center sm:hidden">
+        <div className="mt-8 text-center md:hidden">
           <Button
-            variant="primary"
-            size="md"
+            variant="outline"
+            size="lg"
             onClick={() => onViewAll?.(activeFilter)}
-            className="w-full"
+            className="w-full border-gray-300"
           >
-            View All Products
+            View All Collection
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
       </div>
 
-      {/* Hide scrollbar CSS */}
       <style jsx>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;

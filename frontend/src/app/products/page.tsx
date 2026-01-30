@@ -91,15 +91,26 @@ function ProductsContent() {
   };
 
   const getPageTitle = () => {
+       if (activeFilters.search) return `Search Results for "${activeFilters.search}"`;
+       if (activeFilters.category) {
+           // Try to find category name from ID if possible, or just capitalize
+           // Since we don't have the list here easily unless we fetch it or pass it, we might just use the ID comfortably or rely on the fact that usually ID=Name in some simple apps, 
+           // but better: "Category: [ID]" for now or just the ID capitalizing first letter.
+           // Actually, the API returns products, maybe we can't easily get the pretty name without a lookup. 
+           // Let's just capitalize the ID/Slug for now as a fallback.
+           return activeFilters.category.charAt(0).toUpperCase() + activeFilters.category.slice(1).replace(/-/g, ' '); 
+       }
+       if (activeFilters.brand) return activeFilters.brand;
        if (activeFilters.filter === "featured") return "Featured Products";
        if (activeFilters.filter === "trending") return "Trending Products";
+       if (activeFilters.gender) return `${activeFilters.gender.charAt(0).toUpperCase() + activeFilters.gender.slice(1).toLowerCase()}'s Collection`;
+       
        return "All Products";
   };
   
   const getPageSubtitle = () => {
-       if (activeFilters.filter === "featured") return "Our handpicked selection of premium eyewear";
-       if (activeFilters.filter === "trending") return "The hottest styles everyone is loving";
-       return "Discover our complete collection of premium eyewear";
+       // User requested to remove subtitle.
+       return undefined;
   };
 
   return (

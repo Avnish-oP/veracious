@@ -2,32 +2,42 @@
 
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/utils/cn";
 import { fetchCategories } from "@/utils/api";
-// Category type unused in this file, removing import
 
-// Fallback/Static images mapping based on category names or types
-const getCategoryImage = (name: string) => {
+// Helper to get high-quality images for categories
+const getCategoryImage = (name: string, index: number) => {
   const n = name.toLowerCase();
-  if (n.includes("men") && !n.includes("women"))
-    return "https://images.unsplash.com/photo-1484515991647-c5760fcecfc7?q=80&w=800&auto=format&fit=crop";
-  if (n.includes("women"))
-    return "https://images.unsplash.com/photo-1570222094114-28a9d88a2d64?q=80&w=800&auto=format&fit=crop";
-  if (n.includes("unisex"))
-    return "https://images.unsplash.com/photo-1511499767150-a48a237f0083?q=80&w=800&auto=format&fit=crop";
-  if (n.includes("kid"))
-    return "https://images.unsplash.com/photo-1514782831304-632d84944dbd?q=80&w=800&auto=format&fit=crop";
-  if (n.includes("sport"))
-    return "https://images.unsplash.com/photo-1511499767150-a48a237f0083?q=80&w=800&auto=format&fit=crop"; // Placeholder
-  if (n.includes("reading"))
-    return "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?q=80&w=800&auto=format&fit=crop";
-  if (n.includes("sun"))
-    return "https://images.unsplash.com/photo-1574258495973-f010dfbb5371?q=80&w=800&auto=format&fit=crop";
+  
+  // Curated premium images
+  const images = {
+    men: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?q=80&w=1200&auto=format&fit=crop",
+    women: "https://images.unsplash.com/photo-1570222094114-28a9d88a2d64?q=80&w=1200&auto=format&fit=crop",
+    unisex: "https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?q=80&w=1200&auto=format&fit=crop",
+    kids: "https://images.unsplash.com/photo-1514782831304-632d84944dbd?q=80&w=1200&auto=format&fit=crop",
+    sun: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?q=80&w=1200&auto=format&fit=crop",
+    reading: "https://images.unsplash.com/photo-1591076482161-42ce6da69f67?q=80&w=1200&auto=format&fit=crop",
+    sport: "https://images.unsplash.com/photo-1533827432537-70133748f5c8?q=80&w=1200&auto=format&fit=crop",
+  };
 
-  // Default random nice eyewear images
-  return "https://images.unsplash.com/photo-1577803645773-f96470509666?q=80&w=800&auto=format&fit=crop";
+  if (n.includes("men") && !n.includes("women")) return images.men;
+  if (n.includes("women")) return images.women;
+  if (n.includes("unisex")) return images.unisex;
+  if (n.includes("kid")) return images.kids;
+  if (n.includes("sun")) return images.sun;
+  if (n.includes("reading")) return images.reading;
+
+  // Fallbacks with style
+  const fallbacks = [
+    "https://images.unsplash.com/photo-1577803645773-f96470509666?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1509695507497-903c140c43b0?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1483181954834-3687e741cc2d?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1590736969955-71cc53895d99?q=80&w=1200&auto=format&fit=crop",
+  ];
+
+  return fallbacks[index % fallbacks.length];
 };
 
 interface GridCategory {
@@ -36,7 +46,7 @@ interface GridCategory {
   description: string;
   href: string;
   image: string;
-  size: "large" | "normal" | "wide";
+  colSpan: number; // 1, 2, or 3 (full width)
 }
 
 export const CategoryGrid: React.FC = () => {
@@ -49,95 +59,87 @@ export const CategoryGrid: React.FC = () => {
         const res = await fetchCategories();
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const apiCats: any[] = (res as any).categories || [];
-
-        // Prioritize: Men, Women, Unisex, then others
-        // We want to fill 4 slots: 1 Large, 2 Normal, 1 Wide
         
-        const mapped: GridCategory[] = [];
+        // Strategy: Create a balanced grid layout
+        // Mobile: 1 col always
+        // Tablet/Desktop: Mix of spans
         
-        // Helper to find and map specific categories
-        const findAndMap = (keyword: string, size: "large" | "normal" | "wide", desc: string) => {
-          const found = apiCats.find(c => c.name.toLowerCase().includes(keyword));
-          if (found) {
-            mapped.push({
-              id: found.id,
-              title: found.name,
-              description: desc,
-              href: `/products?category=${found.id}`, // Filter by Category ID
-              image: getCategoryImage(found.name),
-              size: size,
-            });
-            // Remove from pool to avoid duplicates if we iterate later
-            const idx = apiCats.indexOf(found);
-            if (idx > -1) apiCats.splice(idx, 1);
-            return true;
+        const curated: GridCategory[] = [];
+        
+        // Priority Buckets
+        const primary = ["men", "women", "unisex"];
+        const secondary = ["sunglasses", "eyeglasses", "reading"];
+        
+        // Helper to consume from API list
+        const consume = (keywords: string[]) => {
+          for (const k of keywords) {
+             const idx = apiCats.findIndex(c => c.name.toLowerCase().includes(k));
+             if (idx !== -1) return apiCats.splice(idx, 1)[0];
           }
-          return false;
+          return null;
         };
 
-        // 1. Slot 1 (Large): Men
-        findAndMap("men", "large", "Sophisticated frames for the modern gentleman.");
-        
-        // 2. Slot 2 (Normal): Women
-        findAndMap("women", "normal", "Elegant styles for every occasion.");
+        // 1. Hero Item (Full width or large)
+        const hero = consume(["men"]) || apiCats.shift();
+        if (hero) curated.push({ 
+           id: hero.id, 
+           title: hero.name, 
+           description: "Refined aesthetics for the modern visionary.", 
+           href: `/products?category=${hero.id}`, 
+           image: getCategoryImage(hero.name, 0),
+           colSpan: 2 
+        });
 
-        // 3. Slot 3 (Normal): Unisex or Kids or shape
-        if (!findAndMap("unisex", "normal", "Versatile designs for everyone.")) {
-             // Try fetching a Shape or other type if Unisex missing
-             if (apiCats.length > 0) {
-                 const next = apiCats.shift();
-                 mapped.push({
-                     id: next.id,
-                     title: next.name,
-                     description: "Discover our latest styles.",
-                     href: `/products?category=${next.id}`,
-                     image: getCategoryImage(next.name),
-                     size: "normal"
-                 });
-             }
+        // 2. Secondary Hero
+        const subHero = consume(["women"]) || apiCats.shift();
+        if (subHero) curated.push({
+           id: subHero.id,
+           title: subHero.name,
+           description: "Elegant frames that define your style.",
+           href: `/products?category=${subHero.id}`,
+           image: getCategoryImage(subHero.name, 1),
+           colSpan: 1
+        });
+
+        // 3. Middle Row (Two items typically)
+        const mid1 = consume(["unisex", "sun"]) || apiCats.shift();
+        if (mid1) curated.push({
+           id: mid1.id,
+           title: mid1.name,
+           description: "Versatile comfortable fits.",
+           href: `/products?category=${mid1.id}`,
+           image: getCategoryImage(mid1.name, 2),
+           colSpan: 1
+        });
+
+        const mid2 = consume(["reading", "accessories", "shape"]) || apiCats.shift();
+        if (mid2) curated.push({
+           id: mid2.id,
+           title: mid2.name,
+           description: "Precision lenses for clarity.",
+           href: `/products?category=${mid2.id}`,
+           image: getCategoryImage(mid2.name, 3),
+           colSpan: 2
+        });
+
+        // 4. Fill remaining (max 2 more to keep it clean)
+        let count = 0;
+        while(apiCats.length > 0 && count < 2) {
+           const c = apiCats.shift();
+           curated.push({
+             id: c.id,
+             title: c.name,
+             description: "Explore our collection.",
+             href: `/products?category=${c.id}`,
+             image: getCategoryImage(c.name, count + 4),
+             colSpan: 3 // Full width for spacers
+           });
+           count++;
         }
 
-        // 4. [NEW] Slot 4 (Large): Reading, Sun, Sport, or Next Available
-        // This fills the space next to Unisex (2 cols)
-        let slot4Filled = false;
-        if (findAndMap("reading", "large", "Crystal clear vision for reading.")) slot4Filled = true;
-        else if (findAndMap("sun", "large", "Protect your eyes in style.")) slot4Filled = true;
-        else if (findAndMap("sport", "large", "Performance eyewear for athletes.")) slot4Filled = true;
-        
-        if (!slot4Filled && apiCats.length > 0) {
-             const next = apiCats.shift();
-             mapped.push({
-                 id: next.id,
-                 title: next.name,
-                 description: "Premium eyewear collection.",
-                 href: `/products?category=${next.id}`,
-                 image: getCategoryImage(next.name),
-                 size: "large"
-             });
-        }
-
-        // 5. Slot 5 (Wide): Accessories or Collections
-        // Just take the next available one
-        if (apiCats.length > 0) {
-             const next = apiCats.shift();
-             mapped.push({
-                 id: next.id,
-                 title: next.name,
-                 description: "Essential eyewear and more.",
-                 href: `/products?category=${next.id}`,
-                 image: getCategoryImage(next.name),
-                 size: "wide"
-             });
-        }
-
-        // If we still don't have 4 items (e.g. empty DB), use fallbacks?
-        // Or if we have mostly empty DB, just show what we have. 
-        // But for layout stability, ensuring 4 items is good. 
-        // If DB is empty, effectively we show nothing or skeleton.
-        
-        setCategories(mapped);
+        setCategories(curated);
       } catch (e) {
-        console.error("Failed to load categories for grid", e);
+        console.error("Failed to load categories", e);
       } finally {
         setLoading(false);
       }
@@ -146,71 +148,69 @@ export const CategoryGrid: React.FC = () => {
     loadCategories();
   }, []);
 
-  if (loading) {
-      return <div className="py-20 text-center text-gray-400">Loading categories...</div>;
-  }
-
+  if (loading) return null; // Minimize layout shift, or show skeleton
   if (categories.length === 0) return null;
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-16 md:py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-12"
+          className="text-center mb-12 md:mb-16"
         >
-          <span className="text-amber-600 font-semibold tracking-wider uppercase text-sm">
-            Discover
-          </span>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2 mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-bold tracking-widest uppercase mb-4">
+             <Sparkles className="w-3 h-3" />
+             <span>Collections</span>
+          </div>
+          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 tracking-tight">
             Shop by Category
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Explore our diverse collection of eyewear, tailored to fit your unique style and needs.
+          <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+            Explore our curated collections designed to elevate your vision and style.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:auto-rows-[400px]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 auto-rows-[300px] md:auto-rows-[400px]">
           {categories.map((category, index) => (
             <Link
               key={category.id}
               href={category.href}
               className={cn(
-                "relative group overflow-hidden rounded-2xl cursor-pointer block h-[300px] md:h-full",
-                category.size === "large" ? "md:col-span-2" : "",
-                category.size === "wide" ? "md:col-span-3" : ""
+                "group relative overflow-hidden rounded-2xl md:rounded-3xl cursor-pointer block h-full min-h-[300px]",
+                category.colSpan === 2 ? "md:col-span-2" : "md:col-span-1",
+                category.colSpan === 3 ? "md:col-span-3" : ""
               )}
             >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
-                className="relative h-full w-full"
-              >
-                {/* Background Image */}
-                <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                    style={{ backgroundImage: `url(${category.image})` }}
-                />
-                
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
+              <div className="absolute inset-0 bg-gray-200">
+                  {/* Image with zoom effect */}
+                  <div 
+                      className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                      style={{ backgroundImage: `url(${category.image})` }}
+                  />
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-70 transition-opacity duration-300" />
+              </div>
 
-                {/* Content */}
-                <div className="absolute bottom-0 left-0 w-full p-8 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                  <h3 className="text-2xl font-bold mb-2">{category.title}</h3>
-                  <p className="text-gray-200 mb-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100 line-clamp-2">
+              {/* Content */}
+              <div className="absolute inset-0 p-6 md:p-10 flex flex-col justify-end text-white">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <h3 className="text-2xl md:text-3xl font-bold mb-2 md:mb-3">{category.title}</h3>
+                  <p className="text-gray-200 text-sm md:text-base mb-4 md:mb-6 opacity-90 max-w-md line-clamp-2 leading-relaxed">
                     {category.description}
                   </p>
-                  <div className="flex items-center text-sm font-semibold text-amber-400 group-hover:text-amber-300 transition-colors">
-                    Shop Now <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                  
+                  <div className="inline-flex items-center text-sm font-semibold tracking-wide uppercase border-b border-transparent group-hover:border-white/50 pb-0.5 transition-all">
+                    Explore Collection <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </div>
             </Link>
           ))}
         </div>

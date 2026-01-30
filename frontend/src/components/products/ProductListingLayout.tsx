@@ -7,6 +7,7 @@ import { Product, ProductFilters } from "@/types/productTypes";
 import { ProductCard } from "@/components/ui/ProductCard";
 import { Pagination } from "@/components/ui/Pagination";
 import { FilterBar } from "@/components/products/FilterBar";
+import { SortModal } from "@/components/products/SortModal";
 import { FilterModal } from "@/components/products/FilterModal";
 import { FilterSidebar } from "@/components/products/FilterSidebar";
 import { cn } from "@/utils/cn";
@@ -48,16 +49,12 @@ export const ProductListingLayout: React.FC<ProductListingLayoutProps> = ({
 }) => {
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isSortModalOpen, setIsSortModalOpen] = useState(false);
 
-  const handleSortChange = () => {
-    const sorts = ["price_asc", "price_desc", "newest", "popularity"];
-    const currentSortIndex = sorts.indexOf(activeFilters.sort || "newest"); // Default or current
-    const nextSort = sorts[(currentSortIndex + 1) % sorts.length];
-    
-    // Default to newest if undefined for cycling logic
-    // Actually if activeFilters.sort is undefined, indexOf is -1, next is 0 (price_asc). That works.
-
-    onFilterChange({ ...activeFilters, sort: nextSort as ProductFilters['sort'], page: 1 });
+  // This is now purely for opening the modal on mobile
+  // The Desktop select works independently via the select onChange
+  const handleSortClick = () => {
+     setIsSortModalOpen(true);
   };
 
   return (
@@ -66,10 +63,19 @@ export const ProductListingLayout: React.FC<ProductListingLayoutProps> = ({
       <div className="block lg:hidden sticky top-[64px] z-30">
           <FilterBar
             onFilterClick={() => setIsFilterModalOpen(true)}
-            onSortClick={handleSortChange}
+            onSortClick={handleSortClick}
             activeFilterCount={Object.keys(activeFilters).filter(k => !['page','limit','sort','search'].includes(k) && activeFilters[k as keyof ProductFilters]).length}
           />
       </div>
+
+     <SortModal
+        isOpen={isSortModalOpen}
+        onClose={() => setIsSortModalOpen(false)}
+        currentSort={activeFilters.sort}
+        onApplySort={(sort) => {
+            onFilterChange({ ...activeFilters, sort, page: 1 });
+        }}
+      />
 
       <FilterModal
         isOpen={isFilterModalOpen}
@@ -83,16 +89,16 @@ export const ProductListingLayout: React.FC<ProductListingLayoutProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24 lg:pt-28">
         
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-8 gap-4">
+        <div className="flex flex-row items-center justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-            {subtitle && <p className="text-gray-600 mt-2">{subtitle}</p>}
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h1>
+            {subtitle && <p className="text-gray-600 text-sm mt-1">{subtitle}</p>}
           </div>
 
-          <div className="flex items-center gap-4 self-end md:self-auto">
-             {/* Desktop Sort Dropdown could be here, or just reuse the cycle button/indicator */}
+          <div className="flex items-center gap-3 self-start md:self-auto">
+             {/* Desktop Sort Dropdown */}
              <div className="hidden lg:flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700">
-                <span className="text-gray-500">Sort by:</span>
+                <span className="text-gray-500">Sort:</span>
                 <select 
                     value={activeFilters.sort || "newest"}
                     onChange={(e) => onFilterChange({...activeFilters, sort: e.target.value as ProductFilters['sort'], page: 1})}
@@ -110,26 +116,26 @@ export const ProductListingLayout: React.FC<ProductListingLayoutProps> = ({
               <button
                 onClick={() => setLayout("grid")}
                 className={cn(
-                  "p-2 rounded transition-all duration-200",
+                  "p-1.5 rounded transition-all duration-200",
                   layout === "grid"
                     ? "bg-amber-500 text-white"
                     : "text-gray-600 hover:bg-gray-100"
                 )}
                 aria-label="Grid view"
               >
-                <Grid3X3 className="w-5 h-5" />
+                <Grid3X3 className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setLayout("list")}
                 className={cn(
-                  "p-2 rounded transition-all duration-200",
+                  "p-1.5 rounded transition-all duration-200",
                   layout === "list"
                     ? "bg-amber-500 text-white"
                     : "text-gray-600 hover:bg-gray-100"
                 )}
                 aria-label="List view"
               >
-                <List className="w-5 h-5" />
+                <List className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -163,9 +169,9 @@ export const ProductListingLayout: React.FC<ProductListingLayoutProps> = ({
                         <motion.div
                             layout
                             className={cn(
-                                "grid gap-6",
+                                "grid gap-x-3 gap-y-6 sm:gap-4",
                                 layout === "grid" 
-                                    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 justify-items-center sm:justify-items-stretch" // Center on mobile
+                                    ? "grid-cols-2 lg:grid-cols-3" 
                                     : "grid-cols-1"
                             )}
                         >

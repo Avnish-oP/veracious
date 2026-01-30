@@ -8,9 +8,8 @@ import {
   ShoppingCart,
   Star,
   Eye,
-  Share2,
-  Tag,
   Sparkles,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/form-components";
 import { cn } from "@/utils/cn";
@@ -84,386 +83,260 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const getGenderColor = (gender: string) => {
     const colors = {
-      MALE: "bg-blue-100 text-blue-800",
-      FEMALE: "bg-pink-100 text-pink-800",
-      UNISEX: "bg-purple-100 text-purple-800",
+      MALE: "bg-blue-50 text-blue-700 border-blue-100",
+      FEMALE: "bg-pink-50 text-pink-700 border-pink-100",
+      UNISEX: "bg-purple-50 text-purple-700 border-purple-100",
     };
-    return colors[gender as keyof typeof colors] || colors.UNISEX;
+    return colors[gender as keyof typeof colors] || "bg-gray-50 text-gray-700 border-gray-100";
   };
 
-  const cardSizes = {
-    sm: layout === "horizontal" ? "w-full" : "w-full sm:max-w-64",
-    md: layout === "horizontal" ? "w-full" : "w-full sm:max-w-80",
-    lg: layout === "horizontal" ? "w-full" : "w-full sm:max-w-96",
-  }; // Horizontal Layout
+  // Horizontal Layout
   if (layout === "horizontal") {
     return (
       <motion.div
         className={cn(
-          "group relative bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 flex h-full",
-          cardSizes[size],
+          "group relative bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 flex w-full h-auto sm:h-56",
           className
         )}
         whileHover={{ y: -2 }}
-        initial={{ opacity: 0, x: -20 }}
+        initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
       >
-        {/* LEFT: Product Image (approx 40-45%) */}
-        <div className="relative sm:w-[30%] w-[45%] h-full flex-shrink-0 overflow-hidden bg-gray-50">
-          {/* Badges */}
-          {showBadges && (
-            <div className="absolute top-1 left-1 z-10 flex flex-col gap-1">
-              {product.isFeatured && (
-                <div className="bg-amber-500 text-white px-1.5 py-0.5 rounded-full text-[10px] font-semibold flex items-center shadow-sm">
-                  <Sparkles className="w-2.5 h-2.5 mr-0.5" />
-                  Featured
+        {/* Left: Image Area */}
+        <div className="relative w-[35%] sm:w-[30%] bg-gray-50 flex-shrink-0 border-r border-gray-100 flex items-center justify-center">
+           {showBadges && discountPercentage > 0 && (
+              <span className="absolute top-2 left-2 z-10 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                 -{discountPercentage}%
+              </span>
+           )}
+           <div className="relative w-full h-32 sm:h-full p-2">
+             {product.image || product.images?.[0]?.url ? (
+                <Image
+                  src={product.image || product.images?.[0]?.url || ""}
+                  alt={product.name}
+                  fill
+                  className={cn(
+                    "object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105",
+                    isImageLoaded ? "opacity-100" : "opacity-0"
+                  )}
+                  onLoad={() => setIsImageLoaded(true)}
+                  sizes="(max-width: 640px) 150px, 200px"
+                />
+             ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-300">
+                   <Eye className="w-10 h-10" />
                 </div>
-              )}
-              {discountPercentage > 0 && (
-                <div className="bg-red-500 text-white px-1.5 py-0.5 rounded-full text-[10px] font-semibold shadow-sm">
-                  -{discountPercentage}%
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Product Image */}
-          <div className="w-full h-full flex items-center justify-center p-2">
-            {product.image || product.images?.[0]?.url ? (
-              <Image
-                src={product.image || product.images?.[0]?.url || ""}
-                alt={product.name}
-                width={200}
-                height={200}
-                className={cn(
-                  "w-[200px] sm:w-[250px] h-[200px] sm:h-[250px] object-cover transition-all duration-300 group-hover:scale-105",
-                  isImageLoaded ? "opacity-100" : "opacity-0"
-                )}
-                onLoad={() => setIsImageLoaded(true)}
-              />
-            ) : (
-              <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                <Eye className="w-6 h-6 text-gray-400" />
-              </div>
-            )}
-          </div>
+             )}
+           </div>
         </div>
 
-        {/* RIGHT: Content (approx 60%) */}
-        <div className="flex-1 flex flex-col justify-between p-3 min-w-0">
-          {/* UPPER HALF: Info */}
-          <div className="space-y-1">
-            {/* Brand */}
-            <div className="flex justify-between items-start">
-              <p className="text-[12px] sm:text-[15px] text-gray-500 font-medium truncate">
-                {product.brand}
-              </p>
-              
-              {/* Rating (Compact) */}
-              <div className="flex items-center space-x-0.5 shrink-0">
-                <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                <span className="text-[12px] sm:text-[10px] text-gray-500 font-medium">4.8</span>
+        {/* Right: Content */}
+        <div className="flex-1 p-3 sm:p-5 flex flex-col min-w-0">
+           {/* Header */}
+           <div className="flex justify-between items-start mb-1">
+              <div className="flex flex-col">
+                 <div className="flex items-center gap-2 mb-1">
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{product.brand}</p>
+                    {product.categories?.[0]?.name && (
+                        <span className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
+                            {product.categories[0].name}
+                        </span>
+                    )}
+                 </div>
+                 <h3 
+                    onClick={handleCardClick}
+                    className="font-bold text-gray-900 text-base sm:text-lg line-clamp-1 cursor-pointer hover:text-amber-600 transition-colors"
+                 >
+                    {product.name}
+                 </h3>
               </div>
-            </div>
+              
+              <div className="flex items-center gap-1 shrink-0 bg-amber-50 px-1.5 py-0.5 rounded-full">
+                 <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                 <span className="text-xs font-bold text-amber-700">{product.averageRating || 4.8}</span>
+              </div>
+           </div>
 
-            {/* Product Name */}
-            <h3 
-              onClick={handleCardClick}
-              className="font-semibold text-gray-900 line-clamp-2 leading-tight text-lg md:text-xl lg:text-2xl antialiased active:text-amber-600 transition-colors cursor-pointer"
-            >
-              {product.name}
-            </h3>
+           {/* Description (Hidden on very small screens) */}
+           <p className="hidden sm:block text-xs text-gray-500 line-clamp-2 mb-3 leading-relaxed">
+              {product.description || "Premium styling with advanced lens technology for superior comfort and clarity."}
+           </p>
 
-            {/* Tags / Meta */}
-            <div className="flex items-center gap-1.5 text-[13px] text-gray-400 truncate mb-2">
-               <span className="truncate">{product.frameShape}</span>
-               <span>•</span>
-               <span className="truncate">{product.gender}</span>
-            </div>
-            {discountPercentage > 10 && (
-              <span className="text-sm font-bold bg-red-500 text-white px-2 py-1 rounded-full">
-                Deal of the day
+           {/* Attributes */}
+           <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 mb-auto">
+              <span className="flex items-center bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                  <Tag className="w-3 h-3 mr-1 text-gray-400"/> {product.frameShape}
               </span>
-            )}    
-          </div>
+              <span className="flex items-center bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                  {product.frameMaterial}
+              </span>
+              <span className={cn("px-2 py-1 rounded border", getGenderColor(product.gender))}>
+                  {product.gender}
+              </span>
+           </div>
 
-          {/* LOWER HALF: Price & Action */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between pt-1 border-t border-gray-50 mt-1">
-            {/* Price */}
-            <div className="flex gap-1 sm:gap-2">
-              {product.discountPrice ? (
-                <>
-                  <span className="text-lg md:text-xl lg:text-2xl text-gray-400 line-through">
-                    ₹{product.price}
-                  </span>
-                  <span className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">
-                    ₹{product.discountPrice}
-                  </span>
-                  <span className="text-lg font-bold text-amber-600 flex items-center">
-                    <span className="mr-1 text-sm bg-red-500 text-white px-2 py-1 rounded-full">{discountPercentage}% </span>Off
-                  </span>
-                </>
-              ) : (
-                <span className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">
-                  ₹{product.price}
-                </span>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex  left-8 bottom-2 gap-2 items-center">
-               {/* Wishlist (Icon only) */}
-               <button
-                  onClick={handleWishlistToggle}
-                  className="p-1.5 sm:p-2 bg-gray-100 hover:bg-red-500 rounded-full text-gray-400 hover:text-white transition-colors"
-               >
-                 <Heart className={cn("w-8 sm:w-10 h-8 sm:h-10", isWishlisted && "fill-red-500 text-red-500")} />
-               </button>
-
-               {/* Add to Cart */}
-               <motion.button
-                  onClick={handleAddToCart}
-                  className={cn(
-                    "flex items-center px-3 py-1.5 text-white text-xs font-medium rounded-lg shadow-sm transition-all duration-200",
-                    isInCart
-                      ? "bg-green-600"
-                      : "bg-amber-500 active:bg-amber-600"
+           {/* Footer: Price & Action */}
+           <div className="flex items-center justify-between pt-3 mt-2 border-t border-gray-50 gap-2">
+              <div className="flex flex-col min-w-0">
+                  {product.discountPrice ? (
+                    <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-2">
+                       <span className="text-lg sm:text-xl font-bold text-gray-900">₹{product.discountPrice}</span>
+                       <span className="text-xs text-gray-400 line-through">₹{product.price}</span>
+                    </div>
+                  ) : (
+                    <span className="text-lg sm:text-xl font-bold text-gray-900">₹{product.price}</span>
                   )}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <ShoppingCart className="w-6 sm:w-8 h-6 sm:h-8" />
-                  {isInCart && <span className="ml-1">{quantityInCart}</span>}
-                </motion.button>
-            </div>
-          </div>
+              </div>
+              
+              <div className="flex items-center gap-2 shrink-0">
+                 <button 
+                    onClick={handleWishlistToggle}
+                    className="p-2 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                 >
+                    <Heart className={cn("w-5 h-5", isWishlisted && "fill-red-500 text-red-500")} />
+                 </button>
+                 <Button
+                    onClick={handleAddToCart}
+                    size="sm"
+                    className={cn(
+                      "rounded-lg text-xs font-medium shadow-sm transition-all whitespace-nowrap",
+                      isInCart 
+                         ? "bg-green-600 hover:bg-green-700 text-white" 
+                         : "bg-gray-900 hover:bg-gray-800 text-white"
+                    )}
+                 >
+                    {isInCart ? "In Cart" : "Add to Cart"}
+                 </Button>
+              </div>
+           </div>
         </div>
       </motion.div>
     );
   }
 
-  // Vertical Layout (original)
+  // Vertical Layout (Modern Mobile Optimized)
   return (
     <motion.div
       onClick={handleCardClick}
       className={cn(
-        "group relative bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full pb-6 cursor-pointer",
-        cardSizes[size],
+        "group relative bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border border-gray-100 flex flex-col h-full w-full cursor-pointer",
         className
       )}
-      whileHover={{ y: -4 }}
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Product Image Container */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-gray-50">
-        {/* Badges */}
+      {/* 1. Image Container - 4:3 Aspect Ratio (Landscape-ish / Squatter than portrait) */}
+      <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden w-full">
+         {/* Badges - Minimalist Pills */}
         {showBadges && (
-          <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
-            {product.isFeatured && (
-              <motion.div
-                initial={{ scale: 0, rotate: -45 }}
-                animate={{ scale: 1, rotate: 0 }}
-                className="bg-amber-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center"
-              >
-                <Sparkles className="w-3 h-3 mr-1" />
-                Featured
-              </motion.div>
-            )}
-            {discountPercentage > 0 && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.1 }}
-                className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold"
-              >
-                -{discountPercentage}%
-              </motion.div>
-            )}
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className={cn(
-                "px-2 py-1 rounded-full text-xs font-medium",
-                getGenderColor(product.gender)
-              )}
-            >
-              {product.gender}
-            </motion.div>
+          <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 items-start">
+             {product.isFeatured && (
+                <span className="bg-white/90 backdrop-blur-sm text-amber-700 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full shadow-sm border border-amber-100 flex items-center">
+                   <Sparkles className="w-2.5 h-2.5 mr-1" /> Featured
+                </span>
+             )}
+             {discountPercentage > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                   -{discountPercentage}%
+                </span>
+             )}
           </div>
         )}
 
-        {/* Wishlist Button */}
-        <motion.button
-          onClick={handleWishlistToggle}
-          className="absolute top-3 right-3 z-10 p-2 bg-white/90 hover:bg-white rounded-full shadow-md transition-all duration-200"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+        {/* Wishlist Button (Always accessible) */}
+        <button
+           onClick={handleWishlistToggle}
+           className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-white/80 backdrop-blur-sm text-gray-400 hover:text-red-500 hover:bg-white transition-all shadow-sm group-hover:scale-110"
         >
-          <Heart
-            className={cn(
-              "w-4 h-4 transition-colors duration-200",
-              isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"
-            )}
-          />
-        </motion.button>
+           <Heart className={cn("w-4 h-4 transition-colors", isWishlisted && "fill-red-500 text-red-500")} />
+        </button>
 
-        {/* Product Image */}
-        <div className="w-full h-full flex items-center justify-center p-4">
+        {/* Image - Fill using object-cover */}
+        <div className="absolute inset-0 flex items-center justify-center">
           {product.image || product.images?.[0]?.url ? (
-            <Image
-              src={product.image || product.images?.[0]?.url || ""}
-              alt={product.name}
-              width={400}
-              height={300}
-              className={cn(
-                "w-full h-full object-cover transition-all duration-300 group-hover:scale-105",
-                isImageLoaded ? "opacity-100" : "opacity-0"
-              )}
-              onLoad={() => setIsImageLoaded(true)}
-            />
+              <Image
+                src={product.image || product.images?.[0]?.url || ""}
+                alt={product.name}
+                fill
+                className={cn(
+                  "object-contain transition-transform duration-700 ease-out group-hover:scale-105 p-4",
+                  isImageLoaded ? "opacity-100" : "opacity-0"
+                )}
+                onLoad={() => setIsImageLoaded(true)}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              />
           ) : (
-            <div className="w-32 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
-              <Eye className="w-8 h-8 text-gray-400" />
-            </div>
+              <div className="text-gray-300">
+                 <Eye className="w-10 h-10" />
+              </div>
           )}
         </div>
 
-        {/* Hover Overlay */}
-        <motion.div
-          className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
-          initial={{ opacity: 0 }}
-          whileHover={{ opacity: 1 }}
-        >
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={handleQuickView}
-              className="bg-white text-gray-800 hover:bg-gray-100"
+        {/* Quick Actions Overlay (Desktop only) */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 hidden md:flex justify-center bg-gradient-to-t from-white/90 to-transparent pt-6">
+            <Button 
+                onClick={handleQuickView}
+                className="bg-white text-gray-800 hover:bg-gray-100 text-xs px-4 py-1.5 h-auto shadow-md border border-gray-100 rounded-full"
             >
-              <Eye className="w-4 h-4 mr-1" />
-              Quick View
+               Quick View
             </Button>
-            <motion.button
-              onClick={handleAddToCart}
-              className={cn(
-                "p-2 text-white rounded-lg transition-colors duration-200 relative",
-                isInCart
-                  ? "bg-green-500 hover:bg-green-600"
-                  : "bg-amber-500 hover:bg-amber-600"
-              )}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              {isInCart && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-green-600 text-xs rounded-full flex items-center justify-center font-bold border-2 border-green-500">
-                  {quantityInCart}
-                </span>
-              )}
-            </motion.button>
-          </div>
-        </motion.div>
+        </div>
       </div>
 
-      {/* Product Info */}
-      <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-        <div className="space-y-1">
-          {/* Brand */}
-          <p className="text-sm text-gray-500 font-medium">{product.brand}</p>
-
-          {/* Product Name */}
-          <h3 className="font-semibold text-gray-900 line-clamp-2 group-hover:text-amber-600 transition-colors duration-200">
-            {product.name}
-          </h3>
-
-          {/* Product Details */}
-          <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-            <span className="flex items-center">
-              <Tag className="w-3 h-3 mr-1" />
-              {product.frameShape}
+      {/* 2. Content Container - Clean & Spaced */}
+      <div className="p-3 flex flex-col flex-1 gap-1.5">
+         {/* Brand */}
+         <div className="flex justify-between items-center">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate max-w-[70%]">
+               {product.brand}
             </span>
-            <span>•</span>
-            <span>{product.frameMaterial}</span>
-            <span>•</span>
-            <span>{product.frameColor}</span>
-          </div>
-
-          {/* Rating */}
-          <div className="flex items-center space-x-1">
-            <div className="flex space-x-1">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={cn(
-                    "w-4 h-4",
-                    i < 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                  )}
-                />
-              ))}
+            <div className="flex items-center gap-0.5">
+               <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+               <span className="text-[10px] font-semibold text-gray-600">4.8</span>
             </div>
-            <span className="text-sm text-gray-500 ml-2">(4.8)</span>
-          </div>
-        </div>
+         </div>
 
-        {/* Price */}
-        <div className="flex items-center justify-between mt-auto">
-          <div className="flex items-center space-x-2">
-            {product.discountPrice ? (
-              <>
-                <span className="text-lg font-bold text-gray-900">
-                  ₹
-                  {typeof product.discountPrice === "number"
-                    ? product.discountPrice.toFixed(2)
-                    : product.discountPrice}
-                </span>
-                <span className="text-sm text-gray-500 line-through">
-                  ₹
-                  {typeof product.price === "number"
-                    ? product.price.toFixed(2)
-                    : product.price}
-                </span>
-              </>
-            ) : (
-              <span className="text-lg font-bold text-gray-900">
-                ₹
-                {typeof product.price === "number"
-                  ? product.price.toFixed(2)
-                  : product.price}
-              </span>
-            )}
-          </div>
+         {/* Title */}
+         <h3 className="text-sm font-medium text-gray-900 line-clamp-2 leading-snug group-hover:text-amber-600 transition-colors min-h-[2.5em]">
+            {product.name}
+         </h3>
 
-          <motion.button
-            onClick={handleAddToCart}
-            className={cn(
-              "flex items-center px-3 py-2 text-white text-sm font-medium rounded-lg transition-all duration-200",
-              isInCart
-                ? "bg-green-500 hover:bg-green-600"
-                : "bg-amber-500 hover:bg-amber-600"
-            )}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <ShoppingCart className="w-4 h-4 mr-1" />
-            {isInCart ? `In Cart (${quantityInCart})` : "Add"}
-          </motion.button>
-        </div>
-      </div>
+         {/* Meta Tags (Subtle) */}
+         <div className="flex flex-wrap gap-1 mt-auto">
+             <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded border bg-gray-50 text-gray-500 border-gray-100 truncate max-w-full")}>
+                {product.frameShape}
+             </span>
+             <span className={cn("text-[10px] font-medium px-1.5 py-0.5 rounded border truncate max-w-full", getGenderColor(product.gender))}>
+                {product.gender}
+             </span>
+         </div>
 
-      {/* Lens Type Badge */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gray-50 px-4 py-2 border-t">
-        <div className="flex items-center justify-between text-xs text-gray-600">
-          <span className="flex items-center">
-            <div className="w-2 h-2 bg-amber-400 rounded-full mr-2" />
-            {product.lensType}
-          </span>
-          <button className="hover:text-amber-600 transition-colors duration-200">
-            <Share2 className="w-3 h-3" />
-          </button>
-        </div>
+         {/* Price Row */}
+         <div className="flex items-center justify-between pt-2 mt-1 border-t border-gray-50">
+            <div className="flex flex-col leading-none">
+               {product.discountPrice ? (
+                   <div className="flex items-baseline gap-1.5">
+                     <span className="text-base font-bold text-gray-900">₹{product.discountPrice}</span>
+                     <span className="text-[10px] text-gray-400 line-through">₹{product.price}</span>
+                   </div>
+               ) : (
+                   <span className="text-base font-bold text-gray-900">₹{product.price}</span>
+               )}
+            </div>
+
+            {/* Add to Cart Button */}
+            <motion.button
+               onClick={handleAddToCart}
+               className={cn(
+                 "p-2 rounded-full shadow-sm transition-all active:scale-95",
+                  isInCart ? "bg-green-100 text-green-700" : "bg-gray-900 text-white hover:bg-gray-800"
+               )}
+               whileTap={{ scale: 0.9 }}
+            >
+                <ShoppingCart className="w-4 h-4" />
+            </motion.button>
+         </div>
       </div>
     </motion.div>
   );

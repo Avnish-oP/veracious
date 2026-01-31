@@ -164,9 +164,6 @@ export const Navbar: React.FC = () => {
           ? "bg-white/95 backdrop-blur-xl border-b border-gray-200 shadow-lg"
           : "bg-white"
       )}
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.6, type: "spring", bounce: 0.2 }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -377,11 +374,17 @@ export const Navbar: React.FC = () => {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="absolute inset-x-4 top-2 md:inset-y-0 md:left-20 md:right-20 flex items-center justify-center z-[60]"
+                    className="fixed inset-0 z-[100] bg-white flex flex-col p-4 md:absolute md:inset-x-4 md:top-2 md:bottom-auto md:bg-transparent md:flex-row md:items-center md:justify-center md:z-[60]"
                >
-                    <div className="w-full max-w-2xl relative">
-                        <SearchBar autoFocus onClose={() => setShowSearch(false)} />
-                    </div>
+                   <div className="w-full max-w-2xl relative flex items-center gap-3">
+                        <SearchBar autoFocus onClose={() => setShowSearch(false)} className="flex-1" />
+                        <button 
+                            onClick={() => setShowSearch(false)}
+                            className="md:hidden text-gray-500 font-medium whitespace-nowrap px-2"
+                        >
+                            Cancel
+                        </button>
+                   </div>
                </motion.div>
             ) : (
                 <motion.button
@@ -521,211 +524,320 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
+
+
       {/* Mobile Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden bg-white border-t border-gray-200"
-          >
-            <div className="px-4 py-6 space-y-4">
-              {navigation.map((item) => (
-                <div key={item.label}>
-                  {item.children ? (
-                    <div>
-                      <button
-                        onClick={() => handleDropdownToggle(item.label)}
-                        className="flex items-center justify-between w-full px-3 py-2 text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors duration-200"
-                      >
-                        <span>{item.label}</span>
-                        <ChevronDown
-                          className={cn(
-                            "w-4 h-4 transition-transform duration-200",
-                            activeDropdown === item.label ? "rotate-180" : ""
-                          )}
-                        />
-                      </button>
-                      <AnimatePresence>
-                        {activeDropdown === item.label && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="ml-4 mt-2 space-y-2"
-                          >
-                            {item.label === "Categories"
-                              ? (() => {
-                                  const order = [
-                                    "SEX",
-                                    "SHAPE",
-                                    "COLLECTION",
-                                    "BRAND",
-                                    "MATERIAL",
-                                    "OTHER",
-                                  ];
-                                  const typeNames: Record<string, string> = {
-                                    SEX: "By Sex",
-                                    SHAPE: "Shape",
-                                    COLLECTION: "Collections",
-                                    BRAND: "Brands",
-                                    MATERIAL: "Material",
-                                    OTHER: "Other",
-                                  };
-                                  const grouped: Record<string, Category[]> = {};
-                                 categoriesRaw.forEach((c) => {
-                                    const t = c.type || "OTHER";
-                                    if (!grouped[t]) grouped[t] = [];
-                                    grouped[t].push(c);
-                                  });
-
-                                  return order.map((t) => {
-                                    const list = grouped[t];
-                                    if (!list || list.length === 0) return null;
-                                    return (
-                                      <div key={t} className="mb-3">
-                                        <h4 className="text-sm font-semibold text-gray-700 mb-1">
-                                          {typeNames[t] || t}
-                                        </h4>
-                                        <div className="space-y-1">
-                                          {list.map((c) => (
-                                            <Link
-                                              key={c.id}
-                                              href={`/products?category=${c.id}`}
-                                              className="block px-3 py-2 text-sm text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors duration-200"
-                                            >
-                                              {c.name}
-                                            </Link>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    );
-                                  });
-                                })()
-                              : item.children.map((child) => (
-                                  <Link
-                                    key={child.href}
-                                    href={child.href}
-                                    className="block px-3 py-2 text-sm text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors duration-200"
-                                  >
-                                    {child.label}
-                                  </Link>
-                                ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+          <>
+            {/* Backdrop */}
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] md:hidden"
+            />
+            
+            {/* Drawer */}
+            <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="fixed top-0 right-0 h-[100dvh] w-[85%] max-w-sm bg-white shadow-2xl z-[70] md:hidden overflow-y-auto overscroll-contain"
+            >
+                <div className="flex flex-col h-full">
+                    <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                        <span className="text-lg font-bold text-gray-900">Menu</span>
+                        <button 
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="p-2 text-gray-500 hover:text-gray-900 bg-gray-50 rounded-full"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
                     </div>
-                  ) : (
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "block px-3 py-2 text-base font-medium rounded-lg transition-colors duration-200",
-                        isActivePage(item.href)
-                          ? "text-amber-600 bg-amber-50"
-                          : "text-gray-700 hover:text-amber-600 hover:bg-amber-50"
-                      )}
-                    >
-                      {item.label}
-                    </Link>
-                  )}
+
+                    <div className="flex-1 px-4 py-6 space-y-2">
+                        {navigation.map((item) => (
+                            <div key={item.label} className="border-b border-gray-50 last:border-0 pb-2">
+                                {item.children && item.children.length > 0 ? (
+                                    <div className="overflow-hidden">
+                                        <button
+                                            onClick={() => handleDropdownToggle(item.label)}
+                                            className="flex items-center justify-between w-full py-3 text-base font-medium text-gray-800"
+                                        >
+                                            <span className={cn(activeDropdown === item.label && "text-amber-600")}>{item.label}</span>
+                                            <ChevronDown
+                                                className={cn(
+                                                    "w-5 h-5 text-gray-400 transition-transform duration-300",
+                                                    activeDropdown === item.label ? "rotate-180 text-amber-600" : ""
+                                                )}
+                                            />
+                                        </button>
+                                        <AnimatePresence>
+                                            {activeDropdown === item.label && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: "auto", opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.3 }}
+                                                    className="pl-4 space-y-4 pb-2"
+                                                >
+                                                   {/* Logic for specialized sub-menus (Sunglasses/Lenses) vs Standard */}
+                                                   {item.label === "Contact Lenses" ? (
+                                                       <div className="space-y-4 pt-2">
+                                                            {/* Group by Manufacturer */}
+                                                            <div>
+                                                                <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Brands</h5>
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    {item.children.filter(c => c.type === "MANUFACTURER").map(child => (
+                                                                         <Link 
+                                                                            key={child.href} 
+                                                                            href={child.href}
+                                                                            onClick={() => setIsMobileMenuOpen(false)}
+                                                                            className="text-sm text-gray-600 py-1 hover:text-amber-600"
+                                                                         >
+                                                                            {child.label}
+                                                                         </Link>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            {/* Group by Type */}
+                                                            <div>
+                                                                <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Type</h5>
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    {item.children.filter(c => c.type === "LENS_TYPE").map(child => (
+                                                                         <Link 
+                                                                            key={child.href} 
+                                                                            href={child.href}
+                                                                            onClick={() => setIsMobileMenuOpen(false)}
+                                                                            className="text-sm text-gray-600 py-1 hover:text-amber-600"
+                                                                         >
+                                                                            {child.label}
+                                                                         </Link>
+                                                                    ))}
+                                                                </div>
+                                                                </div>
+
+                                                            {/* Group by Disposability */}
+                                                            <div>
+                                                                <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Disposability</h5>
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    {item.children.filter(c => c.type === "DISPOSABILITY").map(child => (
+                                                                         <Link 
+                                                                            key={child.href} 
+                                                                            href={child.href}
+                                                                            onClick={() => setIsMobileMenuOpen(false)}
+                                                                            className="text-sm text-gray-600 py-1 hover:text-amber-600"
+                                                                         >
+                                                                            {child.label}
+                                                                         </Link>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                       </div>
+                                                   ) : item.label === "Sunglasses" ? (
+                                                       <div className="space-y-4 pt-2">
+                                                            {/* Gender */}
+                                                            <div>
+                                                                <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Gender</h5>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {["Men", "Women", "Unisex"].map(gender => (
+                                                                        <Link 
+                                                                            key={gender} 
+                                                                            href={`/products?category=sunglasses&gender=${gender.toUpperCase()}`}
+                                                                            onClick={() => setIsMobileMenuOpen(false)}
+                                                                            className="px-3 py-1 bg-gray-50 text-sm text-gray-600 rounded-full border border-gray-100 hover:border-amber-200 hover:text-amber-600"
+                                                                        >
+                                                                            {gender}
+                                                                        </Link>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            {/* Shape */}
+                                                            {item.children?.some(c => c.type === "SHAPE") && (
+                                                                <div>
+                                                                    <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Shop By Shape</h5>
+                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                        {item.children.filter(c => c.type === "SHAPE").map(child => (
+                                                                             <Link 
+                                                                                key={child.href} 
+                                                                                href={child.href}
+                                                                                onClick={() => setIsMobileMenuOpen(false)}
+                                                                                className="text-sm text-gray-600 py-1 hover:text-amber-600 whitespace-nowrap overflow-hidden text-ellipsis"
+                                                                             >
+                                                                                {child.label}
+                                                                             </Link>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Collections */}
+                                                            {item.children?.some(c => c.type === "COLLECTION") && (
+                                                                <div>
+                                                                    <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Collections</h5>
+                                                                    <div className="space-y-1">
+                                                                        {item.children.filter(c => c.type === "COLLECTION").map(child => (
+                                                                             <Link 
+                                                                                key={child.href} 
+                                                                                href={child.href}
+                                                                                onClick={() => setIsMobileMenuOpen(false)}
+                                                                                className="block text-sm text-gray-600 py-1 hover:text-amber-600"
+                                                                             >
+                                                                                {child.label}
+                                                                             </Link>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Brands */}
+                                                            {item.children?.some(c => c.type === "BRAND") && (
+                                                                <div>
+                                                                    <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Brands</h5>
+                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                        {item.children.filter(c => c.type === "BRAND").map(child => (
+                                                                             <Link 
+                                                                                key={child.href} 
+                                                                                href={child.href}
+                                                                                onClick={() => setIsMobileMenuOpen(false)}
+                                                                                className="text-sm text-gray-600 py-1 hover:text-amber-600"
+                                                                             >
+                                                                                {child.label}
+                                                                             </Link>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                       </div>
+                                                   ) : (
+                                                       <div className="space-y-3 pt-1">
+                                                            {/* Generic fallback that tries to group if types exist, or just list */}
+                                                            {(() => {
+                                                                // Group by type if multiple types exist
+                                                                const groups: Record<string, NavItem[]> = {};
+                                                                let hasTypes = false;
+                                                                
+                                                                item.children?.forEach(child => {
+                                                                    const t = child.type || "Other";
+                                                                    if (child.type) hasTypes = true;
+                                                                    if (!groups[t]) groups[t] = [];
+                                                                    groups[t].push(child);
+                                                                });
+
+                                                                if (hasTypes && Object.keys(groups).length > 1) {
+                                                                    return Object.entries(groups).map(([type, children]) => (
+                                                                        <div key={type}>
+                                                                            <h5 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{type === "Other" ? "More" : type}</h5>
+                                                                            <div className="grid grid-cols-1 gap-1">
+                                                                                {children.map(child => (
+                                                                                    <Link 
+                                                                                        key={child.href} 
+                                                                                        href={child.href}
+                                                                                        onClick={() => setIsMobileMenuOpen(false)}
+                                                                                        className="text-sm text-gray-600 py-1 hover:text-amber-600"
+                                                                                    >
+                                                                                        {child.label}
+                                                                                    </Link>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    ));
+                                                                } else {
+                                                                    // Simple list
+                                                                    return item.children?.map(child => (
+                                                                        <Link 
+                                                                            key={child.href} 
+                                                                            href={child.href}
+                                                                            onClick={() => setIsMobileMenuOpen(false)}
+                                                                            className="block text-sm text-gray-600 py-1.5 hover:text-amber-600"
+                                                                        >
+                                                                            {child.label}
+                                                                        </Link>
+                                                                    ));
+                                                                }
+                                                            })()}
+                                                       </div>
+                                                   )}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                ) : (
+                                    <Link
+                                        href={item.href}
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className={cn(
+                                            "block py-3 text-base font-medium transition-colors",
+                                            isActivePage(item.href) ? "text-amber-600" : "text-gray-800"
+                                        )}
+                                    >
+                                        {item.label}
+                                    </Link>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Bottom Actions */}
+                    <div className="p-4 border-t border-gray-100 bg-gray-50">
+                        <div className="grid grid-cols-2 gap-3 mb-4">
+                            <button
+                                onClick={() => { setIsMobileMenuOpen(false); setShowSearch(true); }}
+                                className="flex items-center justify-center gap-2 p-3 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-amber-200 transition-colors"
+                            >
+                                <Search className="w-4 h-4 text-gray-600" />
+                                <span className="text-sm font-medium text-gray-700">Search</span>
+                            </button>
+                            <button
+                                onClick={() => { setIsMobileMenuOpen(false); router.push('/wishlist'); }}
+                                className="flex items-center justify-center gap-2 p-3 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-red-200 transition-colors"
+                            >
+                                <Heart className="w-4 h-4 text-gray-600" />
+                                <span className="text-sm font-medium text-gray-700">Wishlist</span>
+                            </button>
+                        </div>
+
+                        {!user ? (
+                            <div className="space-y-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => router.push("/auth/login")}
+                                    className="w-full justify-center bg-white"
+                                >
+                                    Sign In
+                                </Button>
+                                <Button
+                                    onClick={() => router.push("/auth/register")}
+                                    className="w-full justify-center bg-gray-900 text-white hover:bg-black"
+                                >
+                                    Get Started
+                                </Button>
+                            </div>
+                        ) : (
+                             <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-200">
+                                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 font-bold">
+                                    {user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-bold text-gray-900 truncate">{user.name}</p>
+                                    <button onClick={handleLogout} className="text-xs text-red-500 font-medium">Sign Out</button>
+                                </div>
+                                <button onClick={() => router.push('/profile')} className="p-2 text-gray-400">
+                                    <ChevronDown className="-rotate-90 w-5 h-5" />
+                                </button>
+                             </div>
+                        )}
+                    </div>
                 </div>
-              ))}
-
-              {/* Mobile Quick Actions */}
-              <div className="pt-4 border-t border-gray-200 grid grid-cols-3 gap-3">
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    setShowSearch(true);
-                  }}
-                  className="flex flex-col items-center justify-center p-4 text-gray-600 hover:text-amber-600 bg-gray-50 hover:bg-amber-50 rounded-lg transition-colors"
-                >
-                  <Search className="w-5 h-5 mb-1" />
-                  <span className="text-xs">Search</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    // Add wishlist functionality later
-                  }}
-                  className="flex flex-col items-center justify-center p-4 text-gray-600 hover:text-amber-600 bg-gray-50 hover:bg-amber-50 rounded-lg transition-colors"
-                >
-                  <Heart className="w-5 h-5 mb-1" />
-                  <span className="text-xs">Wishlist</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    setIsCartOpen(true);
-                  }}
-                  className="relative flex flex-col items-center justify-center p-4 text-gray-600 hover:text-amber-600 bg-gray-50 hover:bg-amber-50 rounded-lg transition-colors"
-                >
-                  <ShoppingCart className="w-5 h-5 mb-1" />
-                  <span className="text-xs">Cart</span>
-                  {cartItemCount > 0 && (
-                    <span className="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold">
-                      {cartItemCount > 99 ? "99+" : cartItemCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {/* Mobile Auth Buttons */}
-              <div className="pt-4 border-t border-gray-200 space-y-3">
-                {loading ? (
-                  <div className="space-y-3">
-                    <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse"></div>
-                    <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse"></div>
-                  </div>
-                ) : !user ? (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="md"
-                      onClick={() => router.push("/auth/login")}
-                      className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
-                    >
-                      <User className="w-4 h-4 mr-2" />
-                      Sign In
-                    </Button>
-                    <Button
-                      size="md"
-                      onClick={() => router.push("/auth/register")}
-                      className="w-full bg-amber-500 hover:bg-amber-600"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Get Started
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        router.push("/profile");
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="flex items-center w-full px-3 py-2 text-base font-medium text-gray-700 hover:text-amber-600 hover:bg-amber-50 rounded-lg"
-                    >
-                      <User className="w-4 h-4 mr-3" />
-                      Profile
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50 rounded-lg"
-                    >
-                      <LogOut className="w-4 h-4 mr-3" />
-                      Logout
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
+
 
       {/* Cart Drawer */}
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />

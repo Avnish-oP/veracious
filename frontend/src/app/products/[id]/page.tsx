@@ -10,6 +10,8 @@ import { ProductSkeleton } from "./ProductSkeleton";
 import { ProductImageGallery } from "./ProductImageGallery";
 import { ProductInfo } from "./ProductInfo";
 import { ProductTabs } from "./ProductTabs";
+import { ProductReviews } from "./ProductReviews";
+import { ProductRecommendations } from "./ProductRecommendations";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -104,9 +106,21 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* Tabs Section (Description, Specs, Reviews) */}
+        {/* Tabs Section (Description, Specs) */}
         <ProductTabs product={product} />
+
+        {/* Product Recommendations */}
+        <ProductRecommendations 
+          productId={productId} 
+          title="You May Also Like"
+          className="mt-16"
+        />
+
+        {/* Customer Reviews Section */}
+        <ProductReviews product={product} />
       </div>
     </div>
   );
 }
+
+

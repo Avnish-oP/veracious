@@ -517,3 +517,109 @@ export const getLensPrices = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error fetching lens prices" });
   }
 };
+
+export const getSimilarProducts = async (req: Request, res: Response) => {
+  const { productId } = req.params;
+  const { limit = 8 } = req.query;
+  const take = Math.min(Number(limit), 12);
+
+  try {
+    // Get the current product to find its categories and brand
+    const currentProduct = await prisma.product.findUnique({
+      where: { id: productId },
+      select: {
+        id: true,
+        brand: true,
+        gender: true,
+        frameShape: true,
+        price: true,
+        discountPrice: true,
+        categories: { select: { id: true } },
+      },
+    });
+
+    if (!currentProduct) {
+      return res.status(404).json({ success: false, error: "Product not found" });
+    }
+
+    const categoryIds = currentProduct.categories.map((c) => c.id);
+    const effectivePrice = currentProduct.discountPrice ?? currentProduct.price;
+    const priceRange = {
+      min: Number(effectivePrice) * 0.5,
+      max: Number(effectivePrice) * 1.5,
+    };
+
+    // Find similar products based on:
+    // 1. Same category OR same brand
+    // 2. Exclude current product
+    // 3. Prioritize same gender
+    const similarProducts = await prisma.product.findMany({
+      take,
+      where: {
+        id: { not: productId },
+        isActive: true,
+        OR: [
+          { categories: { some: { id: { in: categoryIds } } } },
+          { brand: { equals: currentProduct.brand, mode: "insensitive" } },
+        ],
+      },
+      orderBy: [
+        // Prioritize same gender
+        { gender: currentProduct.gender === "UNISEX" ? "asc" : "desc" },
+        { createdAt: "desc" },
+      ],
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        brand: true,
+        price: true,
+        discountPrice: true,
+        frameShape: true,
+        frameMaterial: true,
+        frameColor: true,
+        lensType: true,
+        lensColor: true,
+        gender: true,
+        isFeatured: true,
+        images: {
+          where: { isMain: true },
+          select: { url: true },
+        },
+        _count: {
+          select: { reviews: true },
+        },
+      },
+    });
+
+    // Calculate average rating for each product
+    const productsWithRatings = await Promise.all(
+      similarProducts.map(async (product) => {
+        const avgRating = await prisma.review.aggregate({
+          where: { productId: product.id },
+          _avg: { rating: true },
+        });
+
+        return {
+          ...product,
+          image: product.images[0]?.url || null,
+          images: undefined,
+          averageRating: avgRating._avg.rating
+            ? parseFloat(avgRating._avg.rating.toFixed(1))
+            : null,
+          reviewCount: product._count.reviews,
+          _count: undefined,
+        };
+      })
+    );
+
+    return res.status(200).json({
+      success: true,
+      products: productsWithRatings,
+      total: productsWithRatings.length,
+    });
+  } catch (error) {
+    console.error("Error fetching similar products:", error);
+    return res.status(500).json({ success: false, error: "Failed to fetch similar products" });
+  }
+};

@@ -65,6 +65,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ orderId
   const { data, isLoading, isError } = useOrderDetails(orderId);
   const updateStatus = useUpdateOrderStatus();
   const [newStatus, setNewStatus] = useState<string>('');
+  const [downloading, setDownloading] = useState(false);
 
   if (isLoading) {
     return (
@@ -101,7 +102,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ orderId
     }
   };
 
-  const [downloading, setDownloading] = useState(false);
+
   const handleDownloadInvoice = async () => {
     try {
       setDownloading(true);

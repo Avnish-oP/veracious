@@ -165,8 +165,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 isFocused || hasValue || props.value
                   ? "-top-2.5 text-xs bg-white px-2 text-slate-700 left-3"
                   : icon
-                  ? "top-3 text-base text-slate-500 left-10"
-                  : "top-3 text-base text-slate-500 left-4"
+                  ? "top-3 text-base text-gray-500 left-10"
+                  : "top-3 text-base text-gray-500 left-4"
               )}
             >
               {label}
@@ -187,7 +187,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             className={cn(
               "w-full px-4 py-3.5 bg-white/70 backdrop-blur-sm border-2 rounded-xl",
-              "font-medium text-slate-800 placeholder-transparent",
+              "font-medium text-gray-900 placeholder-transparent",
               "transition-all duration-300 focus:outline-none",
               "shadow-sm hover:shadow-md focus:shadow-lg",
               icon ? "pl-10" : "",
@@ -378,7 +378,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
                 "text-slate-600 font-medium",
                 isFocused || hasValue
                   ? "-top-2.5 text-xs bg-white px-2 text-slate-700 left-4"
-                  : "top-3.5 text-base text-slate-500 left-24"
+                  : "top-3.5 text-base text-gray-500 left-24"
               )}
             >
               {label}
@@ -472,7 +472,7 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
               placeholder={label || "Enter phone number"}
               className={cn(
                 "flex-1 px-4 py-3.5 bg-white/70 backdrop-blur-sm border-2 rounded-r-xl",
-                "font-medium text-slate-800 placeholder-transparent",
+                "font-medium text-gray-900 placeholder-transparent",
                 "transition-all duration-300 focus:outline-none",
                 "shadow-sm hover:shadow-md focus:shadow-lg",
                 error
@@ -571,7 +571,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             id={selectId}
             className={cn(
               "w-full px-4 py-3 bg-white/70 backdrop-blur-sm border-2 rounded-xl",
-              "font-medium text-slate-800 appearance-none cursor-pointer",
+              "font-medium text-gray-900 appearance-none cursor-pointer",
               "transition-all duration-300 focus:outline-none",
               "shadow-sm hover:shadow-md focus:shadow-lg",
               error

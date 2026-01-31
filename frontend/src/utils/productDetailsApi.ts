@@ -56,3 +56,29 @@ export const fetchMultipleProductDetails = async (productIds: string[]) => {
     return {};
   }
 };
+
+/**
+ * Fetch similar/related products for recommendations
+ */
+export const fetchSimilarProducts = async (productId: string, limit = 8) => {
+  try {
+    const response = await fetch(
+      `${API_BASE_URL}/products/${productId}/similar?limit=${limit}`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to fetch similar products");
+    }
+
+    return data.products || [];
+  } catch (error) {
+    console.error(`Error fetching similar products for ${productId}:`, error);
+    return [];
+  }
+};

@@ -6,6 +6,7 @@ import {
   getTrendingProducts,
   getProductsFilters,
   getLensPrices,
+  getSimilarProducts,
 } from "../controllers/products/getProduct";
 import { authMiddleware } from "../middlewares/authmiddleware";
 import { cacheMiddleware } from "../middlewares/cache";
@@ -19,6 +20,8 @@ router.get("/featured", cacheMiddleware(43200), getFeaturedProducts); // 12 hour
 router.get("/trending", cacheMiddleware(43200), getTrendingProducts); // 12 hours
 router.get("/lens-prices", cacheMiddleware(86400), getLensPrices); // 24 hours - very static
 router.get("/category/:categoryId", cacheMiddleware(3600), getProductsByCategory); // 1 hour
+router.get("/:productId/similar", cacheMiddleware(3600), getSimilarProducts); // 1 hour - similar products
 router.get("/:productId", cacheMiddleware(3600), getProductById); // 1 hour
 
 export default router;
+

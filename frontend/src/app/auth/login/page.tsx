@@ -2,8 +2,8 @@
 
 import React, { useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Sun } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { useUser } from "@/hooks/useUser";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -15,159 +15,121 @@ function LoginPageContent() {
 
   useEffect(() => {
     if (!isLoading && user) {
-      // Redirect to the original page they were trying to access, or home
       const redirectTo = searchParams.get("redirect") || "/";
       router.replace(redirectTo);
     }
   }, [user, isLoading, router, searchParams]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 relative overflow-hidden">
-
-      {/* Creative Header Title Area */}
-      <div className=" z-10 pt- pb-">
-        <motion.div
-          className="text-center -mt-16 flex flex-col items-center justify-center"
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          {/* Brand Logo/Icon */}
+    <div className="min-h-screen flex">
+      {/* Left Panel - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+        {/* Subtle Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
+        </div>
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-center items-center w-full px-12">
           <motion.div
-            className=" mb-50"
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
-          >
-            <div className="relative h-1">
-      
-                <Image
-                  src="/otticamart1.png"
-                  alt="Ottichamart Logo"
-                  width={280}
-                  height={180}
-                  className=" object-cover"
-                />
-              
-            </div>
-          </motion.div>
-
-          {/* Tagline */}
-          <motion.div
-            className="flex items-center justify-center space-x-2 mb-2"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
           >
-            <Sparkles className="w-5 h-5 text-amber-500" />
-            <p className="text-xl text-slate-600 font-medium">
-              Welcome Back to Premium Vision
+            {/* Logo */}
+            <div className="mb-8">
+              <Image
+                src="/otticamart1.png"
+                alt="Otticamart"
+                width={200}
+                height={60}
+                className="object-contain mx-auto brightness-0 invert"
+              />
+            </div>
+            
+            {/* Tagline */}
+            <h1 className="text-4xl font-bold text-white mb-4">
+              Premium Eyewear
+            </h1>
+            <p className="text-slate-400 text-lg max-w-md">
+              Discover the perfect frames that match your style and personality
             </p>
-            <Sparkles className="w-5 h-5 text-orange-500" />
+            
+            {/* Features */}
+            <div className="mt-12 space-y-4">
+              {[
+                "Authentic designer frames",
+                "Free shipping on orders above ₹999",
+                "Easy 14-day returns"
+              ].map((feature, i) => (
+                <motion.div
+                  key={feature}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 + i * 0.1 }}
+                  className="flex items-center justify-center gap-3 text-slate-300"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <span>{feature}</span>
+                </motion.div>
+              ))}
+            </div>
           </motion.div>
-
-          <motion.p
-            className="text-slate-500 max-w-md mx-auto mb-2"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.6 }}
-          >
-            Continue your journey with the world&apos;s finest eyewear
-            collection
-          </motion.p>
-        </motion.div>
+        </div>
+        
+        {/* Decorative Gradient */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-900 to-transparent" />
       </div>
 
-      {/* Main Content */}
-      <main className="relative z-10 flex justify-center px-4 pb-12">
+      {/* Right Panel - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-gray-50">
         <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="lg:hidden text-center mb-8">
+            <Image
+              src="/otticamart1.png"
+              alt="Otticamart"
+              width={160}
+              height={48}
+              className="object-contain mx-auto"
+            />
+          </div>
+          
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ duration: 0.5 }}
           >
             <LoginForm />
           </motion.div>
+
+          {/* Footer */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="mt-8 text-center text-sm text-gray-500"
+          >
+            <div className="flex justify-center gap-6 mb-4">
+              <Link href="/privacy" className="hover:text-amber-600 transition-colors">
+                Privacy
+              </Link>
+              <Link href="/terms" className="hover:text-amber-600 transition-colors">
+                Terms
+              </Link>
+              <Link href="/contact" className="hover:text-amber-600 transition-colors">
+                Support
+              </Link>
+            </div>
+            <p className="text-gray-400">
+              © 2026 Otticamart. All rights reserved.
+            </p>
+          </motion.div>
         </div>
-      </main>
-
-      {/* Footer Links */}
-      <motion.div
-        className="relative z-10 text-center pb-8"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
-      >
-        <div className="flex justify-center space-x-6 text-sm text-slate-500 mb-4">
-          <motion.a
-            href="/privacy"
-            className="hover:text-amber-600 transition-colors"
-            whileHover={{ scale: 1.05 }}
-          >
-            Privacy Policy
-          </motion.a>
-          <motion.a
-            href="/terms"
-            className="hover:text-amber-600 transition-colors"
-            whileHover={{ scale: 1.05 }}
-          >
-            Terms of Service
-          </motion.a>
-          <motion.a
-            href="/support"
-            className="hover:text-amber-600 transition-colors"
-            whileHover={{ scale: 1.05 }}
-          >
-            Support
-          </motion.a>
-        </div>
-
-        <p className="text-xs text-slate-400">
-          © 2026 Ottichamart. Crafting premium vision experiences worldwide.
-        </p>
-      </motion.div>
-
-      {/* Floating Elements for Visual Appeal */}
-      <motion.div
-        className="absolute top-1/4 left-10 w-4 h-4 bg-amber-300/40 rounded-full"
-        animate={{
-          y: [0, -20, 0],
-          opacity: [0.4, 0.8, 0.4],
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
-
-      <motion.div
-        className="absolute top-1/3 right-16 w-6 h-6 bg-orange-300/30 rounded-full"
-        animate={{
-          y: [0, 15, 0],
-          opacity: [0.3, 0.7, 0.3],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 1,
-        }}
-      />
-
-      <motion.div
-        className="absolute bottom-1/4 left-1/4 w-3 h-3 bg-red-300/50 rounded-full"
-        animate={{
-          y: [0, -10, 0],
-          opacity: [0.5, 0.9, 0.5],
-        }}
-        transition={{
-          duration: 2.5,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 2,
-        }}
-      />
+      </div>
     </div>
   );
 }
@@ -176,8 +138,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-amber-500 border-t-transparent" />
         </div>
       }
     >

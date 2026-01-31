@@ -24,7 +24,11 @@ import {
   Loader2,
   Tag,
   Sparkles,
+  Truck,
 } from "lucide-react";
+import Link from "next/link";
+
+const FREE_SHIPPING_THRESHOLD = 999;
 
 export default function CartPage() {
   const router = useRouter();
@@ -207,6 +211,45 @@ export default function CartPage() {
           </div>
         </motion.div>
 
+        {/* Free Shipping Progress */}
+        {cart && cart.items?.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-8 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl"
+          >
+            {cartSummary.subtotalAfterDiscount < FREE_SHIPPING_THRESHOLD ? (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-emerald-700">
+                    <Truck className="w-5 h-5" />
+                    <span className="font-medium">
+                      Add <span className="font-bold">₹{(FREE_SHIPPING_THRESHOLD - cartSummary.subtotalAfterDiscount).toFixed(0)}</span> more for FREE shipping!
+                    </span>
+                  </div>
+                  <span className="text-sm text-emerald-600 font-medium">
+                    {((cartSummary.subtotalAfterDiscount / FREE_SHIPPING_THRESHOLD) * 100).toFixed(0)}%
+                  </span>
+                </div>
+                <div className="h-2.5 bg-emerald-100 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(100, (cartSummary.subtotalAfterDiscount / FREE_SHIPPING_THRESHOLD) * 100)}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full"
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-2 text-emerald-700 font-medium">
+                <Truck className="w-5 h-5" />
+                <span>🎉 Congratulations! You&apos;ve unlocked FREE shipping on this order!</span>
+              </div>
+            )}
+          </motion.div>
+        )}
+
         {!cart || cart.items?.length === 0 ? (
           // Empty Cart State
           <motion.div
@@ -248,8 +291,11 @@ export default function CartPage() {
                 >
                   <div className="p-6">
                     <div className="flex gap-4">
-                      {/* Product Image */}
-                      <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+                      {/* Product Image - Clickable */}
+                      <Link
+                        href={`/products/${item.productId}`}
+                        className="relative w-24 h-24 sm:w-32 sm:h-32 flex-shrink-0 bg-gray-100 rounded-xl overflow-hidden hover:opacity-90 transition-opacity group"
+                      >
                         {item.product?.images?.[0] ? (
                           <Image
                             src={
@@ -259,22 +305,32 @@ export default function CartPage() {
                             }
                             alt={item.product?.name || "Product"}
                             fill
-                            className="object-cover"
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <Package className="w-12 h-12 text-gray-400" />
                           </div>
                         )}
-                      </div>
+                        {item.product?.discountPrice && (
+                          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg">
+                            SALE
+                          </div>
+                        )}
+                      </Link>
 
                       {/* Product Details */}
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-4">
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-gray-900 truncate">
-                              {item.product?.name || "Product"}
-                            </h3>
+                            <Link
+                              href={`/products/${item.productId}`}
+                              className="hover:text-amber-600 transition-colors"
+                            >
+                              <h3 className="text-lg font-semibold text-gray-900 truncate">
+                                {item.product?.name || "Product"}
+                              </h3>
+                            </Link>
                             {item.product?.brand && (
                               <p className="text-sm text-gray-500 mt-1">
                                 {item.product.brand}
@@ -345,44 +401,39 @@ export default function CartPage() {
 
                         {/* Quantity Controls and Subtotal */}
                         <div className="mt-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm text-gray-600 font-medium">
-                              Quantity:
+                          <div className="flex items-center bg-gray-100 rounded-lg">
+                            <button
+                              onClick={() =>
+                                handleDecreaseQuantity(
+                                  item.productId,
+                                  item.quantity,
+                                )
+                              }
+                              className="p-2 hover:bg-gray-200 rounded-l-lg transition-colors"
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus className="w-4 h-4 text-gray-700" />
+                            </button>
+                            <span className="px-3 py-2 font-semibold text-gray-900 min-w-[2rem] text-center">
+                              {item.quantity}
                             </span>
-                            <div className="flex items-center bg-gray-100 rounded-lg">
-                              <button
-                                onClick={() =>
-                                  handleDecreaseQuantity(
-                                    item.productId,
-                                    item.quantity,
-                                  )
-                                }
-                                className="p-2 hover:bg-gray-200 rounded-l-lg transition-colors"
-                                aria-label="Decrease quantity"
-                              >
-                                <Minus className="w-4 h-4 text-gray-700" />
-                              </button>
-                              <span className="px-4 py-2 font-semibold text-gray-900 min-w-[3rem] text-center">
-                                {item.quantity}
-                              </span>
-                              <button
-                                onClick={() =>
-                                  handleIncreaseQuantity(
-                                    item.productId,
-                                    item.quantity,
-                                  )
-                                }
-                                className="p-2 hover:bg-gray-200 rounded-r-lg transition-colors"
-                                aria-label="Increase quantity"
-                              >
-                                <Plus className="w-4 h-4 text-gray-700" />
-                              </button>
-                            </div>
+                            <button
+                              onClick={() =>
+                                handleIncreaseQuantity(
+                                  item.productId,
+                                  item.quantity,
+                                )
+                              }
+                              className="p-2 hover:bg-gray-200 rounded-r-lg transition-colors"
+                              aria-label="Increase quantity"
+                            >
+                              <Plus className="w-4 h-4 text-gray-700" />
+                            </button>
                           </div>
 
                           {/* Item Subtotal */}
                           <div className="text-right">
-                            <p className="text-sm text-gray-500">Subtotal</p>
+                            <p className="text-xs text-gray-500">Subtotal</p>
                             <p className="text-lg font-bold text-gray-900">
                               ₹
                               {(() => {
@@ -395,7 +446,7 @@ export default function CartPage() {
                                     0) +
                                     Number(config?.lensPrice || 0)) *
                                   item.quantity
-                                ).toFixed(2);
+                                ).toFixed(0);
                               })()}
                             </p>
                           </div>

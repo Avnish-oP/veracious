@@ -130,6 +130,11 @@ export const fetchOrders = async (): Promise<unknown> => {
   return apiCall<unknown>("/orders");
 };
 
+// Fetch single order by ID
+export const fetchOrderById = async (orderId: string): Promise<unknown> => {
+  return apiCall<unknown>(`/orders/${orderId}`);
+};
+
 // Fetch user addresses
 export const fetchAddresses = async (): Promise<unknown> => {
   return apiCall<unknown>("/address");

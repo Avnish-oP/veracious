@@ -542,7 +542,7 @@ export const ProductInfo: React.FC<ProductInfoProps> = ({
             <Truck className="w-5 h-5" />
           </div>
           <p className="text-xs font-bold text-gray-900">Free Delivery</p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Orders over ₹4175</p>
+          <p className="text-[10px] text-gray-500 mt-0.5">Fast Shipping</p>
         </div>
         <div className="flex flex-col items-center text-center p-2 rounded-lg hover:bg-gray-50 transition-colors">
           <div className="p-2 bg-amber-100 text-amber-600 rounded-full mb-2">

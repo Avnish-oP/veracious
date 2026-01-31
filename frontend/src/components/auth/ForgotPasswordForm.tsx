@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Mail, ArrowLeft, Send } from "lucide-react";
+import { Mail, ArrowLeft, Send, Loader2 } from "lucide-react";
 import {
   ForgotPasswordFormData,
   forgotPasswordSchema,
 } from "@/types/authTypes";
 import { useForgotPasswordMutation } from "@/hooks/useRegistration";
-import { Button, Card, Input } from "@/components/ui/form-components";
+import Link from "next/link";
 
 interface ForgotPasswordFormProps {
   onBackToLogin?: () => void;
@@ -37,124 +37,83 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
     try {
       await forgotPasswordMutation.mutateAsync(data);
       reset();
-    } catch (_error) {
+    } catch {
       // Error handling is done in the mutation
     }
   };
 
+  const isLoading = isSubmitting || forgotPasswordMutation.isPending;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <Card className="p-8 backdrop-blur-xl bg-white/95 border-white/20 shadow-2xl">
-        {/* Header */}
-        <motion.div
-          className="text-center mb-8"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-        >
-          <motion.div
-            className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 rounded-2xl shadow-lg"
-            whileHover={{ scale: 1.05, rotate: 5 }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            <Mail className="w-8 h-8 text-white" />
-          </motion.div>
+    <div className="w-full">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          Reset your password
+        </h1>
+        <p className="text-gray-600">
+          Enter your email and we&apos;ll send you a reset link
+        </p>
+      </div>
 
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">
-            Reset Password
-          </h1>
-
-          <p className="text-slate-600 max-w-sm mx-auto">
-            Enter your email address and we&apos;ll send you instructions to reset
-            your password
-          </p>
-        </motion.div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Email Field */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            <Input
+      {/* Form */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {/* Email Field */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            Email address
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Mail className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
               {...register("email")}
               type="email"
-              label="Email Address"
-              placeholder="Enter your email address"
-              icon={<Mail className="h-5 w-5" />}
-              error={errors.email?.message}
+              placeholder="you@example.com"
               autoComplete="email"
               autoFocus
-              className="transition-all duration-300 hover:border-amber-300"
+              className={`w-full pl-10 pr-4 py-3 border rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all ${
+                errors.email ? "border-red-300" : "border-gray-200"
+              }`}
             />
-          </motion.div>
+          </div>
+          {errors.email && (
+            <p className="mt-1.5 text-sm text-red-500">{errors.email.message}</p>
+          )}
+        </div>
 
-          {/* Submit Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
-            <Button
-              type="submit"
-              className="w-full h-14 text-base bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-600 hover:via-orange-600 hover:to-red-600 text-white shadow-lg hover:shadow-xl transform transition-all duration-300"
-              disabled={isSubmitting || forgotPasswordMutation.isPending}
-              loading={isSubmitting || forgotPasswordMutation.isPending}
-            >
-              {isSubmitting || forgotPasswordMutation.isPending ? (
-                "Sending Reset Link..."
-              ) : (
-                <span className="flex items-center justify-center space-x-2">
-                  <Send className="w-5 h-5" />
-                  <span>Send Reset Link</span>
-                </span>
-              )}
-            </Button>
-          </motion.div>
-        </form>
-
-        {/* Back to Login */}
-        <motion.div
-          className="mt-8 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.5 }}
+        {/* Submit Button */}
+        <motion.button
+          type="submit"
+          disabled={isLoading}
+          className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          whileTap={{ scale: 0.98 }}
         >
-          <motion.button
-            onClick={onBackToLogin || (() => router.push("/auth/login"))}
-            className="inline-flex items-center text-sm font-medium text-slate-600 hover:text-amber-600 transition-colors"
-            whileHover={{ scale: 1.02 }}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Sign In
-          </motion.button>
-        </motion.div>
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Sending...
+            </>
+          ) : (
+            <>
+              <Send className="w-5 h-5" />
+              Send reset link
+            </>
+          )}
+        </motion.button>
+      </form>
 
-        {/* Footer Info */}
-        <motion.div
-          className="mt-6 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
+      {/* Back to Login */}
+      <div className="mt-8 text-center">
+        <Link
+          href="/auth/login"
+          className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-amber-600 transition-colors"
         >
-          <p className="text-xs text-slate-500">
-            Remember your password?{" "}
-            <motion.button
-              onClick={onBackToLogin || (() => router.push("/auth/login"))}
-              className="text-amber-600 hover:text-amber-700 font-medium"
-              whileHover={{ scale: 1.05 }}
-            >
-              Sign in here
-            </motion.button>
-          </p>
-        </motion.div>
-      </Card>
-    </motion.div>
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to sign in
+        </Link>
+      </div>
+    </div>
   );
 };

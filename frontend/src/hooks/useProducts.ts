@@ -121,6 +121,45 @@ export const fetchTrendingProducts = async ({
   return apiCall<ProductsResponse>(`/products/trending?${params}`);
 };
 
+// Fetch similar products for recommendations
+export const fetchSimilarProducts = async ({
+  productId,
+  limit = 8,
+}: {
+  productId: string;
+  limit?: number;
+}): Promise<{ success: boolean; products: Product[]; total: number }> => {
+  const params = new URLSearchParams();
+  params.append("limit", limit.toString());
+
+  return apiCall<{ success: boolean; products: Product[]; total: number }>(
+    `/products/${productId}/similar?${params}`
+  );
+};
+
+// Hook for fetching similar products (recommendations)
+export const useSimilarProducts = ({
+  productId,
+  limit = 8,
+}: {
+  productId: string;
+  limit?: number;
+}) => {
+  return useQuery({
+    queryKey: ["products", "similar", productId, limit],
+    queryFn: () => fetchSimilarProducts({ productId, limit }),
+    enabled: !!productId,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    retry: (failureCount, error: ExtendedApiError) => {
+      if (error?.status && error.status >= 400 && error.status < 500) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+  });
+};
+
+
 // React Query Hooks
 
 // Hook for fetching all products

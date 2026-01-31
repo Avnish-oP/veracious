@@ -1,317 +1,218 @@
 "use client";
 
-import React from "react";
-import { useForm, Controller } from "react-hook-form";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, User, Mail, Lock } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Eye, EyeOff, User, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { Step1FormData, step1Schema } from "@/types/registrationTypes";
 import { useRegisterMutation } from "@/hooks/useRegistration";
-import {
-  Button,
-  Input,
-  Card,
-  PhoneInput,
-} from "@/components/ui/form-components";
 
 interface Step1Props {
   onSuccess: (data: {
     userId: string;
     userData: Omit<Step1FormData, "confirmPassword">;
   }) => void;
+  userId?: string;
+  userData?: Omit<Step1FormData, "confirmPassword">;
 }
 
 export const Step1Form: React.FC<Step1Props> = ({ onSuccess }) => {
-  const [showPassword, setShowPassword] = React.useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
-
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const registerMutation = useRegisterMutation();
 
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors, isSubmitting },
+    setError,
     watch,
   } = useForm<Step1FormData>({
     resolver: zodResolver(step1Schema),
-    mode: "onBlur",
+    mode: "onChange",
   });
 
   const password = watch("password");
 
   const onSubmit = async (data: Step1FormData) => {
     try {
-      const { confirmPassword: _confirmPassword, ...registrationData } = data;
-      const response = await registerMutation.mutateAsync(registrationData);
+      const response = await registerMutation.mutateAsync({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        phoneNumber: data.phoneNumber,
+      });
 
-      if (response.success) {
-        onSuccess({
-          userId: response.user.id,
-          userData: registrationData,
-        });
+      // Remove confirmPassword from data passed to next step
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { confirmPassword, ...userData } = data;
+      
+      onSuccess({
+        userId: response.user.id,
+        userData,
+      });
+    } catch (error: any) {
+      if (error.message?.toLowerCase().includes("email")) {
+        setError("email", { message: error.message });
+      } else {
+        setError("root", { message: error.message || "Registration failed" });
       }
-    } catch (error) {
-      console.error("Registration failed:", error);
     }
   };
 
-  const getPasswordStrength = (
-    password: string
-  ): { score: number; text: string; color: string } => {
-    if (!password) return { score: 0, text: "", color: "" };
-
+  const getPasswordStrength = (pass: string) => {
+    if (!pass) return { score: 0, text: "", color: "bg-gray-200" };
     let score = 0;
-    if (password.length >= 8) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/\d/.test(password)) score++;
-    if (/[@$!%*?&]/.test(password)) score++;
-
-    const strengthMap = {
-      0: { text: "", color: "" },
-      1: { text: "Very Weak", color: "text-red-500" },
-      2: { text: "Weak", color: "text-orange-500" },
-      3: { text: "Fair", color: "text-yellow-500" },
-      4: { text: "Good", color: "text-blue-500" },
-      5: { text: "Strong", color: "text-green-500" },
-    };
-
-    return { score, ...strengthMap[score as keyof typeof strengthMap] };
+    if (pass.length >= 8) score++;
+    if (/[A-Z]/.test(pass)) score++;
+    if (/[0-9]/.test(pass)) score++;
+    if (/[^A-Za-z0-9]/.test(pass)) score++;
+    return { score, color: ["bg-red-400", "bg-orange-400", "bg-yellow-400", "bg-blue-400", "bg-green-500"][score] || "bg-green-500" };
   };
 
-  const passwordStrength = getPasswordStrength(password || "");
+  const strength = getPasswordStrength(password || "");
+  const isLoading = isSubmitting || registerMutation.isPending;
 
   return (
-    <div className="relative">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 rounded-3xl opacity-60" />
-      <div
-        className="absolute inset-0 opacity-10"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {/* Name Field */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Full Name</label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <User className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            {...register("name")}
+            type="text"
+            placeholder="John Doe"
+            className={`w-full pl-10 pr-4 py-3 border rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all ${
+              errors.name ? "border-red-300" : "border-gray-200"
+            }`}
+          />
+        </div>
+        {errors.name && <p className="mt-1.5 text-sm text-red-500">{errors.name.message}</p>}
+      </div>
 
-      <Card
-        variant="glass"
-        className="relative z-10 w-full max-w-md mx-auto border-amber-200/30"
+      {/* Phone Number Field */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Phone Number</label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <User className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            {...register("phoneNumber")}
+            type="tel"
+            placeholder="+91 9876543210"
+            className={`w-full pl-10 pr-4 py-3 border rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all ${
+              errors.phoneNumber ? "border-red-300" : "border-gray-200"
+            }`}
+          />
+        </div>
+        {errors.phoneNumber && <p className="mt-1.5 text-sm text-red-500">{errors.phoneNumber.message}</p>}
+      </div>
+
+      {/* Email Field */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Mail className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            {...register("email")}
+            type="email"
+            placeholder="you@example.com"
+            className={`w-full pl-10 pr-4 py-3 border rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all ${
+              errors.email ? "border-red-300" : "border-gray-200"
+            }`}
+          />
+        </div>
+        {errors.email && <p className="mt-1.5 text-sm text-red-500">{errors.email.message}</p>}
+      </div>
+
+      {/* Password Field */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Lock className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            {...register("password")}
+            type={showPassword ? "text" : "password"}
+            placeholder="Create a password"
+            className={`w-full pl-10 pr-12 py-3 border rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all ${
+              errors.password ? "border-red-300" : "border-gray-200"
+            }`}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+          >
+            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </button>
+        </div>
+        {errors.password && <p className="mt-1.5 text-sm text-red-500">{errors.password.message}</p>}
+        {/* Strength Indicator */}
+        {password && (
+            <div className="mt-2 h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div className={`h-full transition-all duration-300 ${strength.color}`} style={{ width: `${(strength.score + 1) * 20}%` }} />
+            </div>
+        )}
+      </div>
+
+      {/* Confirm Password Field */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password</label>
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Lock className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            {...register("confirmPassword")}
+            type={showConfirmPassword ? "text" : "password"}
+            placeholder="Confirm password"
+            className={`w-full pl-10 pr-12 py-3 border rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all ${
+              errors.confirmPassword ? "border-red-300" : "border-gray-200"
+            }`}
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+          >
+            {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </button>
+        </div>
+        {errors.confirmPassword && <p className="mt-1.5 text-sm text-red-500">{errors.confirmPassword.message}</p>}
+      </div>
+
+      {errors.root && (
+        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">
+            {errors.root.message}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {/* Header */}
-        <motion.div
-          className="text-center mb-8"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <p className="text-slate-600">
-            Create your account and discover eyewear that matches your style
-          </p>
-        </motion.div>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Name Field */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Input
-              {...register("name")}
-              label="Full Name"
-              placeholder="Enter your full name"
-              icon={<User className="h-5 w-5" />}
-              error={errors.name?.message}
-              className="transition-all duration-300 hover:border-amber-300"
-            />
-          </motion.div>
-
-          {/* Email Field */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Input
-              {...register("email")}
-              type="email"
-              label="Email Address"
-              placeholder="you@example.com"
-              icon={<Mail className="h-5 w-5" />}
-              error={errors.email?.message}
-              className="transition-all duration-300 hover:border-amber-300"
-            />
-          </motion.div>
-
-          {/* Phone Field */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Controller
-              name="phoneNumber"
-              control={control}
-              render={({ field }) => (
-                <PhoneInput
-                  label="Phone Number"
-                  error={errors.phoneNumber?.message}
-                  className="transition-all duration-300 hover:border-amber-300"
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  name={field.name}
-                />
-              )}
-            />
-          </motion.div>
-
-          {/* Password Field */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Input
-              {...register("password")}
-              type={showPassword ? "text" : "password"}
-              label="Password"
-              placeholder="Create a strong password"
-              icon={<Lock className="h-5 w-5" />}
-              rightIcon={
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="p-1 hover:bg-slate-100 rounded transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              }
-              error={errors.password?.message}
-              className="transition-all duration-300 hover:border-amber-300"
-            />
-
-            {/* Password Strength Indicator */}
-            <AnimatePresence>
-              {password && passwordStrength.text && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mt-2"
-                >
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span className={passwordStrength.color}>
-                      Password strength: {passwordStrength.text}
-                    </span>
-                    <span className="text-slate-400">
-                      {passwordStrength.score}/5
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
-                    <motion.div
-                      className={`h-2 rounded-full transition-all duration-500 ${
-                        passwordStrength.score <= 2
-                          ? "bg-red-400"
-                          : passwordStrength.score <= 3
-                          ? "bg-yellow-400"
-                          : passwordStrength.score <= 4
-                          ? "bg-blue-400"
-                          : "bg-green-400"
-                      }`}
-                      initial={{ width: 0 }}
-                      animate={{
-                        width: `${(passwordStrength.score / 5) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-
-          {/* Confirm Password Field */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <Input
-              {...register("confirmPassword")}
-              type={showConfirmPassword ? "text" : "password"}
-              label="Confirm Password"
-              placeholder="Confirm your password"
-              icon={<Lock className="h-5 w-5" />}
-              rightIcon={
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="p-1 hover:bg-slate-100 rounded transition-colors"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              }
-              error={errors.confirmPassword?.message}
-              className="transition-all duration-300 hover:border-amber-300"
-            />
-          </motion.div>
-
-          {/* Submit Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-          >
-            <Button
-              type="submit"
-              variant="gradient"
-              size="lg"
-              className="w-full relative overflow-hidden group"
-              loading={isSubmitting || registerMutation.isPending}
-              disabled={isSubmitting || registerMutation.isPending}
-            >
-              <span className="relative z-10">Create Your Account</span>
-            </Button>
-          </motion.div>
-
-          {/* Terms and Privacy */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
-            className="text-center"
-          >
-            <p className="text-xs text-slate-500 leading-relaxed">
-              By creating an account, you agree to our{" "}
-              <a
-                href="/terms"
-                className="text-amber-600 hover:text-amber-700 underline underline-offset-2 transition-colors"
-              >
-                Terms of Service
-              </a>{" "}
-              and{" "}
-              <a
-                href="/privacy"
-                className="text-amber-600 hover:text-amber-700 underline underline-offset-2 transition-colors"
-              >
-                Privacy Policy
-              </a>
-            </p>
-          </motion.div>
-        </form>
-
-        {/* Decorative Elements */}
-        <div className="absolute -top-4 -right-4 w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full opacity-20" />
-        <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-gradient-to-br from-red-400 to-pink-500 rounded-full opacity-20" />
-      </Card>
-    </div>
+        {isLoading ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Creating account...
+          </>
+        ) : (
+          <>
+            Create Account
+            <ArrowRight className="w-5 h-5" />
+          </>
+        )}
+      </button>
+    </form>
   );
 };

@@ -152,15 +152,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </div>
               
               <div className="flex items-center gap-1 shrink-0 bg-amber-50 px-1.5 py-0.5 rounded-full">
-                 <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                 <span className="text-xs font-bold text-amber-700">{product.averageRating || 4.8}</span>
-              </div>
+                  <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                  <span className="text-xs font-bold text-amber-700">{product.averageRating?.toFixed(1) ?? 'N/A'}</span>
+               </div>
            </div>
 
            {/* Description (Hidden on very small screens) */}
-           <p className="hidden sm:block text-xs text-gray-500 line-clamp-2 mb-3 leading-relaxed">
-              {product.description || "Premium styling with advanced lens technology for superior comfort and clarity."}
-           </p>
+           {product.description && (
+            <p className="hidden sm:block text-xs text-gray-500 line-clamp-2 mb-3 leading-relaxed">
+               {product.description}
+            </p>
+           )}
 
            {/* Attributes */}
            <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 mb-auto">
@@ -291,10 +293,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate max-w-[70%]">
                {product.brand}
             </span>
-            <div className="flex items-center gap-0.5">
-               <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-               <span className="text-[10px] font-semibold text-gray-600">4.8</span>
-            </div>
+             <div className="flex items-center gap-0.5">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                <span className="text-[10px] font-semibold text-gray-600">{product.averageRating?.toFixed(1) ?? 'N/A'}</span>
+             </div>
          </div>
 
          {/* Title */}

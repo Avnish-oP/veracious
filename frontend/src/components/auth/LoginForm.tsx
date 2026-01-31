@@ -5,15 +5,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Mail, Lock, ArrowRight, Glasses } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { LoginFormData, loginSchema } from "@/types/authTypes";
 import { useLoginMutation } from "@/hooks/useRegistration";
-import { Button, Card, Input } from "@/components/ui/form-components";
 import { useUserStore } from "@/store/useUserStore";
 import { useCart, CART_QUERY_KEY } from "@/hooks/useCart";
 import { useQueryClient } from "@tanstack/react-query";
 import { USER_QUERY_KEY } from "@/hooks/useUser";
+import Link from "next/link";
 
 interface LoginFormProps {
   onForgotPassword?: () => void;
@@ -25,7 +25,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   const loginMutation = useLoginMutation();
   const [showPassword, setShowPassword] = useState(false);
 
-  // const { fetchUser } = useUserStore();
   const queryClient = useQueryClient();
   const { mergeGuestCart } = useCart();
 
@@ -43,27 +42,21 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
     try {
       await loginMutation.mutateAsync(data);
 
-      // Refetch user data and wait for it
       await queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
       await queryClient.refetchQueries({ queryKey: USER_QUERY_KEY });
 
-      // Manually sync store to ensure mergeGuestCart has access to the user
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const user = queryClient.getQueryData<any>(USER_QUERY_KEY);
       if (user) {
         useUserStore.getState().setUser(user);
       }
 
-      // Merge guest cart with user cart and wait for it
       await mergeGuestCart();
-
-      // Refetch the server cart to ensure it's up to date after merge
       await queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
       await queryClient.refetchQueries({ queryKey: CART_QUERY_KEY });
 
       toast.success("Welcome back!");
 
-      // Redirect to the page user was trying to access, or homepage
       const redirectTo = searchParams.get("redirect") || "/";
       router.push(redirectTo);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -84,7 +77,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
       const errorMessage = error.message || "Invalid email or password";
       toast.error(errorMessage);
 
-      // Set form errors for better UX
       if (errorMessage.toLowerCase().includes("email")) {
         setError("email", { message: errorMessage });
       } else if (errorMessage.toLowerCase().includes("password")) {
@@ -93,166 +85,132 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
     }
   };
 
+  const isLoading = isSubmitting || loginMutation.isPending;
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-    >
-      <Card className="p-8 backdrop-blur-xl bg-white/95 border-white/20 shadow-2xl">
-        {/* Header */}
-        <motion.div
-          className="text-center mb-8"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-        >
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-800 via-slate-700 to-slate-900 bg-clip-text text-transparent mb-2">
-            Welcome Back
-          </h1>
+    <div className="w-full">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          Welcome back
+        </h1>
+        <p className="text-gray-600">
+          Sign in to continue to your account
+        </p>
+      </div>
 
-          <p className="text-slate-600">
-            Sign in to continue your vision journey
-          </p>
-        </motion.div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Email Field */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            <Input
+      {/* Form */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {/* Email Field */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            Email
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Mail className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
               {...register("email")}
               type="email"
-              label="Email Address"
-              placeholder="Enter your email"
-              icon={<Mail className="h-5 w-5" />}
-              error={errors.email?.message}
+              placeholder="you@example.com"
               autoComplete="email"
-              className="transition-all duration-300 hover:border-amber-300"
+              className={`w-full pl-10 pr-4 py-3 border rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all ${
+                errors.email ? "border-red-300" : "border-gray-200"
+              }`}
             />
-          </motion.div>
+          </div>
+          {errors.email && (
+            <p className="mt-1.5 text-sm text-red-500">{errors.email.message}</p>
+          )}
+        </div>
 
-          {/* Password Field */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
-            <Input
+        {/* Password Field */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            Password
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Lock className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
               {...register("password")}
               type={showPassword ? "text" : "password"}
-              label="Password"
               placeholder="Enter your password"
-              icon={<Lock className="h-5 w-5" />}
-              rightIcon={
-                <motion.button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="p-1 hover:bg-slate-100 rounded transition-colors"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </motion.button>
-              }
-              error={errors.password?.message}
               autoComplete="current-password"
-              className="transition-all duration-300 hover:border-amber-300"
+              className={`w-full pl-10 pr-12 py-3 border rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all ${
+                errors.password ? "border-red-300" : "border-gray-200"
+              }`}
             />
-          </motion.div>
-
-          {/* Forgot Password Link */}
-          <motion.div
-            className="flex justify-end"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-          >
-            <motion.button
+            <button
               type="button"
-              onClick={
-                onForgotPassword || (() => router.push("/auth/forgot-password"))
-              }
-              className="text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors"
-              whileHover={{ scale: 1.02 }}
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
             >
-              Forgot your password?
-            </motion.button>
-          </motion.div>
-
-          {/* Submit Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
-          >
-            <Button
-              type="submit"
-              className="w-full h-14 text-base bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 hover:from-amber-600 hover:via-orange-600 hover:to-red-600 text-white shadow-lg hover:shadow-xl transform transition-all duration-300"
-              disabled={isSubmitting || loginMutation.isPending}
-              loading={isSubmitting || loginMutation.isPending}
-            >
-              {isSubmitting || loginMutation.isPending ? (
-                "Signing In..."
+              {showPassword ? (
+                <EyeOff className="h-5 w-5" />
               ) : (
-                <span className="flex items-center justify-center space-x-2">
-                  <span>Sign In</span>
-                  <ArrowRight className="w-5 h-5" />
-                </span>
+                <Eye className="h-5 w-5" />
               )}
-            </Button>
-          </motion.div>
-        </form>
-
-        {/* Sign Up Link */}
-        <motion.div
-          className="mt-8 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
-        >
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-300/50" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 text-slate-600">
-                New to Veracious?
-              </span>
-            </div>
+            </button>
           </div>
+          {errors.password && (
+            <p className="mt-1.5 text-sm text-red-500">{errors.password.message}</p>
+          )}
+        </div>
 
-          <motion.button
-            onClick={() => router.push("/auth/register")}
-            className="mt-4 inline-flex items-center px-6 py-3 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 hover:border-amber-300 transition-all duration-300 shadow-sm hover:shadow-md"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+        {/* Forgot Password */}
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onForgotPassword || (() => router.push("/auth/forgot-password"))}
+            className="text-sm text-amber-600 hover:text-amber-700 font-medium"
           >
-            <Glasses className="w-4 h-4 mr-2" />
-            Create your account
-          </motion.button>
-        </motion.div>
+            Forgot password?
+          </button>
+        </div>
 
-        {/* Social Login Section (Optional for future) */}
-        <motion.div
-          className="mt-6 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1, duration: 0.5 }}
+        {/* Submit Button */}
+        <motion.button
+          type="submit"
+          disabled={isLoading}
+          className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          whileTap={{ scale: 0.98 }}
         >
-          <p className="text-xs text-slate-500">
-            Secure login protected by industry-standard encryption
-          </p>
-        </motion.div>
-      </Card>
-    </motion.div>
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            <>
+              Sign in
+              <ArrowRight className="w-5 h-5" />
+            </>
+          )}
+        </motion.button>
+      </form>
+
+      {/* Divider */}
+      <div className="relative mt-8 mb-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-200" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-4 bg-gray-50 text-gray-500">
+            New to Otticamart?
+          </span>
+        </div>
+      </div>
+
+      {/* Register Link */}
+      <Link
+        href="/auth/register"
+        className="w-full py-3.5 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-amber-300 hover:bg-amber-50 transition-all flex items-center justify-center gap-2"
+      >
+        Create an account
+      </Link>
+    </div>
   );
 };

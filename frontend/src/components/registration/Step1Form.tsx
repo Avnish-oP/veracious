@@ -51,6 +51,7 @@ export const Step1Form: React.FC<Step1Props> = ({ onSuccess }) => {
         userId: response.user.id,
         userData,
       });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       if (error.message?.toLowerCase().includes("email")) {
         setError("email", { message: error.message });

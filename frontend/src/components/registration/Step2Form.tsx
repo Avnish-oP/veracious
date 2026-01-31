@@ -19,7 +19,6 @@ interface Step2Props {
 
 export const Step2Form: React.FC<Step2Props> = ({
   userId,
-  email,
   onSuccess,
   onBack,
 }) => {
@@ -86,6 +85,7 @@ export const Step2Form: React.FC<Step2Props> = ({
         code: data.verificationCode,
       });
       onSuccess();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
        setError("root", { message: error.message || "Invalid verification code" });
     }

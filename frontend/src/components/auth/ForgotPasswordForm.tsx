@@ -13,14 +13,7 @@ import {
 import { useForgotPasswordMutation } from "@/hooks/useRegistration";
 import Link from "next/link";
 
-interface ForgotPasswordFormProps {
-  onBackToLogin?: () => void;
-}
-
-export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
-  onBackToLogin,
-}) => {
-  const router = useRouter();
+export const ForgotPasswordForm: React.FC = () => {
   const forgotPasswordMutation = useForgotPasswordMutation();
 
   const {

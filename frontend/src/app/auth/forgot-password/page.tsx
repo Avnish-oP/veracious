@@ -3,7 +3,6 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import Link from "next/link";
 import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 import { useUserStore } from "@/store/useUserStore";
 import { useRouter } from "next/navigation";

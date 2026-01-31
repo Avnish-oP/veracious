@@ -4,7 +4,6 @@ import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
-import { Glasses } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { RegistrationState, Step1FormData } from "@/types/registrationTypes";
@@ -106,7 +105,7 @@ export const RegistrationFlow: React.FC = () => {
 
         toast.success("Welcome aboard!");
         router.push("/");
-      } catch (_error) {
+      } catch {
         toast.success("Registration complete! Please log in.");
         router.push("/auth/login");
       }

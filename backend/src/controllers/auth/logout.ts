@@ -1,6 +1,7 @@
 import redisClient from "../../lib/redis";
 import express from "express";
 import jwt from "jsonwebtoken";
+import { cookieClearOptions } from "../../utils/authentication";
 
 export const logoutUser = async (
   req: express.Request,
@@ -32,8 +33,9 @@ export const logoutUser = async (
       });
     }
     await redisClient.del(`refreshToken:${userId}`);
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
+    // Pass matching cookie options so cross-subdomain cookies are properly cleared
+    res.clearCookie("accessToken", cookieClearOptions);
+    res.clearCookie("refreshToken", cookieClearOptions);
     return res.status(200).json({
       success: true,
       message: "Logged out successfully",

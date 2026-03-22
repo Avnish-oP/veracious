@@ -63,7 +63,7 @@ export const addToCart = async (
     }
     cart.items[latestItemIndex] = item;
 
-    await redisClient.set(key, JSON.stringify(cart));
+    await redisClient.set(key, JSON.stringify(cart), "EX", 7 * 24 * 60 * 60);
     //now db
 
     let dbCart = await prisma.cart.upsert({
@@ -221,7 +221,9 @@ export const getCart = async (req: express.Request, res: express.Response) => {
             productId: item.productId,
             quantity: item.quantity,
           })),
-        })
+        }),
+        "EX",
+        7 * 24 * 60 * 60
       );
       return res.status(200).json({ success: true, cart: formattedCart });
     }
@@ -318,7 +320,7 @@ export const updateCartItem = async (
         .json({ success: false, message: "Item not found" });
     }
     cart.items[existingItemIndex].quantity = quantity;
-    await redisClient.set(key, JSON.stringify(cart));
+    await redisClient.set(key, JSON.stringify(cart), "EX", 7 * 24 * 60 * 60);
     // Update DB
     // Find the cart item id by productId
     const dbCart = await prisma.cart.findUnique({
@@ -431,7 +433,7 @@ export const removeCartItem = async (
     const cartData = await redisClient.get(key);
     let cart = cartData ? JSON.parse(cartData) : { items: [] };
     cart.items = cart.items.filter((item: any) => item.productId !== productId);
-    await redisClient.set(key, JSON.stringify(cart));
+    await redisClient.set(key, JSON.stringify(cart), "EX", 7 * 24 * 60 * 60);
     // Update DB
     const updatedCart = await prisma.cart.update({
       where: { userId },
@@ -528,7 +530,7 @@ export const mergeCarts = async (
     });
     
     // Sync to Redis
-    await redisClient.set(key, JSON.stringify(cart));
+    await redisClient.set(key, JSON.stringify(cart), "EX", 7 * 24 * 60 * 60);
     
     // Sync to Database (upsert cart with merged items)
     const dbCart = await prisma.cart.upsert({

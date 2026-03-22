@@ -6,7 +6,6 @@ interface UserState {
   user: User | null;
   loading: boolean;
   setUser: (user: User | null) => void;
-  // fetchUser: () => Promise<void>; // Deprecated
   logout: () => Promise<void>;
 }
 
@@ -14,8 +13,6 @@ export const useUserStore = create<UserState>((set) => ({
   user: null,
   loading: true,
   setUser: (user) => set({ user, loading: false }),
-  // fetchUser is now handled by React Query (useUser hook) + UserHydration
-  fetchUser: async () => {}, 
 
   logout: async () => {
     try {

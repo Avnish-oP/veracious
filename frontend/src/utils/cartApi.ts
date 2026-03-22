@@ -8,7 +8,6 @@ import {
 } from "@/types/cartTypes";
 
 import api from "../lib/axios";
-import { ApiCallConfig } from "./api";
 import { AxiosError } from "axios";
 
 interface ApiErrorResponse {
@@ -20,14 +19,13 @@ interface ApiErrorResponse {
  */
 async function cartApiCall<T>(
   endpoint: string,
-  options: ApiCallConfig = {}
+  options: { method?: string; data?: unknown } = {}
 ): Promise<T> {
   try {
     const response = await api({
       url: endpoint,
       method: options.method || 'GET',
-      data: options.body ? JSON.parse(options.body) : undefined,
-      ...options
+      data: options.data,
     });
     return response.data;
   } catch (error) {
@@ -43,7 +41,7 @@ export const addToCartAPI = async (
 ): Promise<CartResponse> => {
   return cartApiCall<CartResponse>("/cart/add", {
     method: "POST",
-    body: JSON.stringify({ productId, quantity, configuration } as AddToCartRequest),
+    data: { productId, quantity, configuration } as AddToCartRequest,
   });
 };
 
@@ -63,7 +61,7 @@ export const updateCartItemAPI = async (
 ): Promise<CartResponse> => {
   return cartApiCall<CartResponse>(`/cart/update/${productId}`, {
     method: "PUT",
-    body: JSON.stringify({ productId, quantity } as UpdateCartItemRequest),
+    data: { productId, quantity } as UpdateCartItemRequest,
   });
 };
 
@@ -75,7 +73,7 @@ export const removeFromCartAPI = async (
 ): Promise<CartResponse> => {
   return cartApiCall<CartResponse>(`/cart/remove/${productId}`, {
     method: "DELETE",
-    body: JSON.stringify({ productId } as RemoveCartItemRequest),
+    data: { productId } as RemoveCartItemRequest,
   });
 };
 
@@ -87,6 +85,7 @@ export const mergeCartsAPI = async (guestCart: {
 }): Promise<CartResponse> => {
   return cartApiCall<CartResponse>("/cart/merge", {
     method: "POST",
-    body: JSON.stringify({ guestCart } as MergeCartsRequest),
+    data: { guestCart } as MergeCartsRequest,
   });
 };
+

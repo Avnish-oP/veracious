@@ -64,14 +64,25 @@ export const verifyOrder = async (req: Request, res: Response) => {
         throw new Error("Order not found");
       }
 
-      if (orderRecord.paymentStatus === "PAID") {
-        return; // Already paid, idempotent approach
+      // Atomically mark order as paid — only one processor (verify OR webhook) can win
+      const updateResult = await tx.order.updateMany({
+        where: { id: orderId, paymentStatus: "PENDING" },
+        data: {
+          paymentStatus: "PAID",
+          status: "PROCESSING" as any,
+          updatedAt: new Date(),
+        },
+      });
+
+      if (updateResult.count === 0) {
+        // Already processed (by webhook or a concurrent verify call) — return idempotently
+        return;
       }
 
-      // Store for cache cleanup after transaction
+      // Store for cache cleanup after transaction (only if we won the atomic update)
       userIdForCacheCleanup = orderRecord.userId;
 
-      // update order + payment record
+      // Create payment record
       await tx.payment.create({
         data: {
           orderId,
@@ -85,14 +96,6 @@ export const verifyOrder = async (req: Request, res: Response) => {
         } as any,
       });
 
-      await tx.order.update({
-        where: { id: orderId },
-        data: {
-          paymentStatus: "PAID",
-          status: "PROCESSING" as any,
-          updatedAt: new Date(),
-        },
-      });
 
       if (orderRecord.couponId && orderRecord.userId) {
         await tx.redeemedCoupon.upsert({
@@ -112,32 +115,28 @@ export const verifyOrder = async (req: Request, res: Response) => {
         });
       }
 
-      // 1. Re-verify and Decrement Stock (prevents race condition)
+      // 1. Atomically decrement stock (prevents race condition)
+      // Uses WHERE stock >= quantity so only one concurrent request can succeed
       const items = orderRecord.items as any[];
       if (Array.isArray(items)) {
         for (const item of items) {
           if (item.productId && item.quantity) {
-            // First check if stock is still available
-            const product = await tx.product.findUnique({
-              where: { id: item.productId },
-              select: { stock: true, name: true },
-            });
-            
-            if (!product || product.stock < Number(item.quantity)) {
-              throw new Error(
-                `Insufficient stock for product ${product?.name || item.productId}. ` +
-                `Required: ${item.quantity}, Available: ${product?.stock || 0}`
-              );
-            }
-            
-            await tx.product.update({
-              where: { id: item.productId },
+            const result = await tx.product.updateMany({
+              where: { 
+                id: item.productId, 
+                stock: { gte: Number(item.quantity) } 
+              },
               data: {
-                stock: {
-                  decrement: Number(item.quantity)
-                }
+                stock: { decrement: Number(item.quantity) }
               }
             });
+            
+            if (result.count === 0) {
+              throw new Error(
+                `Insufficient stock for product ${item.productId}. ` +
+                `Required: ${item.quantity}`
+              );
+            }
           }
         }
       }

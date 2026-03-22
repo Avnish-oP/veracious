@@ -1,12 +1,13 @@
 import redisClient from "../lib/redis";
 import jwt from "jsonwebtoken";
 import express from "express";
+import crypto from "crypto";
 
 export const generateVerificationCode = (): string => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 999999).toString();
 };
 
-const cookiesOptions = {
+export const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite:
@@ -20,6 +21,11 @@ const cookiesOptions = {
   path: "/",
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
+
+// Options for clearCookie — same as cookieOptions but without maxAge
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { maxAge: _, ...cookieClearBase } = cookieOptions;
+export const cookieClearOptions = cookieClearBase;
 
 export const generateTokens = (userId: string) => {
   const refreshToken = jwt.sign(
@@ -58,8 +64,8 @@ export const setCookies = (
   refreshToken: string
 ) => {
   res.cookie("accessToken", accessToken, {
-    ...cookiesOptions,
+    ...cookieOptions,
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
-  res.cookie("refreshToken", refreshToken, cookiesOptions);
+  res.cookie("refreshToken", refreshToken, cookieOptions);
 };

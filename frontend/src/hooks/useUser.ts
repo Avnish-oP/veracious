@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api, { setAuthenticated } from "../lib/axios";
 import { AxiosError } from "axios";
@@ -43,19 +44,12 @@ export function useUser() {
     refetchOnWindowFocus: false, // Avoid refetching on every focus
   });
 
-  // Sync with Zustand store whenever data changes
-  // This is a side effect. Putting it in render body is okay for simple syncs
-  // if guarded, but useEffect is safer for state updates.
-  // However, React Query onSuccess is deprecated in v5.
-  // We can use an effect here.
-  // NOTE: We must be careful not to trigger infinite re-renders.
-  // useUserStore.setState({ user }) is stable.
-
-  if (user !== undefined) {
-    // We only sync if user is defined (loaded).
-    // If isLoading, user is undefined (or old data if placeholder).
-    // Actually strictly speaking we should sync in useEffect.
-  }
+  // Sync React Query data → Zustand store on every change
+  useEffect(() => {
+    if (user !== undefined) {
+      setUser(user ?? null);
+    }
+  }, [user, setUser]);
 
   // Logout Mutation
   const logoutMutation = useMutation({

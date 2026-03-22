@@ -10,13 +10,12 @@ import { Button } from "@/components/ui/form-components";
 import { toast } from "react-hot-toast";
 import Image from "next/image";
 import Link from "next/link";
+import { FREE_SHIPPING_THRESHOLD } from "@/utils/constants";
 
 interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const FREE_SHIPPING_THRESHOLD = 999;
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose }) => {
   const router = useRouter();

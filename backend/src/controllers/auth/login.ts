@@ -21,23 +21,18 @@ const loginUser = async (req: express.Request, res: express.Response) => {
     const user = await prisma.user.findUnique({
       where: { email },
     });
-    if (!user) {
+    // Use generic message for all credential failures to prevent email enumeration
+    if (!user || !user.passwordHash) {
       return res.status(400).json({
         success: false,
-        message: "Invalid email",
-      });
-    }
-    if (!user.passwordHash) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid password",
+        message: "Invalid credentials",
       });
     }
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
       return res.status(400).json({
         success: false,
-        message: "Invalid password",
+        message: "Invalid credentials",
       });
     }
     if (!user.isVerified) {

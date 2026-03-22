@@ -4,17 +4,16 @@ import {
   getCouponsByValue,
 } from "../controllers/coupons/getCoupons";
 import express from "express";
-import { get } from "http";
+import { authMiddleware } from "../middlewares/authmiddleware";
 
 const router = express.Router();
 
-// Define your coupon routes here
-
-//route for showing available coupons on products page
-router.get("/:productId", getCouponsByProductId);
+// Specific routes MUST come before parameterized routes
+// Otherwise "/by-order-value" matches as "/:productId"
 router.get("/by-order-value", getCouponsByValue);
+router.get("/:productId", getCouponsByProductId);
 
-//route for applying coupon code during checkout
-router.post("/apply", applyCouponCode);
+// Applying coupon requires authentication for per-user coupon limits
+router.post("/apply", authMiddleware, applyCouponCode);
 
 export default router;

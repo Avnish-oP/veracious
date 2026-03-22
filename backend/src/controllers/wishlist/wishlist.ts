@@ -44,7 +44,7 @@ export const toggleWishlistItem = async (req: Request, res: Response) => {
       } else {
         wishlist.push({ productId });
       }
-      await redisClient.set(key, JSON.stringify(wishlist));
+      await redisClient.set(key, JSON.stringify(wishlist), "EX", 7 * 24 * 60 * 60);
       // Update the database: delete when removed, create when added (no composite unique available)
       if (itemIndex > -1) {
         // item was removed -> delete from DB
@@ -61,7 +61,7 @@ export const toggleWishlistItem = async (req: Request, res: Response) => {
     } else {
       // No existing wishlist in Redis: create one with the product
       const wishlist = [{ productId }];
-      await redisClient.set(key, JSON.stringify(wishlist));
+      await redisClient.set(key, JSON.stringify(wishlist), "EX", 7 * 24 * 60 * 60);
       // Also create in database
       await prisma.wishlist.create({
         data: { userId, productId },

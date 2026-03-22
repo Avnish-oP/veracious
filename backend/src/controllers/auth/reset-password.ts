@@ -20,6 +20,15 @@ const resetPassword = async (req: express.Request, res: express.Response) => {
     });
   }
 
+  // Password strength validation: min 8 chars, 1 uppercase, 1 lowercase, 1 number
+  const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+  if (!PASSWORD_REGEX.test(newPassword)) {
+    return res.status(400).json({
+      success: false,
+      message: "Password must be at least 8 characters with uppercase, lowercase, and a number",
+    });
+  }
+
   try {
     const user = await prisma.user.findFirst({
       where: {

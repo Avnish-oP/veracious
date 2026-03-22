@@ -27,8 +27,8 @@ import {
   Truck,
 } from "lucide-react";
 import Link from "next/link";
+import { FREE_SHIPPING_THRESHOLD } from "@/utils/constants";
 
-const FREE_SHIPPING_THRESHOLD = 999;
 
 export default function CartPage() {
   const router = useRouter();

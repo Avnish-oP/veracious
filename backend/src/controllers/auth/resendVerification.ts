@@ -44,7 +44,7 @@ const resendVerificationCode = async (
         verificationExp: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
       },
     });
-    console.log("New verification code for testing:", newVerificationCode);
+    // Verification code logging removed for security — never log sensitive codes in production
 
     // TODO: Send email with new verification code
     await sendVerificationEmail(user.email, newVerificationCode);

@@ -27,8 +27,6 @@ export interface CreateOrderRequest {
   items: OrderItem[];
   addressId?: string;
   couponCode?: string;
-  shipping?: number;
-  gst?: number;
 }
 
 export interface RazorpayOrderDetails {

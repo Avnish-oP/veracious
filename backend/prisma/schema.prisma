@@ -92,13 +92,16 @@ model Cart {
 }
 
 model CartItem {
-  id        String  @id @default(uuid())
-  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  cartId    String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId String
-  quantity  Int     @default(1)
+  id            String  @id @default(uuid())
+  cart          Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId        String
+  product       Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId     String
+  quantity      Int     @default(1)
   configuration Json?
+
+  @@index([cartId])
+  @@index([productId])
 }
 
 model RefreshToken {
@@ -192,13 +195,17 @@ model Order {
   address     Address?  @relation(fields: [addressId], references: [id])
   payments    Payment[]
 
-  razorpayOrderId String?
+  razorpayOrderId String? @unique
 
   status        OrderStatus @default(PENDING)
   paymentMethod String?
   paymentStatus String?     @default("PENDING")
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([paymentStatus])
+  @@index([createdAt])
 }
 
 model Payment {
@@ -313,8 +320,8 @@ enum CategoryType {
 
 model LensPrice {
   id          String   @id @default(uuid())
-  name        String   // e.g. "Single Vision", "Blue Cut"
-  type        String   // e.g. "LENS_TYPE", "COATING"
+  name        String // e.g. "Single Vision", "Blue Cut"
+  type        String // e.g. "LENS_TYPE", "COATING"
   price       Decimal  @default(0) @db.Decimal(10, 2)
   description String?
   isActive    Boolean  @default(true)

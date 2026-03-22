@@ -39,7 +39,6 @@ export default function RootLayout({
           <UserHydration />
           <CartHydration />
           <WishlistHydration />
-          <WishlistHydration />
           <ConditionalNavbar />
           {children}
           <Footer />

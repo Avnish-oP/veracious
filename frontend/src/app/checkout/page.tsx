@@ -24,6 +24,7 @@ import { Address } from "@/types/orderTypes";
 import { createOrder } from "@/utils/checkoutApi";
 import { getAddresses, addAddress } from "@/utils/addressApi";
 import { useGeolocation } from "@/hooks/useGeolocation";
+import { FREE_SHIPPING_THRESHOLD, calculateShipping } from "@/utils/constants";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -68,7 +69,7 @@ export default function CheckoutPage() {
     0,
     cartSummary.subtotalAfterDiscount - cartSummary.couponDiscount,
   );
-  const SHIPPING_COST = itemsTotal > 1000 ? 0 : 50; // Free shipping above ₹1000
+  const SHIPPING_COST = calculateShipping(itemsTotal);
   // GST is INCLUDED in MRP (as per Indian law) - we show it for transparency
   // Using 12% as average rate (sunglasses). Invoice will show exact per-product GST.
   const AVG_GST_RATE = 12;
@@ -219,12 +220,11 @@ export default function CheckoutPage() {
       });
 
       // 2. Create order (only once, with valid addressId)
+      // NOTE: Shipping is calculated server-side for security — never send client-supplied monetary values
       const orderResponse = await createOrder({
         items,
         addressId: finalAddressId || undefined,
         couponCode: appliedCoupon?.code || undefined,
-        shipping: SHIPPING_COST,
-        // No GST parameter - it's already included in product prices
       });
 
       sessionStorage.setItem("pendingOrder", JSON.stringify(orderResponse));

@@ -11,9 +11,9 @@ const redisClient = new Redis(process.env.REDIS_URL as string, {
   enableReadyCheck: true,
   enableOfflineQueue: true,
   connectTimeout: 10000,
-  // TLS configuration for Upstash
+  // TLS configuration for Upstash (must verify certificates to prevent MITM)
   tls: {
-    rejectUnauthorized: false,
+    rejectUnauthorized: true,
   },
 });
 

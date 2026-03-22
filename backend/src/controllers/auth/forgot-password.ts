@@ -18,9 +18,10 @@ const forgotPassword = async (req: express.Request, res: express.Response) => {
     });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
+      // Always return 200 to prevent email enumeration
+      return res.status(200).json({
+        success: true,
+        message: "If an account exists with this email, a reset link has been sent.",
       });
     }
 
@@ -40,7 +41,7 @@ const forgotPassword = async (req: express.Request, res: express.Response) => {
         message: "Failed to set reset token",
       });
     }
-    console.log("Password reset token for testing:", resetToken);
+    // Token logging removed for security — never log sensitive tokens in production
     await sendResetPasswordEmail(email, resetToken);
 
     return res.status(200).json({

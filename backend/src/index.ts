@@ -25,10 +25,13 @@ dotenv.config();
 
 const app = express();
 
+// Trust proxy must be set BEFORE rate limiter so it reads the real client IP
+app.set("trust proxy", 1);
+
 // Security & Production Middleware
 app.use(helmet());
 app.use(compression());
-app.use(morgan("dev"));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Rate limiting for API routes
 const limiter = rateLimit({
@@ -84,26 +87,78 @@ app.use("/api/v1/orders", orderListingRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/search", searchRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
-app.get("/health", (req, res) => {
-  res.status(200).json({ message: "ok" });
-});
-app.get("/api/v1/health", (req, res) => {
-  res.status(200).json({ message: "ok" });
+import prisma from "./utils/prisma";
+import redisClient from "./lib/redis";
+
+app.get("/health", async (req, res) => {
+  try {
+    // Verify dependencies are actually reachable
+    await prisma.$queryRaw`SELECT 1`;
+    await redisClient.ping();
+    res.status(200).json({ status: "ok", db: "ok", redis: "ok" });
+  } catch (err) {
+    console.error("Health check failed:", err);
+    res.status(503).json({ status: "degraded", error: String(err) });
+  }
 });
 
-app.set("trust proxy", 1);
+app.get("/api/v1/health", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    await redisClient.ping();
+    res.status(200).json({ status: "ok", db: "ok", redis: "ok" });
+  } catch (err) {
+    console.error("Health check failed:", err);
+    res.status(503).json({ status: "degraded", error: String(err) });
+  }
+});
+
+// trust proxy is now set before rate limiter (moved above)
 
 // Global Error Handler
 import { errorHandler } from "./middlewares/errorHandler";
 app.use(errorHandler);
 
 // Start server
+// Start server and handle graceful shutdown
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(
       `Ganpati Bappa Morya!, hey bhagwan dukh haro na haro ye bugs jarur har lena🥹🙏 Server is running on port ${PORT}`
     );
   });
+
+  const shutdown = async (signal: string) => {
+    console.log(`\n${signal} received — shutting down gracefully`);
+    server.close(async () => {
+      console.log("HTTP server closed.");
+      
+      try {
+        await prisma.$disconnect();
+        console.log("Prisma disconnected.");
+      } catch (err) {
+        console.error("Error disconnecting Prisma:", err);
+      }
+
+      try {
+        redisClient.disconnect();
+        console.log("Redis disconnected.");
+      } catch (err) {
+        console.error("Error disconnecting Redis:", err);
+      }
+
+      process.exit(0);
+    });
+
+    // Force exit if graceful shutdown takes too long (10s)
+    setTimeout(() => {
+      console.error("Could not close connections in time, forcefully shutting down");
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
 }
 
 export default app;

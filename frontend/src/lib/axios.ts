@@ -24,17 +24,39 @@ if (typeof window !== "undefined") {
   wasAuthenticated = localStorage.getItem("wasAuthenticated") === "true";
 }
 
-// Simple interceptor - backend handles token refresh automatically
-// This just tracks authentication state for UI purposes
+// Interceptor with token refresh retry — matches admin panel behavior.
+// On 401, attempt to refresh the token and retry the original request.
+// Only gives up and clears auth state if the refresh itself fails.
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // If we get a 401, clear the authenticated state
-    // The backend already tried to refresh, so if we still got 401,
-    // both tokens are invalid
-    if (error.response?.status === 401) {
-      setAuthenticated(false);
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If 401 and we haven't tried refreshing yet, attempt refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // The backend expects the refresh token in cookies
+        await api.post("/auth/refresh-token");
+
+        // If refresh succeeded, retry the original request
+        return api(originalRequest);
+      } catch {
+        // Refresh failed — both tokens are invalid, clear auth state
+        setAuthenticated(false);
+
+        // Redirect to login if not already there
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.includes("/auth/login")
+        ) {
+          window.location.href = "/auth/login";
+        }
+        return Promise.reject(error);
+      }
     }
+
     return Promise.reject(error);
   },
 );

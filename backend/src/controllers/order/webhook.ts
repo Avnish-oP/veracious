@@ -9,7 +9,14 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
     const secret =
       process.env.RAZORPAY_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET || "";
     const signature = req.headers["x-razorpay-signature"] as string;
-    const body = (req as any).rawBody || JSON.stringify(req.body);
+    
+    // Use raw body for signature verification — JSON.stringify may produce
+    // different bytes than what Razorpay signed, making verification unreliable
+    const body = (req as any).rawBody;
+    if (!body) {
+      console.error("[WEBHOOK] Raw body not available — ensure raw-body middleware is configured for this route");
+      return res.status(400).send("raw body required for signature verification");
+    }
     const expected = crypto
       .createHmac("sha256", secret)
       .update(body)
@@ -66,19 +73,20 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
           return;
         }
 
-        if (orderRecord.paymentStatus === "PAID") {
-          return; // Already processed
-        }
-
-        // Store data for post-transaction operations
-        userIdForCacheCleanup = orderRecord.userId;
-        orderDataForEmail = orderRecord;
-
-        // mark order paid
-        await tx.order.update({
-          where: { id: orderRecord.id },
+        // Atomically mark order as paid — only one processor (verify OR webhook) can win
+        const updateResult = await tx.order.updateMany({
+          where: { id: orderRecord.id, paymentStatus: "PENDING" },
           data: { paymentStatus: "PAID", status: "PROCESSING" as any, updatedAt: new Date() },
         });
+
+        if (updateResult.count === 0) {
+          // Already processed by verifyOrder — skip to avoid double-processing
+          return;
+        }
+
+        // Store data for post-transaction operations (only if we won the atomic update)
+        userIdForCacheCleanup = orderRecord.userId;
+        orderDataForEmail = orderRecord;
 
         await tx.payment.create({
           data: {
@@ -111,19 +119,26 @@ export const razorpayWebhook = async (req: Request, res: Response) => {
           });
         }
 
-        // Decrement Stock
+        // Atomically decrement stock — prevents race condition with verifyOrder
         const items = orderRecord.items as any[];
         if (Array.isArray(items)) {
           for (const item of items) {
             if (item.productId && item.quantity) {
-               await tx.product.update({
-                where: { id: item.productId },
+              const result = await tx.product.updateMany({
+                where: { 
+                  id: item.productId, 
+                  stock: { gte: Number(item.quantity) } 
+                },
                 data: {
-                  stock: {
-                    decrement: Number(item.quantity)
-                  }
+                  stock: { decrement: Number(item.quantity) }
                 }
               });
+              
+              if (result.count === 0) {
+                throw new Error(
+                  `Insufficient stock for product ${item.productId}. Required: ${item.quantity}`
+                );
+              }
             }
           }
         }

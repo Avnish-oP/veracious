@@ -37,6 +37,13 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
+        // Only attempt refresh if user was previously authenticated
+        // (i.e., they have a session that expired, not a first-time visitor)
+        if (!wasAuthenticated) {
+          // User was never logged in — 401 is expected, don't redirect
+          return Promise.reject(error);
+        }
+
         // The backend expects the refresh token in cookies
         await api.post("/auth/refresh-token");
 
@@ -46,7 +53,8 @@ api.interceptors.response.use(
         // Refresh failed — both tokens are invalid, clear auth state
         setAuthenticated(false);
 
-        // Redirect to login if not already there
+        // Only redirect to login if user had an active session that expired
+        // Don't redirect guest users who were never logged in
         if (
           typeof window !== "undefined" &&
           !window.location.pathname.includes("/auth/login")
